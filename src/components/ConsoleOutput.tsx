@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -6,13 +5,13 @@ import { Terminal } from 'lucide-react';
 
 interface ConsoleOutputProps {
   title: string;
-  data: any;
+  data: unknown;
 }
 
 // 콘솔 출력을 웹 페이지에 표시하는 컴포넌트
 const ConsoleOutput: React.FC<ConsoleOutputProps> = ({ title, data }) => {
-  const formatOutput = (data: any) => {
-    if (!data) return '데이터 없음';
+  const formatOutput = (data: unknown): string => {
+    if (data === null || data === undefined) return '데이터 없음';
     
     if (typeof data === 'string') return data;
     
