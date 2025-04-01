@@ -138,12 +138,12 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <div className="transition-transform duration-300 hover:-translate-y-1">
+        <div className="transition-transform duration-300 hover:-translate-y-1 h-full">
           <Card 
             className={cn(
               "mb-4 transition-all duration-300 overflow-hidden border-t-4",
               "hover:shadow-lg focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300",
-              "shadow-md" // 항상 그림자 효과 적용
+              "shadow-md h-full flex flex-col" // 높이 100% 추가, flex-col로 변경
             )}
             style={{ borderTopColor: getBorderColor(job.score) }}
           >
@@ -165,7 +165,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                           className={`font-medium mb-2 ${getScoreColor(job.score)}`}
                         >
                           <Star className="h-3 w-3 mr-1 inline" fill="currentColor" />
-                          매칭도: {getScoreText(job.score)} ({job.score}점)
+                          {getScoreText(job.score)} ({job.score}점)
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -195,7 +195,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4 pb-2">
+            <CardContent className="pt-4 pb-2 flex-grow overflow-auto">
               <div className="grid gap-3 text-sm">
                 <div className="flex items-start">
                   <MapPin className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
@@ -220,17 +220,17 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                 <div className="mt-1 grid gap-2 transition-all duration-300 ease-in-out">
                   <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
                     <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 mt-0.5 flex-shrink-0 dark:text-green-400" />
-                    <span className="text-green-800 dark:text-green-300">{job.strength}</span>
+                    <span className="text-green-800 dark:text-green-300 line-clamp-3">{job.strength}</span>
                   </div>
                   <div className="flex items-start bg-red-50 p-2 rounded-md dark:bg-red-900/20">
                     <XCircle className="h-4 w-4 mr-2 text-red-600 mt-0.5 flex-shrink-0 dark:text-red-400" />
-                    <span className="text-red-800 dark:text-red-300">{job.weakness}</span>
+                    <span className="text-red-800 dark:text-red-300 line-clamp-3">{job.weakness}</span>
                   </div>
                 </div>
               </div>
             </CardContent>
             
-            <CardFooter className="pt-2 pb-3 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
+            <CardFooter className="pt-2 pb-3 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center mt-auto">
               <div className="flex gap-2">
                 <a 
                   href={job.url} 

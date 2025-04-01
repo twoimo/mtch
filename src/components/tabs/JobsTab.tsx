@@ -8,9 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin, CheckCircle2 } from 'lucide-react';
+import { 
+  Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin, CheckCircle2,
+  LayoutGrid, LayoutList, Grid2X2
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
 
 // 타입 정의 추가
 interface Job {
@@ -73,12 +82,25 @@ const COMPANY_CATEGORIES: CompanyCategory[] = [
 
 const ITEMS_PER_PAGE = 10;
 
+// 로컬 스토리지 키
+const LAYOUT_STORAGE_KEY = 'job-grid-layout-preference';
+
 const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
   const isMobile = useIsMobile();
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  
+  // 그리드 레이아웃 상태 추가 ('single' 또는 'double')
+  const [gridLayout, setGridLayout] = useState<'single' | 'double'>(
+    () => {
+      // 로컬 스토리지에서 설정 불러오기
+      const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
+      // 저장된 값이 'single'이면 'single', 그렇지 않으면 'double'을 기본값으로 사용
+      return (savedLayout === 'single') ? 'single' : 'double';
+    }
+  );
   
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,6 +121,14 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
   };
   
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  
+  // 그리드 레이아웃 변경 함수
+  const toggleGridLayout = useCallback(() => {
+    const newLayout = gridLayout === 'single' ? 'double' : 'single';
+    setGridLayout(newLayout);
+    // 로컬 스토리지에 설정 저장
+    localStorage.setItem(LAYOUT_STORAGE_KEY, newLayout);
+  }, [gridLayout]);
   
   // 필터링 로직
   useEffect(() => {
@@ -295,44 +325,77 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
           </div>
         </div>
         
-        {/* 정렬 옵션 */}
-        <div className="flex justify-end items-center mt-4 space-x-2">
-          <Label>정렬:</Label>
-          <Select 
-            value={sortOrder} 
-            onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score">
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 mr-2" />
-                  매칭 점수
-                </div>
-              </SelectItem>
-              <SelectItem value="name">
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  회사명
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        {/* 정렬 및 레이아웃 설정 영역 - 수정된 부분 */}
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center space-x-2">
+            <Label>그리드 레이아웃:</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={toggleGridLayout}
+                    className="flex items-center gap-1"
+                  >
+                    {gridLayout === 'single' ? (
+                      <>
+                        <LayoutList className="h-4 w-4" />
+                        <span className="hidden sm:inline">1열 보기</span>
+                      </>
+                    ) : (
+                      <>
+                        <Grid2X2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">2열 보기</span>
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{gridLayout === 'single' ? '2열 그리드로 변경' : '1열 목록으로 변경'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSortDirection}
-            className="flex items-center justify-center"
-          >
-            {sortDirection === 'desc' ? (
-              <ArrowDownAZ className="h-4 w-4" />
-            ) : (
-              <ArrowDownZA className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Label>정렬:</Label>
+            <Select 
+              value={sortOrder} 
+              onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="score">
+                  <div className="flex items-center">
+                    <Star className="w-4 h-4 mr-2" />
+                    매칭 점수
+                  </div>
+                </SelectItem>
+                <SelectItem value="name">
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    회사명
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSortDirection}
+              className="flex items-center justify-center"
+            >
+              {sortDirection === 'desc' ? (
+                <ArrowDownAZ className="h-4 w-4" />
+              ) : (
+                <ArrowDownZA className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -344,15 +407,29 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
         </p>
       </div>
       
-      {/* 채용 정보 목록 */}
-      <div className="w-full grid grid-cols-1 gap-4">
+      {/* 채용 정보 목록 - 그리드 컨테이너 부분 수정 */}
+      <div className={cn(
+        "w-full grid gap-4",
+        // 그리드 아이템 행 높이 통일을 위한 설정 추가
+        "grid-auto-rows-fr",
+        gridLayout === 'single' 
+          ? "grid-cols-1" 
+          : isMobile 
+            ? "grid-cols-1" 
+            : "md:grid-cols-2"
+      )}>
         {displayedJobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <div key={job.id} className="h-full">
+            <JobCard job={job} />
+          </div>
         ))}
         
         {/* 로딩 표시기 */}
         {loading && (
-          <div className="mt-4 space-y-4">
+          <div className={cn(
+            "mt-4 space-y-4",
+            gridLayout === 'single' ? "col-span-1" : "md:col-span-2"
+          )}>
             {[...Array(3)].map((_, i) => (
               <Card key={i} className="w-full h-32 animate-pulse bg-muted/20" />
             ))}
@@ -361,7 +438,10 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
         
         {/* 더 로드할 항목이 있는지 확인하는 참조 요소 */}
         {filteredJobs.length > displayedJobs.length && (
-          <div ref={loadMoreRef} className="h-4" />
+          <div ref={loadMoreRef} className={cn(
+            "h-4",
+            gridLayout === 'single' ? "col-span-1" : "md:col-span-2"
+          )} />
         )}
       </div>
       

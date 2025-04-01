@@ -121,7 +121,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   // 로딩 중인 경우 스켈레톤 UI 표시
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1">
         {Array(6).fill(0).map((_, index) => (
           <Card key={index} className="mb-4">
             <CardHeader className="pb-2">
@@ -175,7 +175,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1">
         {displayedJobs.map((job, index) => (
           <div 
             key={job.id} 
