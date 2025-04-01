@@ -3,14 +3,14 @@
 class MainServiceCommunicateService {
   private baseUrl: string = 'http://localhost:6080/api/developer/main_service_communicate';
 
-  // 테스트 API 호출
+  // 사람인 웹사이트 스크래핑 시작
   async test(): Promise<any> {
     try {
       const response = await fetch(`${this.baseUrl}/test`);
       return await response.json();
     } catch (error) {
-      console.error('테스트 API 호출 중 오류 발생:', error);
-      return { success: false, error: '테스트 API 호출 중 오류가 발생했습니다.' };
+      console.error('사람인 스크래핑 중 오류 발생:', error);
+      return { success: false, error: '사람인 스크래핑 중 오류가 발생했습니다.' };
     }
   }
 

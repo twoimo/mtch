@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Search, Briefcase, CheckCircle, RefreshCw } from 'lucide-react';
 
 const Index = () => {
   // 상태 관리
@@ -24,21 +25,21 @@ const Index = () => {
   
   const { toast } = useToast();
 
-  // API 테스트 실행
+  // 사람인 스크래핑 시작
   const handleTestApi = async () => {
     setIsTestLoading(true);
     try {
       const result = await apiService.test();
       setTestResult(result);
       toast({
-        title: '테스트 완료',
-        description: '테스트 API가 성공적으로 호출되었습니다.',
+        title: '스크래핑 완료',
+        description: '사람인 웹사이트 스크래핑이 성공적으로 완료되었습니다.',
       });
     } catch (error) {
-      console.error('API 테스트 중 오류:', error);
+      console.error('사람인 스크래핑 중 오류:', error);
       toast({
         title: '오류 발생',
-        description: 'API 테스트 중 오류가 발생했습니다.',
+        description: '사람인 스크래핑 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -122,63 +123,80 @@ const Index = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card className="mb-8">
+    <div className="container mx-auto py-8 px-4 animate-fade-in">
+      <Card className="mb-8 shadow-md border-t-4 border-t-blue-500">
         <CardHeader className="pb-3">
-          <CardTitle className="text-2xl">사람인 채용 매칭 시스템</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-blue-700">사람인 채용 매칭 시스템</CardTitle>
+          <CardDescription className="text-gray-600">
             API를 통해 채용 정보를 조회하고 자동 매칭 및 지원을 실행할 수 있습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <ApiButton 
-              label="테스트 API 호출" 
+              label="사람인 스크래핑 시작" 
               onClick={handleTestApi} 
-              isLoading={isTestLoading} 
+              isLoading={isTestLoading}
+              className="bg-indigo-600 hover:bg-indigo-700"
+              variant="default"
             />
             <ApiButton 
               label="추천 채용 정보 조회" 
               onClick={handleGetRecommendedJobs} 
-              isLoading={isRecommendedLoading} 
+              isLoading={isRecommendedLoading}
+              className="bg-emerald-600 hover:bg-emerald-700" 
+              variant="default"
             />
             <ApiButton 
               label="자동 채용 매칭 실행" 
               onClick={handleRunAutoJobMatching} 
-              isLoading={isAutoMatchingLoading} 
+              isLoading={isAutoMatchingLoading}
+              className="bg-amber-600 hover:bg-amber-700" 
+              variant="default"
             />
             <ApiButton 
               label="사람인 채용 지원" 
               onClick={handleApplySaraminJobs} 
-              isLoading={isApplyLoading} 
+              isLoading={isApplyLoading}
+              className="bg-rose-600 hover:bg-rose-700" 
+              variant="default"
             />
           </div>
         </CardContent>
       </Card>
 
       <Tabs defaultValue="recommended" className="mb-6">
-        <TabsList className="mb-4">
-          <TabsTrigger value="recommended">추천 채용 정보</TabsTrigger>
-          <TabsTrigger value="console">콘솔 출력</TabsTrigger>
+        <TabsList className="mb-4 w-full p-1 bg-gray-100 rounded-lg">
+          <TabsTrigger value="recommended" className="flex-1 py-2 rounded-md">
+            <Briefcase className="w-4 h-4 mr-2" /> 추천 채용 정보
+          </TabsTrigger>
+          <TabsTrigger value="console" className="flex-1 py-2 rounded-md">
+            <Search className="w-4 h-4 mr-2" /> 콘솔 출력
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="recommended">
+        <TabsContent value="recommended" className="animate-fade-in">
           {recommendedJobs.length > 0 ? (
             <>
-              <h2 className="text-xl font-semibold mb-4">추천 채용 정보 ({recommendedJobs.length}개)</h2>
+              <div className="flex items-center mb-4 bg-blue-50 p-3 rounded-lg">
+                <Briefcase className="text-blue-600 mr-2" />
+                <h2 className="text-xl font-semibold text-blue-800">추천 채용 정보 ({recommendedJobs.length}개)</h2>
+              </div>
               <JobList jobs={recommendedJobs} />
             </>
           ) : (
-            <div className="text-center py-8 border rounded-lg bg-gray-50">
-              <p className="text-gray-500">추천 채용 정보를 조회해주세요.</p>
+            <div className="text-center py-12 border rounded-lg bg-gray-50 shadow-sm transition-all duration-300">
+              <RefreshCw className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-lg">추천 채용 정보를 조회해주세요.</p>
+              <p className="text-gray-400 mt-2">오른쪽 상단의 '추천 채용 정보 조회' 버튼을 클릭하세요.</p>
             </div>
           )}
         </TabsContent>
         
-        <TabsContent value="console">
+        <TabsContent value="console" className="animate-fade-in">
           <div className="space-y-6">
             {testResult && (
-              <ConsoleOutput title="테스트 API 호출 결과" data={testResult} />
+              <ConsoleOutput title="사람인 스크래핑 결과" data={testResult} />
             )}
             
             {recommendedJobs.length > 0 && (
@@ -194,8 +212,10 @@ const Index = () => {
             )}
             
             {!testResult && !recommendedJobs.length && !autoMatchingResult && !applyResult && (
-              <div className="text-center py-8 border rounded-lg bg-gray-50">
-                <p className="text-gray-500">API를 호출하면 결과가 여기에 표시됩니다.</p>
+              <div className="text-center py-12 border rounded-lg bg-gray-50 shadow-sm transition-all duration-300">
+                <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-gray-500 text-lg">API를 호출하면 결과가 여기에 표시됩니다.</p>
+                <p className="text-gray-400 mt-2">상단의 버튼을 클릭하여 API를 호출해보세요.</p>
               </div>
             )}
           </div>
