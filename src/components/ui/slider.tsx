@@ -52,18 +52,17 @@ const Slider = React.forwardRef<
       </SliderPrimitive.Track>
       
       {value.map((val, i) => (
-        <React.Fragment key={i}>
-          <SliderPrimitive.Thumb 
-            className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:bg-primary/10"
-          >
-            {showTooltip && tooltipVisible && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground opacity-0 transition-opacity animate-fade-in">
-                {showTooltipValue(val)}
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary" />
-              </div>
-            )}
-          </SliderPrimitive.Thumb>
-        </React.Fragment>
+        <SliderPrimitive.Thumb 
+          key={i}
+          className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:bg-primary/10"
+        >
+          {showTooltip && tooltipVisible && (
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground opacity-0 transition-opacity animate-fade-in">
+              {showTooltipValue(val)}
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary" />
+            </div>
+          )}
+        </SliderPrimitive.Thumb>
       ))}
     </SliderPrimitive.Root>
   )
