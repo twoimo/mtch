@@ -12,35 +12,93 @@ import { Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin, CheckCircle2 } from 'lu
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 
-interface JobsTabProps {
-  jobs: any[];
+// 타입 정의 추가
+interface Job {
+  id: number;
+  score: number;
+  reason: string;
+  strength: string;
+  weakness: string;
+  apply_yn: number;
+  companyName: string;
+  jobTitle: string;
+  jobLocation: string;
+  companyType: string;
+  url: string;
+  deadline?: string;
 }
+
+interface JobsTabProps {
+  jobs: Job[];
+}
+
+// 회사 유형 카테고리 정의
+interface CompanyCategory {
+  label: string;
+  value: string;
+  types: string[];
+}
+
+// 회사 유형 카테고리 (대분류)
+const COMPANY_CATEGORIES: CompanyCategory[] = [
+  {
+    label: "대기업/공기업",
+    value: "large",
+    types: [
+      "대기업", "공기업", "상장기업", "중견기업", "대기업 계열사", "외국계기업", "금융기업"
+    ]
+  },
+  {
+    label: "스타트업/벤처",
+    value: "startup",
+    types: [
+      "스타트업", "벤처기업", "중소기업", "소기업"
+    ]
+  },
+  {
+    label: "IT/소프트웨어",
+    value: "tech",
+    types: [
+      "IT기업", "소프트웨어", "정보통신", "게임", "플랫폼", "전자", "보안"
+    ]
+  },
+  {
+    label: "제조/서비스",
+    value: "manufacturing",
+    types: [
+      "제조", "서비스", "유통", "물류", "건설", "교육", "의료", "컨설팅", "법률"
+    ]
+  }
+];
 
 const ITEMS_PER_PAGE = 10;
 
 const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
   const isMobile = useIsMobile();
-  const [displayedJobs, setDisplayedJobs] = useState<any[]>([]);
-  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+  const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState('');
-  const [companyType, setCompanyType] = useState('');
+  const [companyCategory, setCompanyCategory] = useState('all');
   const [minScore, setMinScore] = useState(0);
   const [onlyApplicable, setOnlyApplicable] = useState(false);
   const [sortOrder, setSortOrder] = useState<'score' | 'name'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
-  // 필터링된 회사 유형 옵션들을 얻기
-  const companyTypeOptions = React.useMemo(() => {
-    if (!jobs || jobs.length === 0) return [];
-    const types = [...new Set(jobs.map(job => job.companyType))];
-    return types.filter(type => type).sort();
-  }, [jobs]);
+  // 회사 유형을 카테고리와 매핑하는 함수
+  const getCompanyCategory = (companyType: string): string => {
+    for (const category of COMPANY_CATEGORIES) {
+      if (category.types.some(type => companyType?.includes(type))) {
+        return category.value;
+      }
+    }
+    return "other"; // 어떤 카테고리에도 속하지 않는 경우
+  };
   
-  const loadMoreRef = useRef(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
   // 필터링 로직
   useEffect(() => {
@@ -62,9 +120,9 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
       );
     }
     
-    // 회사 유형 필터링
-    if (companyType && companyType !== 'all') {
-      result = result.filter(job => job.companyType === companyType);
+    // 회사 유형 필터링 (카테고리 기반)
+    if (companyCategory && companyCategory !== 'all') {
+      result = result.filter(job => getCompanyCategory(job.companyType) === companyCategory);
     }
     
     // 최소 점수 필터링
@@ -84,10 +142,10 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
     setCurrentPage(1);
     setDisplayedJobs(result.slice(0, ITEMS_PER_PAGE));
     
-  }, [jobs, searchTerm, companyType, minScore, onlyApplicable, sortOrder, sortDirection]);
+  }, [jobs, searchTerm, companyCategory, minScore, onlyApplicable, sortOrder, sortDirection]);
   
   // 정렬 함수
-  const sortJobs = (jobsToSort: any[], order: 'score' | 'name', direction: 'asc' | 'desc') => {
+  const sortJobs = (jobsToSort: Job[], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
     return [...jobsToSort].sort((a, b) => {
       let comparison = 0;
       
@@ -143,7 +201,7 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
   // 필터 초기화
   const resetFilters = () => {
     setSearchTerm('');
-    setCompanyType('all');
+    setCompanyCategory('all');
     setMinScore(0);
     setOnlyApplicable(false);
     setSortOrder('score');
@@ -187,21 +245,24 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
             />
           </div>
           
-          {/* 회사 유형 */}
+          {/* 회사 유형 (카테고리 기반) */}
           <div className="space-y-2">
-            <Label htmlFor="company-type">회사 유형</Label>
+            <Label htmlFor="company-category">회사 유형</Label>
             <Select 
-              value={companyType} 
-              onValueChange={setCompanyType}
+              value={companyCategory} 
+              onValueChange={setCompanyCategory}
             >
-              <SelectTrigger id="company-type">
+              <SelectTrigger id="company-category">
                 <SelectValue placeholder="회사 유형 선택" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                {companyTypeOptions.map((type) => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                {COMPANY_CATEGORIES.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
                 ))}
+                <SelectItem value="other">기타 기업</SelectItem>
               </SelectContent>
             </Select>
           </div>
