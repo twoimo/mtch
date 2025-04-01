@@ -1,31 +1,33 @@
-
 import React from 'react';
-import JobList from '@/components/JobList';
-import { Briefcase, RefreshCw } from 'lucide-react';
+import JobCard from '@/components/JobCard';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface JobsTabProps {
   jobs: any[];
 }
 
-// 추천 채용 정보 탭 컴포넌트
 const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
+  const isMobile = useIsMobile();
+
+  if (!jobs || jobs.length === 0) {
+    return (
+      <div className="flex items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40">
+        <p className="text-muted-foreground text-center">
+          추천 채용정보가 없습니다. '추천 채용 정보 조회' 버튼을 눌러 채용정보를 불러오세요.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="animate-fade-in">
-      {jobs.length > 0 ? (
-        <>
-          <div className="flex items-center mb-4 bg-blue-50 p-3 rounded-lg">
-            <Briefcase className="text-blue-600 mr-2" />
-            <h2 className="text-xl font-semibold text-blue-800">추천 채용 정보 ({jobs.length}개)</h2>
-          </div>
-          <JobList jobs={jobs} />
-        </>
-      ) : (
-        <div className="text-center py-12 border rounded-lg bg-gray-50 shadow-sm transition-all duration-300">
-          <RefreshCw className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">추천 채용 정보를 조회해주세요.</p>
-          <p className="text-gray-400 mt-2">오른쪽 상단의 '추천 채용 정보 조회' 버튼을 클릭하세요.</p>
-        </div>
-      )}
+    <div className="w-full space-y-4">
+      {/* 항상 세로 한 열 레이아웃으로 표시 */}
+      <div className="w-full grid grid-cols-1 gap-4">
+        {jobs.map((job) => (
+          <JobCard key={job.id} job={job} />
+        ))}
+      </div>
     </div>
   );
 };

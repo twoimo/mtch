@@ -149,9 +149,9 @@ const Index = () => {
           defaultValue="jobs" 
           value={activeTab} 
           onValueChange={setActiveTab}
-          className="w-full flex flex-col h-[calc(100vh-350px)]"
+          className="w-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-2">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
@@ -172,25 +172,21 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="jobs" className="flex-1 mt-0 overflow-hidden">
-            <ScrollArea className="h-full pr-4">
-              <div className="space-y-4 pb-4">
-                <JobsTab jobs={recommendedJobs} />
-              </div>
-            </ScrollArea>
+          <TabsContent value="jobs" className="mt-0">
+            <div className="pb-8">
+              <JobsTab jobs={recommendedJobs} />
+            </div>
           </TabsContent>
           
-          <TabsContent value="console" className="flex-1 mt-0 overflow-hidden">
-            <ScrollArea className="h-full pr-4">
-              <div className="space-y-4 pb-4">
-                <ConsoleTab 
-                  testResult={testResult}
-                  recommendedJobs={recommendedJobs}
-                  autoMatchingResult={autoMatchingResult}
-                  applyResult={applyResult}
-                />
-              </div>
-            </ScrollArea>
+          <TabsContent value="console" className="mt-0">
+            <div className="pb-8">
+              <ConsoleTab 
+                testResult={testResult}
+                recommendedJobs={recommendedJobs}
+                autoMatchingResult={autoMatchingResult}
+                applyResult={applyResult}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
