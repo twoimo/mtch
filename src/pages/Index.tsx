@@ -1,126 +1,33 @@
 
-import React, { useState } from 'react';
-import { apiService } from '@/services/MainServiceCommunicateService';
-import ApiButton from '@/components/ApiButton';
-import JobList from '@/components/JobList';
-import ConsoleOutput from '@/components/ConsoleOutput';
-import { useToast } from '@/components/ui/use-toast';
+import React from 'react';
+import { useApiActions } from '@/hooks/useApiActions';
+import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Search, Briefcase, CheckCircle, RefreshCw } from 'lucide-react';
+import { Briefcase, Search } from 'lucide-react';
+import JobsTab from '@/components/tabs/JobsTab';
+import ConsoleTab from '@/components/tabs/ConsoleTab';
 
 const Index = () => {
-  // 상태 관리
-  const [testResult, setTestResult] = useState<any>(null);
-  const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
-  const [autoMatchingResult, setAutoMatchingResult] = useState<any>(null);
-  const [applyResult, setApplyResult] = useState<any>(null);
-  
-  // 로딩 상태 관리
-  const [isTestLoading, setIsTestLoading] = useState(false);
-  const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
-  const [isAutoMatchingLoading, setIsAutoMatchingLoading] = useState(false);
-  const [isApplyLoading, setIsApplyLoading] = useState(false);
-  
-  const { toast } = useToast();
-
-  // 사람인 스크래핑 시작
-  const handleTestApi = async () => {
-    setIsTestLoading(true);
-    try {
-      const result = await apiService.test();
-      setTestResult(result);
-      toast({
-        title: '스크래핑 완료',
-        description: '사람인 웹사이트 스크래핑이 성공적으로 완료되었습니다.',
-      });
-    } catch (error) {
-      console.error('사람인 스크래핑 중 오류:', error);
-      toast({
-        title: '오류 발생',
-        description: '사람인 스크래핑 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTestLoading(false);
-    }
-  };
-
-  // 추천 채용 정보 가져오기
-  const handleGetRecommendedJobs = async () => {
-    setIsRecommendedLoading(true);
-    try {
-      const result = await apiService.getRecommendedJobs();
-      if (result.success && result.recommendedJobs) {
-        setRecommendedJobs(result.recommendedJobs);
-        toast({
-          title: '추천 채용 정보 조회 완료',
-          description: `${result.recommendedJobs.length}개의 추천 채용 정보를 가져왔습니다.`,
-        });
-      } else {
-        setRecommendedJobs([]);
-        toast({
-          title: '데이터 없음',
-          description: '추천 채용 정보를 가져오지 못했습니다.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('추천 채용 정보 가져오기 중 오류:', error);
-      toast({
-        title: '오류 발생',
-        description: '추천 채용 정보를 가져오는 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRecommendedLoading(false);
-    }
-  };
-
-  // 자동 채용 매칭 실행
-  const handleRunAutoJobMatching = async () => {
-    setIsAutoMatchingLoading(true);
-    try {
-      const result = await apiService.runAutoJobMatching();
-      setAutoMatchingResult(result);
-      toast({
-        title: '자동 채용 매칭 완료',
-        description: '자동 채용 매칭이 성공적으로 실행되었습니다.',
-      });
-    } catch (error) {
-      console.error('자동 채용 매칭 실행 중 오류:', error);
-      toast({
-        title: '오류 발생',
-        description: '자동 채용 매칭 실행 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAutoMatchingLoading(false);
-    }
-  };
-
-  // 사람인 채용 지원
-  const handleApplySaraminJobs = async () => {
-    setIsApplyLoading(true);
-    try {
-      const result = await apiService.applySaraminJobs();
-      setApplyResult(result);
-      toast({
-        title: '사람인 채용 지원 완료',
-        description: '사람인 채용 지원이 성공적으로 실행되었습니다.',
-      });
-    } catch (error) {
-      console.error('사람인 채용 지원 중 오류:', error);
-      toast({
-        title: '오류 발생',
-        description: '사람인 채용 지원 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsApplyLoading(false);
-    }
-  };
+  const {
+    // 상태
+    testResult,
+    recommendedJobs,
+    autoMatchingResult,
+    applyResult,
+    
+    // 로딩 상태
+    isTestLoading,
+    isRecommendedLoading,
+    isAutoMatchingLoading,
+    isApplyLoading,
+    
+    // 액션 메서드
+    handleTestApi,
+    handleGetRecommendedJobs,
+    handleRunAutoJobMatching,
+    handleApplySaraminJobs
+  } = useApiActions();
 
   return (
     <div className="container mx-auto py-8 px-4 animate-fade-in">
@@ -132,36 +39,17 @@ const Index = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <ApiButton 
-              label="사람인 스크래핑 시작" 
-              onClick={handleTestApi} 
-              isLoading={isTestLoading}
-              className="bg-indigo-600 hover:bg-indigo-700"
-              variant="default"
-            />
-            <ApiButton 
-              label="추천 채용 정보 조회" 
-              onClick={handleGetRecommendedJobs} 
-              isLoading={isRecommendedLoading}
-              className="bg-emerald-600 hover:bg-emerald-700" 
-              variant="default"
-            />
-            <ApiButton 
-              label="자동 채용 매칭 실행" 
-              onClick={handleRunAutoJobMatching} 
-              isLoading={isAutoMatchingLoading}
-              className="bg-amber-600 hover:bg-amber-700" 
-              variant="default"
-            />
-            <ApiButton 
-              label="사람인 채용 지원" 
-              onClick={handleApplySaraminJobs} 
-              isLoading={isApplyLoading}
-              className="bg-rose-600 hover:bg-rose-700" 
-              variant="default"
-            />
-          </div>
+          <ApiButtonGroup 
+            onTestApi={handleTestApi}
+            onGetRecommendedJobs={handleGetRecommendedJobs}
+            onRunAutoJobMatching={handleRunAutoJobMatching}
+            onApplySaraminJobs={handleApplySaraminJobs}
+            
+            isTestLoading={isTestLoading}
+            isRecommendedLoading={isRecommendedLoading}
+            isAutoMatchingLoading={isAutoMatchingLoading}
+            isApplyLoading={isApplyLoading}
+          />
         </CardContent>
       </Card>
 
@@ -175,50 +63,17 @@ const Index = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="recommended" className="animate-fade-in">
-          {recommendedJobs.length > 0 ? (
-            <>
-              <div className="flex items-center mb-4 bg-blue-50 p-3 rounded-lg">
-                <Briefcase className="text-blue-600 mr-2" />
-                <h2 className="text-xl font-semibold text-blue-800">추천 채용 정보 ({recommendedJobs.length}개)</h2>
-              </div>
-              <JobList jobs={recommendedJobs} />
-            </>
-          ) : (
-            <div className="text-center py-12 border rounded-lg bg-gray-50 shadow-sm transition-all duration-300">
-              <RefreshCw className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-lg">추천 채용 정보를 조회해주세요.</p>
-              <p className="text-gray-400 mt-2">오른쪽 상단의 '추천 채용 정보 조회' 버튼을 클릭하세요.</p>
-            </div>
-          )}
+        <TabsContent value="recommended">
+          <JobsTab jobs={recommendedJobs} />
         </TabsContent>
         
-        <TabsContent value="console" className="animate-fade-in">
-          <div className="space-y-6">
-            {testResult && (
-              <ConsoleOutput title="사람인 스크래핑 결과" data={testResult} />
-            )}
-            
-            {recommendedJobs.length > 0 && (
-              <ConsoleOutput title="추천 채용 정보 결과" data={{ success: true, recommendedJobs }} />
-            )}
-            
-            {autoMatchingResult && (
-              <ConsoleOutput title="자동 채용 매칭 결과" data={autoMatchingResult} />
-            )}
-            
-            {applyResult && (
-              <ConsoleOutput title="사람인 채용 지원 결과" data={applyResult} />
-            )}
-            
-            {!testResult && !recommendedJobs.length && !autoMatchingResult && !applyResult && (
-              <div className="text-center py-12 border rounded-lg bg-gray-50 shadow-sm transition-all duration-300">
-                <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500 text-lg">API를 호출하면 결과가 여기에 표시됩니다.</p>
-                <p className="text-gray-400 mt-2">상단의 버튼을 클릭하여 API를 호출해보세요.</p>
-              </div>
-            )}
-          </div>
+        <TabsContent value="console">
+          <ConsoleTab 
+            testResult={testResult} 
+            recommendedJobs={recommendedJobs} 
+            autoMatchingResult={autoMatchingResult} 
+            applyResult={applyResult} 
+          />
         </TabsContent>
       </Tabs>
     </div>
