@@ -127,7 +127,7 @@ class MainServiceCommunicateService {
         },
         {
           id: 123,
-          score: 90,
+          score: 50,
           reason: "데이터 사이언티스트 직무 일치, 필요 기술 스택 보유",
           strength: "머신러닝, 딥러닝 경험 보유, 석사학위 취득",
           weakness: "경력 요구사항이 5년이나 현재 2년 경력",
