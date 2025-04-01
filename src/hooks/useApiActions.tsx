@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { safeSetItem, safeGetItem, safeRemoveItem, isLocalStorageAvailable } from '@/utils/storage';
 
 // Define proper interface types for our data structures
 interface Job {
@@ -71,8 +70,8 @@ export const useApiActions = () => {
   
   const { toast } = useToast();
   
-  // 직접 localStorage 접근 함수들
-  const directSaveToStorage = useCallback((key: string, data: unknown) => {
+  // 직접적으로 localStorage에 접근하는 함수들 (우선순위 높게 정의)
+  const directSaveToStorage = useCallback(<T,>(key: string, data: T): boolean => {
     try {
       const storageItem = {
         data,
@@ -83,13 +82,14 @@ export const useApiActions = () => {
       const serialized = JSON.stringify(storageItem);
       
       // 저장 시도
-      window.localStorage.setItem(key, serialized);
+      localStorage.setItem(key, serialized);
       
       // 저장 확인
-      console.log(`Direct save to localStorage - key: ${key}, success: ${!!window.localStorage.getItem(key)}`);
-      return true;
+      const saved = localStorage.getItem(key);
+      console.log(`직접 저장 완료: ${key}, 성공: ${!!saved}`);
+      return !!saved;
     } catch (error) {
-      console.error(`Failed to save to localStorage: ${error}`);
+      console.error("저장 실패:", error);
       return false;
     }
   }, []);
@@ -97,10 +97,9 @@ export const useApiActions = () => {
   const directLoadFromStorage = useCallback(<T,>(key: string): T | null => {
     try {
       // 항목 가져오기
-      const serialized = window.localStorage.getItem(key);
-      console.log(`Direct load from localStorage - key: ${key}, exists: ${!!serialized}`);
-      
+      const serialized = localStorage.getItem(key);
       if (!serialized) {
+        console.log(`${key}에 해당하는 캐시 없음`);
         return null;
       }
       
@@ -109,88 +108,78 @@ export const useApiActions = () => {
       
       // 만료 확인
       if (Date.now() - item.timestamp > CACHE_EXPIRY) {
-        console.log(`Item is expired - key: ${key}`);
-        window.localStorage.removeItem(key);
+        console.log(`${key} 캐시 만료됨`);
+        localStorage.removeItem(key);
         return null;
       }
       
+      console.log(`${key} 캐시 로드 성공`);
       return item.data;
     } catch (error) {
-      console.error(`Failed to load from localStorage: ${error}`);
+      console.error(`${key} 캐시 로드 실패:`, error);
       return null;
     }
   }, []);
-  
-  // 초기화 시 모든 localStorage 캐시 키 확인 (디버깅용)
-  useEffect(() => {
-    // 모든 localStorage 키 출력
-    console.log('All localStorage keys:');
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      console.log(`${i}: ${key}`);
-    }
-    
-    // 관련 캐시 키 검사
-    Object.values(CACHE_KEYS).forEach(key => {
-      const value = localStorage.getItem(key);
-      console.log(`Cache key ${key}:`, value ? 'exists' : 'does not exist');
-    });
-  }, []);
 
-  // 캐시 상태 확인 
+  // 앱 시작 시 캐시 확인 (디버깅용)
   useEffect(() => {
-    const storageAvailable = isLocalStorageAvailable();
-    console.log(`localStorage is ${storageAvailable ? 'available' : 'not available'}`);
+    console.log("=== 캐시 상태 확인 ===");
+    try {
+      Object.values(CACHE_KEYS).forEach(key => {
+        const item = localStorage.getItem(key);
+        console.log(`${key}: ${item ? '있음' : '없음'}`);
+        
+        if (item) {
+          try {
+            const parsed = JSON.parse(item);
+            console.log(`${key} 데이터:`, parsed);
+          } catch (err) {
+            console.error(`${key} 파싱 실패`);
+          }
+        }
+      });
+    } catch (err) {
+      console.error("캐시 확인 중 오류:", err);
+    }
+  }, []);
+  
+  // 초기 로드 시 캐시 불러오기
+  useEffect(() => {
+    console.log("앱 시작: 캐시 데이터 로드 시도");
     
-    if (!storageAvailable) {
+    // 채용 정보 로드
+    const jobsCache = directLoadFromStorage<Job[]>(CACHE_KEYS.RECOMMENDED_JOBS);
+    if (jobsCache && jobsCache.length > 0) {
+      console.log(`${jobsCache.length}개 채용 정보 로드됨`);
+      setRecommendedJobs(jobsCache);
+      
       toast({
-        title: '저장소 오류',
-        description: '브라우저 localStorage를 사용할 수 없습니다. 캐싱 기능이 작동하지 않습니다.',
-        variant: 'destructive',
-        duration: 5000,
+        title: '캐시된 데이터 로드됨',
+        description: `${jobsCache.length}개의 이전 채용 정보가 로드되었습니다.`,
+        variant: 'default',
       });
     }
-  }, [toast]);
-
-  // 캐시 초기화 시 직접 호출
-  useEffect(() => {
-    function loadInitialCache() {
-      console.log("====== INITIAL CACHE LOADING ======");
-      
-      try {
-        // 캐시된 채용 정보 로드
-        const jobsData = directLoadFromStorage<Job[]>(CACHE_KEYS.RECOMMENDED_JOBS);
-        console.log("직접 로드한 채용정보:", jobsData);
-        
-        if (jobsData && jobsData.length > 0) {
-          setRecommendedJobs(jobsData);
-          toast({
-            title: '저장된 채용정보 로드됨',
-            description: `${jobsData.length}개의 추천 채용 정보를 불러왔습니다.`,
-          });
-        }
-        
-        // 다른 캐싱된 데이터 로드
-        const testData = directLoadFromStorage<TestResult>(CACHE_KEYS.TEST_RESULT);
-        if (testData) setTestResult(testData);
-        
-        const matchingData = directLoadFromStorage<AutoMatchingResult>(CACHE_KEYS.AUTO_MATCHING);
-        if (matchingData) setAutoMatchingResult(matchingData);
-        
-        const applyData = directLoadFromStorage<ApplyResult>(CACHE_KEYS.APPLY_RESULT);
-        if (applyData) setApplyResult(applyData);
-        
-        console.log("====== INITIAL CACHE LOADING COMPLETE ======");
-      } catch (error) {
-        console.error("캐시 초기화 중 오류:", error);
-      }
+    
+    // 테스트 결과 로드
+    const testResultCache = directLoadFromStorage<TestResult>(CACHE_KEYS.TEST_RESULT);
+    if (testResultCache) {
+      setTestResult(testResultCache);
     }
     
-    // 컴포넌트 마운트 시 캐시 로드
-    loadInitialCache();
+    // 자동 매칭 결과 로드
+    const matchingCache = directLoadFromStorage<AutoMatchingResult>(CACHE_KEYS.AUTO_MATCHING);
+    if (matchingCache) {
+      setAutoMatchingResult(matchingCache);
+    }
+    
+    // 지원 결과 로드
+    const applyCache = directLoadFromStorage<ApplyResult>(CACHE_KEYS.APPLY_RESULT);
+    if (applyCache) {
+      setApplyResult(applyCache);
+    }
   }, [directLoadFromStorage, toast]);
   
-  // API 핸들러
+  // API 핸들러 함수들
   const handleTestApi = useCallback(async () => {
     setIsTestLoading(true);
     try {
@@ -215,13 +204,11 @@ export const useApiActions = () => {
     }
   }, [toast, directSaveToStorage]);
   
-  // 채용 정보 조회 함수
   const handleGetRecommendedJobs = useCallback(async () => {
     setIsRecommendedLoading(true);
     try {
       // 실제 API 호출 코드 (현재는 더미 데이터)
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const dummyJobs: Job[] = Array.from({ length: 25 }).map((_, i) => ({
         id: i + 1,
         companyName: `회사 ${i + 1}`,
@@ -240,13 +227,13 @@ export const useApiActions = () => {
       // 상태 업데이트
       setRecommendedJobs(dummyJobs);
       
-      // 직접 로컬 스토리지에 저장 
-      const saveSuccess = directSaveToStorage(CACHE_KEYS.RECOMMENDED_JOBS, dummyJobs);
-      console.log(`채용 정보 저장 ${saveSuccess ? '성공' : '실패'}`);
+      // 캐시 저장
+      const saved = directSaveToStorage(CACHE_KEYS.RECOMMENDED_JOBS, dummyJobs);
+      console.log(`채용 정보 캐싱: ${saved ? '성공' : '실패'}`);
       
-      // 저장 확인
-      const checkSaved = window.localStorage.getItem(CACHE_KEYS.RECOMMENDED_JOBS);
-      console.log('저장된 데이터 확인: ', !!checkSaved, checkSaved?.length);
+      // 저장 결과 확인
+      const savedData = localStorage.getItem(CACHE_KEYS.RECOMMENDED_JOBS);
+      console.log(`저장된 데이터 크기: ${savedData?.length || 0}바이트`);
       
       toast({
         title: '채용 정보 로드 성공',
@@ -268,7 +255,6 @@ export const useApiActions = () => {
   const handleRunAutoJobMatching = useCallback(async () => {
     setIsAutoMatchingLoading(true);
     try {
-      // 실제 API 호출 코드 (현재는 더미 데이터)
       await new Promise(resolve => setTimeout(resolve, 1500));
       const matchingResult: AutoMatchingResult = {
         success: true,
@@ -304,9 +290,8 @@ export const useApiActions = () => {
   const handleApplySaraminJobs = useCallback(async () => {
     setIsApplyLoading(true);
     try {
-      // 실제 API 호출 코드 (현재는 더미 데이터)
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const applyResult: ApplyResult = {
+      const applyResultData: ApplyResult = {
         success: true,
         applied: Math.floor(Math.random() * 5) + 1,
         failed: Math.floor(Math.random() * 2),
@@ -318,12 +303,12 @@ export const useApiActions = () => {
         timestamp: new Date().toISOString()
       };
       
-      setApplyResult(applyResult);
-      directSaveToStorage(CACHE_KEYS.APPLY_RESULT, applyResult);
+      setApplyResult(applyResultData);
+      directSaveToStorage(CACHE_KEYS.APPLY_RESULT, applyResultData);
       
       toast({
         title: '지원 완료',
-        description: `${applyResult.applied}개의 채용공고에 지원했습니다`,
+        description: `${applyResultData.applied}개의 채용공고에 지원했습니다`,
         variant: 'success',
       });
     } catch (error) {
@@ -341,8 +326,8 @@ export const useApiActions = () => {
   const clearCache = useCallback(() => {
     try {
       Object.values(CACHE_KEYS).forEach(key => {
-        window.localStorage.removeItem(key);
-        console.log(`캐시 삭제: ${key}`);
+        localStorage.removeItem(key);
+        console.log(`${key} 캐시 삭제됨`);
       });
       
       // 상태 초기화
@@ -410,6 +395,6 @@ export const useApiActions = () => {
     
     // 캐시 관리 메서드
     clearCache,
-    checkCacheStatus // 디버깅용 메서드 추가
+    checkCacheStatus
   };
 };
