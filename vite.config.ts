@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      // API 요청을 프록시하기 위한 설정
+      '/api': {
+        target: 'http://localhost:6080',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
+      }
+    }
   },
   plugins: [
     react(),

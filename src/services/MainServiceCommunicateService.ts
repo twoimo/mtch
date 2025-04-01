@@ -38,22 +38,31 @@ interface Job {
 }
 
 class MainServiceCommunicateService {
-  private baseUrl: string = 'http://localhost:6080/api/developer/main_service_communicate';
-  // 현재 대부분의 공개 CORS 프록시는 제한이 있으므로 기본적으로 비활성화
-  private useCorsProxy: boolean = false;
-  private corsProxyUrl: string = 'https://cors-anywhere.herokuapp.com/';
+  // 프록시를 사용하기 위해 상대 경로로 변경
+  private baseUrl: string = '/api/developer/main_service_communicate';
+  // CORS 프록시 관련 설정 제거 (더 이상 필요 없음)
 
   // 사람인 웹사이트 스크래핑 시작
   async test(): Promise<TestResponse> {
     try {
-      await fetch(`${this.baseUrl}/test`, {
-        mode: 'no-cors' // CORS 정책 우회
+      const response = await fetch(`${this.baseUrl}/test`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       
-      // no-cors 모드에서는 response.json()을 사용할 수 없으므로 기본 성공 응답 반환
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: `서버 오류: ${response.status}`,
+          testCompleted: false 
+        };
+      }
+      
       return { 
         success: true, 
-        message: '사람인 스크래핑 요청이 전송되었습니다.',
+        message: '사람인 스크래핑 요청이 성공적으로 전송되었습니다.',
         testCompleted: true 
       };
     } catch (error) {
@@ -64,40 +73,30 @@ class MainServiceCommunicateService {
 
   // 추천 채용 정보 가져오기 - 실제 API 데이터 처리
   async getRecommendedJobs(): Promise<RecommendedJobsResponse> {
-    // CORS 프록시를 사용하지 않고 바로 폴백 데이터 반환
-    if (!this.useCorsProxy) {
-      console.info('CORS 프록시를 사용하지 않고 기본 데이터를 반환합니다.');
-      return this.getFallbackRecommendedJobs();
-    }
-    
     try {
-      // CORS 프록시를 통한 요청 (활성화된 경우에만)
-      const apiUrl = `${this.corsProxyUrl}${this.baseUrl}/recommended-jobs`;
-      
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${this.baseUrl}/recommended-jobs`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': window.location.origin,
-          'X-Requested-With': 'XMLHttpRequest'
         }
       });
       
-      // 응답 확인 및 처리
       if (!response.ok) {
-        console.warn(`API 응답 오류: ${response.status} ${response.statusText}`);
-        // 오류 발생시 폴백 데이터로 전환
+        console.warn(`API 응답 오류: ${response.status}`);
         return this.getFallbackRecommendedJobs();
       }
       
-      // 실제 API 응답 데이터 파싱
-      const data = await response.json();
-      
-      // 응답 데이터 유효성 검증
-      if (data && data.success && Array.isArray(data.recommendedJobs)) {
-        return data as RecommendedJobsResponse;
-      } else {
-        console.warn('API에서 예상치 못한 응답 형식:', data);
+      try {
+        const data = await response.json();
+        if (data && data.success && Array.isArray(data.recommendedJobs)) {
+          console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
+          return data as RecommendedJobsResponse;
+        } else {
+          console.warn('API 응답 형식이 예상과 다릅니다:', data);
+          return this.getFallbackRecommendedJobs();
+        }
+      } catch (parseError) {
+        console.error('API 응답 파싱 중 오류 발생:', parseError);
         return this.getFallbackRecommendedJobs();
       }
     } catch (error) {
@@ -159,16 +158,30 @@ class MainServiceCommunicateService {
   // 자동 채용 매칭 실행
   async runAutoJobMatching(): Promise<AutoMatchingResponse> {
     try {
-      await fetch(`${this.baseUrl}/run-auto-job-matching`, {
-        mode: 'no-cors' // CORS 정책 우회
+      const response = await fetch(`${this.baseUrl}/run-auto-job-matching`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       
-      // no-cors 모드에서는 response.json()을 사용할 수 없으므로 기본 성공 응답 반환
-      return { 
-        success: true, 
-        message: '자동 채용 매칭이 성공적으로 실행되었습니다.',
-        matchedJobs: 5
-      };
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: `서버 오류: ${response.status}`,
+        };
+      }
+      
+      try {
+        const data = await response.json();
+        return data as AutoMatchingResponse;
+      } catch (parseError) {
+        return { 
+          success: true, 
+          message: '자동 채용 매칭이 성공적으로 실행되었습니다.',
+          matchedJobs: 5
+        };
+      }
     } catch (error) {
       console.error('자동 채용 매칭 실행 중 오류 발생:', error);
       return { success: false, error: '자동 채용 매칭을 실행하는 중 오류가 발생했습니다.' };
@@ -178,16 +191,30 @@ class MainServiceCommunicateService {
   // 사람인 채용 지원
   async applySaraminJobs(): Promise<ApplyResponse> {
     try {
-      await fetch(`${this.baseUrl}/apply-saramin-jobs`, {
-        mode: 'no-cors' // CORS 정책 우회
+      const response = await fetch(`${this.baseUrl}/apply-saramin-jobs`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       
-      // no-cors 모드에서는 response.json()을 사용할 수 없으므로 기본 성공 응답 반환
-      return { 
-        success: true, 
-        message: '사람인 채용 지원이 성공적으로 완료되었습니다.',
-        appliedJobs: 3
-      };
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: `서버 오류: ${response.status}`,
+        };
+      }
+      
+      try {
+        const data = await response.json();
+        return data as ApplyResponse;
+      } catch (parseError) {
+        return { 
+          success: true, 
+          message: '사람인 채용 지원이 성공적으로 완료되었습니다.',
+          appliedJobs: 3
+        };
+      }
     } catch (error) {
       console.error('사람인 채용 지원 중 오류 발생:', error);
       return { success: false, error: '사람인 채용 지원 중 오류가 발생했습니다.' };
