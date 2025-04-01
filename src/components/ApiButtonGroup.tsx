@@ -2,13 +2,14 @@ import React from 'react';
 import ApiButton from '@/components/ApiButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { Database, FileSearch, BriefcaseBusiness, SendToBack } from 'lucide-react';
+import { Database, FileSearch, BriefcaseBusiness, SendToBack, RefreshCw } from 'lucide-react';
 
 interface ApiButtonGroupProps {
   onTestApi: () => Promise<void>;
   onGetRecommendedJobs: () => Promise<void>;
   onRunAutoJobMatching: () => Promise<void>;
   onApplySaraminJobs: () => Promise<void>;
+  clearCache?: () => void;
   
   isTestLoading: boolean;
   isRecommendedLoading: boolean;
@@ -22,6 +23,7 @@ const ApiButtonGroup: React.FC<ApiButtonGroupProps> = ({
   onGetRecommendedJobs,
   onRunAutoJobMatching,
   onApplySaraminJobs,
+  clearCache,
   
   isTestLoading,
   isRecommendedLoading,
@@ -73,6 +75,18 @@ const ApiButtonGroup: React.FC<ApiButtonGroupProps> = ({
         icon={<SendToBack className="h-4 w-4" />}
         tooltip="매칭된 채용 정보에 자동으로 지원합니다"
       />
+      
+      {clearCache && (
+        <ApiButton 
+          label="캐시 초기화" 
+          onClick={() => clearCache()} 
+          isLoading={false}
+          className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-800" 
+          variant="outline"
+          icon={<RefreshCw className="h-4 w-4" />}
+          tooltip="저장된 채용 정보 캐시를 초기화합니다"
+        />
+      )}
     </div>
   );
 };

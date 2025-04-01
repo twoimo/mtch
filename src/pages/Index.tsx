@@ -33,7 +33,8 @@ const Index = () => {
     handleTestApi,
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
-    handleApplySaraminJobs
+    handleApplySaraminJobs,
+    clearCache
   } = useApiActions();
 
   const [activeTab, setActiveTab] = useState<string>("jobs");
@@ -135,6 +136,7 @@ const Index = () => {
             onGetRecommendedJobs={handleGetRecommendedJobs}
             onRunAutoJobMatching={handleRunAutoJobMatching}
             onApplySaraminJobs={handleApplySaraminJobs}
+            clearCache={clearCache} // 캐시 초기화 함수 전달
             
             isTestLoading={isTestLoading}
             isRecommendedLoading={isRecommendedLoading}

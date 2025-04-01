@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,8 @@ interface JobCardProps {
 
 // 채용 정보를 표시하는 카드 컴포넌트
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
-  const [expanded, setExpanded] = useState(false);
+  // 기본값을 true로 변경하여 항상 펼쳐진 상태로 시작
+  const [expanded, setExpanded] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -127,7 +128,12 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     });
   };
 
-  const toggleExpand = () => setExpanded(!expanded);
+  // 컴포넌트 마운트 시 항상 펼쳐진 상태로 설정
+  useEffect(() => {
+    setExpanded(true);
+  }, []);
+
+  const toggleExpand = () => setExpanded(true); // 항상 펼쳐진 상태를 유지하기 위해 true로만 설정
 
   return (
     <ContextMenu>
@@ -137,7 +143,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             className={cn(
               "mb-4 transition-all duration-300 overflow-hidden border-t-4",
               "hover:shadow-lg focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300",
-              expanded ? "shadow-md" : ""
+              "shadow-md" // 항상 그림자 효과 적용
             )}
             style={{ borderTopColor: getBorderColor(job.score) }}
           >
@@ -210,20 +216,20 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <span className="line-clamp-2 dark:text-gray-300">{job.reason}</span>
                 </div>
                 
-                {expanded && (
-                  <div className="mt-1 grid gap-2 transition-all duration-300 ease-in-out">
-                    <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
-                      <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 mt-0.5 flex-shrink-0 dark:text-green-400" />
-                      <span className="text-green-800 dark:text-green-300">{job.strength}</span>
-                    </div>
-                    <div className="flex items-start bg-red-50 p-2 rounded-md dark:bg-red-900/20">
-                      <XCircle className="h-4 w-4 mr-2 text-red-600 mt-0.5 flex-shrink-0 dark:text-red-400" />
-                      <span className="text-red-800 dark:text-red-300">{job.weakness}</span>
-                    </div>
+                {/* 항상 펼침 상태로 표시 (expanded 조건 제거) */}
+                <div className="mt-1 grid gap-2 transition-all duration-300 ease-in-out">
+                  <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 mt-0.5 flex-shrink-0 dark:text-green-400" />
+                    <span className="text-green-800 dark:text-green-300">{job.strength}</span>
                   </div>
-                )}
+                  <div className="flex items-start bg-red-50 p-2 rounded-md dark:bg-red-900/20">
+                    <XCircle className="h-4 w-4 mr-2 text-red-600 mt-0.5 flex-shrink-0 dark:text-red-400" />
+                    <span className="text-red-800 dark:text-red-300">{job.weakness}</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
+            
             <CardFooter className="pt-2 pb-3 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
               <div className="flex gap-2">
                 <a 
@@ -235,15 +241,17 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   사람인에서 보기 <ExternalLink className="ml-1 h-3.5 w-3.5" />
                 </a>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={toggleExpand}
-                className="p-1 h-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                <span className="sr-only">{expanded ? '접기' : '펼치기'}</span>
-              </Button>
+              {/* 펼침 버튼 제거 또는 숨김 처리 */}
+              <div className="opacity-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-1 h-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <ChevronUp size={16} />
+                  <span className="sr-only">접기</span>
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         </div>
