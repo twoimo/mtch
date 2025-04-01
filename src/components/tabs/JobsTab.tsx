@@ -9,10 +9,9 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin, CheckCircle2,
-  LayoutGrid, LayoutList, Grid2X2
+  Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin,
+  LayoutList, Grid2X2
 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { 
   Tooltip, 

@@ -126,19 +126,6 @@ class MainServiceCommunicateService {
           url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=49964277"
         },
         {
-          id: 36,
-          score: 95,
-          reason: "AI 연구원 직무로 기술 스택이 일치하며, 경력 요구사항도 부합, 대기업 및 관심 산업",
-          strength: "AI, 머신러닝, 딥러닝, 컴퓨터 비전 관련 기술 스택이 풍부하며, 연구 및 개발 경험이 있습니다.",
-          weakness: "해외 대학 석/박사 또는 Postdoc 재학/졸업(예정)자만 지원 가능",
-          apply_yn: 1,
-          companyName: "(주)엘지씨엔에스",
-          jobTitle: "2025년 상반기 Global 해외 석/박사 채용",
-          jobLocation: "서울 강서구, 서울전체",
-          companyType: "코스피, 대기업, 1000대기업, 외부감사법인, 수출입 기업",
-          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=50226248"
-        },
-        {
           id: 123,
           score: 90,
           reason: "데이터 사이언티스트 직무 일치, 필요 기술 스택 보유",

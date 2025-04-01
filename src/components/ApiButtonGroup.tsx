@@ -9,7 +9,7 @@ interface ApiButtonGroupProps {
   onGetRecommendedJobs: () => Promise<void>;
   onRunAutoJobMatching: () => Promise<void>;
   onApplySaraminJobs: () => Promise<void>;
-  clearCache?: () => void;
+  clearCache?: () => void; // 선택적으로 변경
   
   isTestLoading: boolean;
   isRecommendedLoading: boolean;
@@ -79,7 +79,7 @@ const ApiButtonGroup: React.FC<ApiButtonGroupProps> = ({
       {clearCache && (
         <ApiButton 
           label="캐시 초기화" 
-          onClick={() => clearCache()} 
+          onClick={() => Promise.resolve(clearCache())} // Promise로 감싸서 반환
           isLoading={false}
           className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-800" 
           variant="outline"

@@ -4,14 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   ExternalLink, Star, CheckCircle2, XCircle, MapPin, Building, 
-  Info, Calendar, ChevronDown, ChevronUp, Copy, Share2, Bookmark, BookmarkCheck 
+  Info, Calendar, ChevronUp, Copy, Share2, Bookmark, BookmarkCheck 
 } from 'lucide-react';
 import { 
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator 
 } from '@/components/ui/context-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 interface JobCardProps {
@@ -33,11 +32,10 @@ interface JobCardProps {
 
 // 채용 정보를 표시하는 카드 컴포넌트
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
-  // 기본값을 true로 변경하여 항상 펼쳐진 상태로 시작
+  // expanded 변수와 setter 함수 제대로 정의
   const [expanded, setExpanded] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   
   // 매칭 점수에 따른 색상 및 텍스트 결정
   const getScoreColor = (score: number) => {
@@ -86,7 +84,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         description: '채용 정보가 클립보드에 복사되었습니다',
         variant: 'success',
       });
-    } catch (err) {
+    } catch (_) { // 미사용 error 변수를 _로 대체
       toast({
         title: '복사 실패',
         description: '복사 중 오류가 발생했습니다',
@@ -107,7 +105,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           description: '채용 정보가 공유되었습니다',
           variant: 'success',
         });
-      }).catch((err) => {
+      }).catch((_) => { // 미사용 error 변수를 _로 대체
         toast({
           title: '공유 실패',
           description: '공유 중 오류가 발생했습니다',
@@ -130,10 +128,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
   // 컴포넌트 마운트 시 항상 펼쳐진 상태로 설정
   useEffect(() => {
-    setExpanded(true);
+    setExpanded(true); // 이제 정의된 setter 함수 사용
   }, []);
-
-  const toggleExpand = () => setExpanded(true); // 항상 펼쳐진 상태를 유지하기 위해 true로만 설정
 
   return (
     <ContextMenu>

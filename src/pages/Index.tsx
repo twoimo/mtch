@@ -2,7 +2,8 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, Search, LayoutDashboard, Terminal, Info, Github } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info } from 'lucide-react';
+import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
 import { useState, useEffect } from 'react';
@@ -10,10 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Progress } from '@/components/ui/progress';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+
+// 로컬 스토리지 키
+const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
 const Index = () => {
   const {
@@ -33,14 +37,19 @@ const Index = () => {
     handleTestApi,
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
-    handleApplySaraminJobs,
-    clearCache
+    handleApplySaraminJobs
   } = useApiActions();
 
   const [activeTab, setActiveTab] = useState<string>("jobs");
   const [progress, setProgress] = useState<number>(0);
-  const isMobile = useIsMobile();
   const isAnyLoading = isTestLoading || isRecommendedLoading || isAutoMatchingLoading || isApplyLoading;
+  
+  // 자동 데이터 불러오기 설정 상태
+  const [autoFetchEnabled, setAutoFetchEnabled] = useState<boolean>(() => {
+    const savedSetting = localStorage.getItem(AUTO_FETCH_STORAGE_KEY);
+    // 기본값은 true (활성화)
+    return savedSetting === null ? true : savedSetting === 'true';
+  });
 
   // 로딩 중 프로그레스 바 애니메이션
   useEffect(() => {
@@ -68,6 +77,28 @@ const Index = () => {
       if (interval) clearInterval(interval);
     };
   }, [isAnyLoading]);
+  
+  // 자동 데이터 불러오기 설정 변경 시 로컬 스토리지에 저장
+  useEffect(() => {
+    localStorage.setItem(AUTO_FETCH_STORAGE_KEY, autoFetchEnabled.toString());
+  }, [autoFetchEnabled]);
+
+  // 웹사이트 접속 시 자동으로 추천 채용 정보 불러오기
+  useEffect(() => {
+    // 자동 데이터 불러오기가 활성화되어 있고 데이터가 없을 때만 실행
+    if (autoFetchEnabled && recommendedJobs.length === 0 && !isRecommendedLoading) {
+      // 약간의 지연 후 실행하여 UI가 준비된 후 데이터를 불러옴
+      const timer = setTimeout(() => {
+        handleGetRecommendedJobs();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoFetchEnabled, recommendedJobs.length, isRecommendedLoading, handleGetRecommendedJobs]);
+
+  const toggleAutoFetch = () => {
+    setAutoFetchEnabled(prev => !prev);
+  };
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
@@ -84,12 +115,23 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center space-x-2 mr-2">
+            <Switch
+              id="auto-fetch"
+              checked={autoFetchEnabled}
+              onCheckedChange={toggleAutoFetch}
+            />
+            <Label htmlFor="auto-fetch" className="text-sm">
+              자동 조회
+            </Label>
+          </div>
+          
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="icon" asChild>
                   <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
-                    <Github className="h-4 w-4" />
+                    <Icons.gitHub className="h-4 w-4" />
                   </a>
                 </Button>
               </TooltipTrigger>
@@ -136,7 +178,6 @@ const Index = () => {
             onGetRecommendedJobs={handleGetRecommendedJobs}
             onRunAutoJobMatching={handleRunAutoJobMatching}
             onApplySaraminJobs={handleApplySaraminJobs}
-            clearCache={clearCache} // 캐시 초기화 함수 전달
             
             isTestLoading={isTestLoading}
             isRecommendedLoading={isRecommendedLoading}
