@@ -65,7 +65,7 @@ const ApiButtonGroup: React.FC<ApiButtonGroupProps> = ({
         tooltip="자동으로 이력서와 채용 정보를 매칭합니다"
       />
       <ApiButton 
-        label="사람인 채용 지원" 
+        label="사람인 채용 자동 지원" 
         onClick={onApplySaraminJobs} 
         isLoading={isApplyLoading}
         className="bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800" 
