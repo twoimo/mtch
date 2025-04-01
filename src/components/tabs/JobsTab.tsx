@@ -42,31 +42,31 @@ interface CompanyCategory {
 // 회사 유형 카테고리 (대분류)
 const COMPANY_CATEGORIES: CompanyCategory[] = [
   {
-    label: "대기업/공기업",
+    label: "대기업",
     value: "large",
     types: [
-      "대기업", "공기업", "상장기업", "중견기업", "대기업 계열사", "외국계기업", "금융기업"
+      "대기업", "대기업 계열사", "상장기업", "외국계기업", "금융기업"
     ]
   },
   {
-    label: "스타트업/벤처",
-    value: "startup",
+    label: "중견기업",
+    value: "medium",
     types: [
-      "스타트업", "벤처기업", "중소기업", "소기업"
+      "중견기업", "중견", "준대기업"
     ]
   },
   {
-    label: "IT/소프트웨어",
-    value: "tech",
+    label: "중소기업",
+    value: "small",
     types: [
-      "IT기업", "소프트웨어", "정보통신", "게임", "플랫폼", "전자", "보안"
+      "중소기업", "소기업", "스타트업", "벤처기업"
     ]
   },
   {
-    label: "제조/서비스",
-    value: "manufacturing",
+    label: "공공기관",
+    value: "public",
     types: [
-      "제조", "서비스", "유통", "물류", "건설", "교육", "의료", "컨설팅", "법률"
+      "공기업", "공공기관", "정부기관", "비영리기관", "협회"
     ]
   }
 ];
