@@ -70,31 +70,42 @@ export const useApiActions = () => {
   
   const { toast } = useToast();
   
-  // 캐시 저장 함수
+  // 캐시 저장 함수 개선
   const saveToCache = <T,>(key: string, data: T) => {
-    const cacheData: CacheData<T> = {
-      data,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(key, JSON.stringify(cacheData));
+    try {
+      const cacheData: CacheData<T> = {
+        data,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify(cacheData));
+      console.log(`Data cached to ${key}`, data);
+    } catch (error) {
+      console.error("Error saving to cache:", error);
+    }
   };
   
-  // 캐시 로드 함수
+  // 캐시 로드 함수 개선
   const loadFromCache = <T,>(key: string): T | null => {
-    const cachedData = localStorage.getItem(key);
-    if (!cachedData) return null;
-    
     try {
+      const cachedData = localStorage.getItem(key);
+      if (!cachedData) {
+        console.log(`No cached data found for ${key}`);
+        return null;
+      }
+      
       const parsedCache: CacheData<T> = JSON.parse(cachedData);
       const isExpired = Date.now() - parsedCache.timestamp > CACHE_EXPIRY;
       
       if (isExpired) {
+        console.log(`Cached data for ${key} is expired`);
         localStorage.removeItem(key);
         return null;
       }
       
+      console.log(`Loaded cached data from ${key}`, parsedCache.data);
       return parsedCache.data;
     } catch (error) {
+      console.error(`Error loading cache for ${key}:`, error);
       localStorage.removeItem(key);
       return null;
     }
@@ -102,25 +113,41 @@ export const useApiActions = () => {
   
   // 초기 로드 시 캐시된 데이터 불러오기
   useEffect(() => {
-    const cachedJobs = loadFromCache<Job[]>(CACHE_KEYS.RECOMMENDED_JOBS);
-    if (cachedJobs) {
-      setRecommendedJobs(cachedJobs);
-      toast({
-        title: '캐시됨',
-        description: '캐시된 채용 정보를 불러왔습니다.',
-        variant: 'default',
-      });
-    }
-    
-    const cachedTestResult = loadFromCache<TestResult>(CACHE_KEYS.TEST_RESULT);
-    if (cachedTestResult) setTestResult(cachedTestResult);
-    
-    const cachedAutoMatchingResult = loadFromCache<AutoMatchingResult>(CACHE_KEYS.AUTO_MATCHING);
-    if (cachedAutoMatchingResult) setAutoMatchingResult(cachedAutoMatchingResult);
-    
-    const cachedApplyResult = loadFromCache<ApplyResult>(CACHE_KEYS.APPLY_RESULT);
-    if (cachedApplyResult) setApplyResult(cachedApplyResult);
-  }, [toast]); // Added toast to the dependency array
+    // 동기식으로 캐시 로드 보장
+    const loadCache = () => {
+      try {
+        // 캐시된 채용 정보 로드
+        const cachedJobs = loadFromCache<Job[]>(CACHE_KEYS.RECOMMENDED_JOBS);
+        if (cachedJobs && cachedJobs.length > 0) {
+          console.log("Setting cached jobs:", cachedJobs.length);
+          setRecommendedJobs(cachedJobs);
+          // useEffect 내에서 사용하므로 의존성에 포함해야 함
+          if (toast) {
+            toast({
+              title: '캐시된 정보 로드됨',
+              description: `${cachedJobs.length}개의 캐시된 채용 정보를 불러왔습니다.`,
+              variant: 'default',
+            });
+          }
+        }
+        
+        // 기타 캐시 데이터 로드
+        const cachedTestResult = loadFromCache<TestResult>(CACHE_KEYS.TEST_RESULT);
+        if (cachedTestResult) setTestResult(cachedTestResult);
+        
+        const cachedAutoMatchingResult = loadFromCache<AutoMatchingResult>(CACHE_KEYS.AUTO_MATCHING);
+        if (cachedAutoMatchingResult) setAutoMatchingResult(cachedAutoMatchingResult);
+        
+        const cachedApplyResult = loadFromCache<ApplyResult>(CACHE_KEYS.APPLY_RESULT);
+        if (cachedApplyResult) setApplyResult(cachedApplyResult);
+      } catch (error) {
+        console.error("Error loading cache:", error);
+      }
+    };
+
+    // 컴포넌트 마운트 시 즉시 캐시 로드
+    loadCache();
+  }, [toast]);  // toast를 의존성 배열에 추가
 
   // API 핸들러
   const handleTestApi = useCallback(async () => {
@@ -167,8 +194,14 @@ export const useApiActions = () => {
         deadline: `2023-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`
       }));
       
+      // 상태 및 캐시 업데이트
       setRecommendedJobs(dummyJobs);
+      
+      // 명시적으로 localStorage에 직접 저장
       saveToCache(CACHE_KEYS.RECOMMENDED_JOBS, dummyJobs);
+      
+      // 캐시 저장 확인
+      console.log("Jobs cached:", dummyJobs.length);
       
       toast({
         title: '채용 정보 로드 성공',
@@ -272,6 +305,35 @@ export const useApiActions = () => {
     });
   }, [toast]);
   
+  // 유틸리티 함수: 캐시 디버깅을 위한 함수
+  const checkCacheStatus = useCallback(() => {
+    try {
+      const keys = Object.values(CACHE_KEYS);
+      const status = keys.map(key => {
+        const item = localStorage.getItem(key);
+        return {
+          key,
+          exists: !!item,
+          size: item ? item.length : 0,
+          valid: item ? (() => {
+            try { 
+              JSON.parse(item);
+              return true;
+            } catch(e) { 
+              return false;
+            }
+          })() : false
+        };
+      });
+      
+      console.table(status);
+      return status;
+    } catch (error) {
+      console.error("Error checking cache status:", error);
+      return [];
+    }
+  }, []); // Fixed: Added empty dependency array and removed typo
+
   return {
     // 상태
     testResult,
@@ -292,6 +354,7 @@ export const useApiActions = () => {
     handleApplySaraminJobs,
     
     // 캐시 관리 메서드
-    clearCache
+    clearCache,
+    checkCacheStatus, // 디버깅용 메서드 추가
   };
 };
