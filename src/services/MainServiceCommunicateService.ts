@@ -15,6 +15,10 @@ interface RecommendedJobsResponse extends ApiResponse {
   recommendedJobs: Job[];
 }
 
+interface AllJobsResponse extends ApiResponse {
+  jobs: Job[];
+}
+
 interface AutoMatchingResponse extends ApiResponse {
   matchedJobs?: number;
 }
@@ -23,6 +27,7 @@ interface ApplyResponse extends ApiResponse {
   appliedJobs?: number;
 }
 
+// 업데이트된 Job 인터페이스 - 새로운 API 필드 추가
 interface Job {
   id: number;
   score: number;
@@ -35,6 +40,43 @@ interface Job {
   jobLocation: string;
   companyType: string;
   url: string;
+  deadline?: string;
+  jobType?: string;
+  jobSalary?: string;
+  employmentType?: string;
+  jobDescription?: string;
+  descriptionType?: string;
+  scrapedAt?: string;
+  matchScore?: number;
+  isRecommended?: number;
+  matchReason?: string;
+  
+  // 새로 추가된 필드
+  company_name?: string;
+  job_title?: string;
+  job_description?: string;
+  job_url?: string;
+  job_location?: string;
+  employment_type?: string;
+  job_salary?: string;
+  job_type?: string;
+  company_type?: string;
+  scraped_at?: string;
+  match_score?: number;
+  match_reason?: string;
+  is_recommended?: number;
+  
+  // 실제 새로운 필드들
+  isApplied?: number;
+  is_applied?: number;
+  isGptChecked?: number;
+  is_gpt_checked?: number;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  deletedAt?: string | null;
+  deleted_at?: string | null;
 }
 
 class MainServiceCommunicateService {
@@ -68,6 +110,40 @@ class MainServiceCommunicateService {
     } catch (error) {
       console.error('사람인 스크래핑 중 오류 발생:', error);
       return { success: false, error: '사람인 스크래핑 중 오류가 발생했습니다.' };
+    }
+  }
+
+  // 전체 채용 정보 조회 - API 응답 형식 업데이트
+  async getAllJobs(): Promise<AllJobsResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/all-jobs`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        console.warn(`API 응답 오류: ${response.status}`);
+        return { success: false, jobs: [] };
+      }
+      
+      try {
+        const data = await response.json();
+        if (data && data.success && Array.isArray(data.jobs)) {
+          console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
+          return data as AllJobsResponse;
+        } else {
+          console.warn('API 응답 형식이 예상과 다릅니다:', data);
+          return { success: false, jobs: [] };
+        }
+      } catch (parseError) {
+        console.error('API 응답 파싱 중 오류 발생:', parseError);
+        return { success: false, jobs: [] };
+      }
+    } catch (error) {
+      console.error('전체 채용 정보 가져오기 중 오류 발생:', error);
+      return { success: false, jobs: [] };
     }
   }
 
@@ -211,4 +287,4 @@ class MainServiceCommunicateService {
 
 // 싱글턴 인스턴스 생성 및 내보내기
 export const apiService = new MainServiceCommunicateService();
-export type { Job, ApiResponse, RecommendedJobsResponse, AutoMatchingResponse, ApplyResponse };
+export type { Job, ApiResponse, RecommendedJobsResponse, AllJobsResponse, AutoMatchingResponse, ApplyResponse };

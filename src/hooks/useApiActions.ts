@@ -1,15 +1,24 @@
-
 import { useState } from 'react';
-import { apiService } from '@/services/MainServiceCommunicateService';
+import { apiService, type Job, type ApplyResponse, type AutoMatchingResponse } from '@/services/MainServiceCommunicateService';
 import { useToast } from '@/hooks/use-toast';
+
+// 결과 타입 정의
+interface TestResultData {
+  success: boolean;
+  message: string;
+  data?: {
+    count: number;
+  };
+  timestamp?: string;
+}
 
 // API 액션 관련 커스텀 훅
 export const useApiActions = () => {
   // 상태 관리
-  const [testResult, setTestResult] = useState<any>(null);
-  const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
-  const [autoMatchingResult, setAutoMatchingResult] = useState<any>(null);
-  const [applyResult, setApplyResult] = useState<any>(null);
+  const [testResult, setTestResult] = useState<TestResultData | null>(null);
+  const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
+  const [autoMatchingResult, setAutoMatchingResult] = useState<AutoMatchingResponse | null>(null);
+  const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null);
   
   // 로딩 상태 관리
   const [isTestLoading, setIsTestLoading] = useState(false);
@@ -19,21 +28,42 @@ export const useApiActions = () => {
   
   const { toast } = useToast();
 
-  // 사람인 스크래핑 시작
+  // 전체 채용 정보 조회 (이전 사람인 스크래핑 대체)
   const handleTestApi = async () => {
     setIsTestLoading(true);
     try {
-      const result = await apiService.test();
-      setTestResult(result);
-      toast({
-        title: '스크래핑 완료',
-        description: '사람인 웹사이트 스크래핑이 성공적으로 완료되었습니다.',
-      });
+      const result = await apiService.getAllJobs();
+      if (result.success && result.jobs) {
+        setRecommendedJobs(result.jobs); // 불러온 채용 정보를 표시하기 위해 recommendedJobs 상태 사용
+        setTestResult({
+          success: true,
+          message: '전체 채용 정보 조회가 완료되었습니다.',
+          data: { count: result.jobs.length }
+        });
+        toast({
+          title: '전체 채용 정보 조회 완료',
+          description: `${result.jobs.length}개의 채용 정보를 가져왔습니다.`,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: '채용 정보를 가져오지 못했습니다.',
+        });
+        toast({
+          title: '데이터 없음',
+          description: '채용 정보를 가져오지 못했습니다.',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
-      console.error('사람인 스크래핑 중 오류:', error);
+      console.error('전체 채용 정보 조회 중 오류:', error);
+      setTestResult({
+        success: false,
+        message: '전체 채용 정보 조회 중 오류가 발생했습니다.',
+      });
       toast({
         title: '오류 발생',
-        description: '사람인 스크래핑 중 오류가 발생했습니다.',
+        description: '전체 채용 정보를 조회하는 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {

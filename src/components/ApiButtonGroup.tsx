@@ -40,13 +40,13 @@ const ApiButtonGroup: React.FC<ApiButtonGroupProps> = ({
         : "sm:grid-cols-2 lg:grid-cols-4"
     )}>
       <ApiButton 
-        label="사람인 스크래핑" 
+        label="전체 채용 정보 조회" 
         onClick={onTestApi} 
         isLoading={isTestLoading}
         className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800"
         variant="default"
         icon={<Database className="h-4 w-4" />}
-        tooltip="사람인 웹사이트에서 채용 정보를 스크래핑합니다"
+        tooltip="사람인의 모든 채용 정보를 조회합니다"
       />
       <ApiButton 
         label="추천 채용 정보 조회" 

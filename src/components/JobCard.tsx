@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   ExternalLink, Star, CheckCircle2, XCircle, MapPin, Building, 
-  Info, Calendar, ChevronUp, Copy, Share2, Bookmark, BookmarkCheck 
+  Info, Calendar, ChevronUp, Copy, Share2, Bookmark, BookmarkCheck,
+  AlertCircle, CheckSquare
 } from 'lucide-react';
 import { 
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator 
@@ -27,13 +28,19 @@ interface JobCardProps {
     companyType: string;
     url: string;
     deadline?: string;
+    isApplied?: number;
+    isGptChecked?: number;
+    matchScore?: number;
+    createdAt?: string;
+    jobSalary?: string;
+    jobType?: string;
+    employmentType?: string;
   };
 }
 
 // 채용 정보를 표시하는 카드 컴포넌트
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
-  // expanded 변수와 setter 함수 제대로 정의
-  const [expanded, setExpanded] = useState(true);
+  // 북마크 상태만 유지하고 unused 변수 제거
   const [bookmarked, setBookmarked] = useState(false);
   const { toast } = useToast();
   
@@ -126,9 +133,9 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     });
   };
 
-  // 컴포넌트 마운트 시 항상 펼쳐진 상태로 설정
+  // 컴포넌트 마운트 시 효과 - expanded 관련 코드 제거
   useEffect(() => {
-    setExpanded(true); // 이제 정의된 setter 함수 사용
+    // 필요한 초기화 작업이 있으면 여기에 작성
   }, []);
 
   return (
@@ -139,9 +146,10 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             className={cn(
               "mb-4 transition-all duration-300 overflow-hidden border-t-4",
               "hover:shadow-lg focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300",
-              "shadow-md h-full flex flex-col" // 높이 100% 추가, flex-col로 변경
+              "shadow-md h-full flex flex-col", // 높이 100% 추가, flex-col로 변경
+              job.isApplied ? "border-l-4 border-l-blue-500" : "" // 지원한 채용공고 표시
             )}
-            style={{ borderTopColor: getBorderColor(job.score) }}
+            style={{ borderTopColor: getBorderColor(job.score || job.matchScore || 0) }}
           >
             <CardHeader className="pb-2 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex justify-between items-start">
@@ -158,10 +166,10 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge 
-                          className={`font-medium mb-2 ${getScoreColor(job.score)}`}
+                          className={`font-medium mb-2 ${getScoreColor(job.score || job.matchScore || 0)}`}
                         >
                           <Star className="h-3 w-3 mr-1 inline" fill="currentColor" />
-                          {getScoreText(job.score)} ({job.score}점)
+                          {getScoreText(job.score || job.matchScore || 0)} ({job.score || job.matchScore || 0}점)
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -170,24 +178,49 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                     </Tooltip>
                   </TooltipProvider>
                   
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge 
-                          className={getApplyBadgeVariant(job.apply_yn)}
-                        >
-                          {job.apply_yn === 1 ? 
-                            <CheckCircle2 className="h-3 w-3 mr-1 inline" /> : 
-                            <XCircle className="h-3 w-3 mr-1 inline" />
-                          }
-                          {job.apply_yn === 1 ? '지원 가능' : '지원 불가'}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{job.apply_yn === 1 ? '이 공고에 지원할 수 있습니다' : '이 공고에는 지원할 수 없습니다'}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            className={getApplyBadgeVariant(job.apply_yn)}
+                          >
+                            {job.apply_yn === 1 ? 
+                              <CheckCircle2 className="h-3 w-3 mr-1 inline" /> : 
+                              <XCircle className="h-3 w-3 mr-1 inline" />
+                            }
+                            {job.apply_yn === 1 ? '지원 가능' : '지원 불가'}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{job.apply_yn === 1 ? '이 공고에 지원할 수 있습니다' : '이 공고에는 지원할 수 없습니다'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    {/* 지원 여부 표시 (새로 추가) */}
+                    {job.isApplied !== undefined && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant={job.isApplied ? "default" : "outline"}
+                              className={job.isApplied ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : ""}
+                            >
+                              {job.isApplied ? 
+                                <CheckSquare className="h-3 w-3 mr-1 inline" /> : 
+                                <AlertCircle className="h-3 w-3 mr-1 inline" />
+                              }
+                              {job.isApplied ? '지원 완료' : '미지원'}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{job.isApplied ? '이 채용공고에 지원이 완료되었습니다' : '아직 지원하지 않은 채용공고입니다'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -201,27 +234,50 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <Building className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
                   <span className="line-clamp-2 dark:text-gray-300">{job.companyType}</span>
                 </div>
+                
+                {/* 새로 추가된 필드 표시 */}
+                {job.jobType && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="dark:text-gray-300">경력: {job.jobType}</span>
+                  </div>
+                )}
+                
+                {job.jobSalary && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="dark:text-gray-300">급여: {job.jobSalary}</span>
+                  </div>
+                )}
+                
                 {job.deadline && (
                   <div className="flex items-start">
                     <Calendar className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
                     <span className="dark:text-gray-300">마감일: {job.deadline}</span>
                   </div>
                 )}
-                <div className="flex items-start">
-                  <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                  <span className="line-clamp-2 dark:text-gray-300">{job.reason}</span>
-                </div>
                 
-                {/* 항상 펼침 상태로 표시 (expanded 조건 제거) */}
+                {job.reason && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="line-clamp-2 dark:text-gray-300">{job.reason}</span>
+                  </div>
+                )}
+                
+                {/* 항상 펼침 상태로 표시 */}
                 <div className="mt-1 grid gap-2 transition-all duration-300 ease-in-out">
-                  <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 mt-0.5 flex-shrink-0 dark:text-green-400" />
-                    <span className="text-green-800 dark:text-green-300 line-clamp-3">{job.strength}</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-2 rounded-md dark:bg-red-900/20">
-                    <XCircle className="h-4 w-4 mr-2 text-red-600 mt-0.5 flex-shrink-0 dark:text-red-400" />
-                    <span className="text-red-800 dark:text-red-300 line-clamp-3">{job.weakness}</span>
-                  </div>
+                  {job.strength && (
+                    <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
+                      <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 mt-0.5 flex-shrink-0 dark:text-green-400" />
+                      <span className="text-green-800 dark:text-green-300 line-clamp-3">{job.strength}</span>
+                    </div>
+                  )}
+                  {job.weakness && (
+                    <div className="flex items-start bg-red-50 p-2 rounded-md dark:bg-red-900/20">
+                      <XCircle className="h-4 w-4 mr-2 text-red-600 mt-0.5 flex-shrink-0 dark:text-red-400" />
+                      <span className="text-red-800 dark:text-red-300 line-clamp-3">{job.weakness}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -237,17 +293,13 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   사람인에서 보기 <ExternalLink className="ml-1 h-3.5 w-3.5" />
                 </a>
               </div>
-              {/* 펼침 버튼 제거 또는 숨김 처리 */}
-              <div className="opacity-0">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-1 h-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                >
-                  <ChevronUp size={16} />
-                  <span className="sr-only">접기</span>
-                </Button>
-              </div>
+              
+              {/* 등록/업데이트 일자 표시 (새로 추가) */}
+              {job.createdAt && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {new Date(job.createdAt).toLocaleDateString()}
+                </div>
+              )}
             </CardFooter>
           </Card>
         </div>
