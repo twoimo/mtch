@@ -507,13 +507,13 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                     <SelectItem value="score">
                       <div className="flex items-center">
                         <Star className="w-3.5 h-3.5 mr-2" />
-                        매칭 점수순
+                        매칭 점수
                       </div>
                     </SelectItem>
                     <SelectItem value="name">
                       <div className="flex items-center">
                         <MapPin className="w-3.5 h-3.5 mr-2" />
-                        회사명순
+                        회사명
                       </div>
                     </SelectItem>
                   </SelectContent>
