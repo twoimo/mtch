@@ -1,4 +1,3 @@
-
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -46,6 +45,17 @@ const Index = () => {
     updateFilters,
     resetFilters
   } = useApiActions();
+
+  // Ensure filters is always defined with arrays initialized
+  const safeFilters = {
+    keyword: filters?.keyword || '',
+    minScore: filters?.minScore || 0,
+    employmentType: Array.isArray(filters?.employmentType) ? filters.employmentType : [],
+    companyType: filters?.companyType || 'all',
+    jobType: Array.isArray(filters?.jobType) ? filters.jobType : [],
+    salaryRange: filters?.salaryRange || 'all',
+    onlyApplicable: filters?.onlyApplicable || false
+  };
 
   const [activeTab, setActiveTab] = useState<string>("jobs");
   const [progress, setProgress] = useState<number>(0);
@@ -227,7 +237,7 @@ const Index = () => {
               <JobsTab 
                 jobs={recommendedJobs || []}
                 filteredJobs={filteredJobs || []}
-                filters={filters}
+                filters={safeFilters}
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
               />

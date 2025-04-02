@@ -371,7 +371,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         className="w-full justify-between"
                       >
-                        {filters.employmentType.length > 0 
+                        {filters.employmentType && filters.employmentType.length > 0 
                           ? `${filters.employmentType.length}개 선택됨` 
                           : "고용 형태 선택"}
                         <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
@@ -386,13 +386,15 @@ const JobsTab: React.FC<JobsTabProps> = ({
                             <CommandItem
                               key={type.value}
                               onSelect={() => {
-                                const isSelected = filters.employmentType.includes(type.value);
+                                const isSelected = Array.isArray(filters.employmentType) && 
+                                                  filters.employmentType.includes(type.value);
                                 handleMultiSelectChange('employmentType', type.value, !isSelected);
                               }}
                               className="flex items-center gap-2"
                             >
                               <Checkbox 
-                                checked={filters.employmentType.includes(type.value)}
+                                checked={Array.isArray(filters.employmentType) && 
+                                        filters.employmentType.includes(type.value)}
                                 onCheckedChange={(checked) => {
                                   handleMultiSelectChange('employmentType', type.value, !!checked);
                                 }}
@@ -414,7 +416,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         className="w-full justify-between"
                       >
-                        {filters.jobType.length > 0 
+                        {filters.jobType && filters.jobType.length > 0 
                           ? `${filters.jobType.length}개 선택됨` 
                           : "직무 유형 선택"}
                         <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
@@ -429,13 +431,15 @@ const JobsTab: React.FC<JobsTabProps> = ({
                             <CommandItem
                               key={type.value}
                               onSelect={() => {
-                                const isSelected = filters.jobType.includes(type.value);
+                                const isSelected = Array.isArray(filters.jobType) && 
+                                                 filters.jobType.includes(type.value);
                                 handleMultiSelectChange('jobType', type.value, !isSelected);
                               }}
                               className="flex items-center gap-2"
                             >
                               <Checkbox 
-                                checked={filters.jobType.includes(type.value)}
+                                checked={Array.isArray(filters.jobType) && 
+                                       filters.jobType.includes(type.value)}
                                 onCheckedChange={(checked) => {
                                   handleMultiSelectChange('jobType', type.value, !!checked);
                                 }}
