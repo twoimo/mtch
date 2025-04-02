@@ -516,8 +516,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
                                     className={cn(
                                       isSelected ? "border-primary" : "border-muted-foreground"
                                     )}
+                                    aria-labelledby={`employment-label-${type.value}`}
                                   />
                                   <label 
+                                    id={`employment-label-${type.value}`}
                                     htmlFor={`employment-${type.value}`}
                                     className="text-sm cursor-pointer flex-1"
                                   >
@@ -582,8 +584,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
                                     className={cn(
                                       isSelected ? "border-primary" : "border-muted-foreground"
                                     )}
+                                    aria-labelledby={`job-type-label-${type.value}`}
                                   />
                                   <label 
+                                    id={`job-type-label-${type.value}`}
                                     htmlFor={`job-type-${type.value}`}
                                     className="text-sm cursor-pointer flex-1"
                                   >
