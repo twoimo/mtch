@@ -593,9 +593,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </Select>
                 </div>
                 
-                {/* 추가 필터 옵션 - 토글 스위치 영역 - 패딩 조정 */}
+                {/* 추가 필터 옵션 - 토글 스위치 영역 */}
                 <div className="space-y-1 flex flex-col justify-center py-1.5 pt-2.5 pb-0">
-                  <div className="flex items-center justify-between space-x-2 h-7">
+                  <div className="flex items-center justify-between space-x-2 h-7 pb-2.5">
                     <Label htmlFor="only-applicable" className="flex items-center gap-1.5 text-sm font-medium">
                       <Check className="h-3.5 w-3.5 text-muted-foreground" />
                       지원 가능한 공고만 보기
@@ -609,7 +609,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </div>
                   
                   {/* 마감일 지난 채용 공고 제외 토글 */}
-                  <div className="flex items-center justify-between space-x-2 h-7 mt-2.5">
+                  <div className="flex items-center justify-between space-x-2 h-7 mt-1">
                     <Label htmlFor="hide-expired" className="flex items-center gap-1.5 text-sm font-medium">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       마감일 지난 공고 제외
