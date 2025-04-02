@@ -1,9 +1,8 @@
-
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info, Sparkles } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';

@@ -23,7 +23,7 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { 
   Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin,
-  LayoutList, Grid2X2, SlidersHorizontal, ChevronDown, ChevronUp, Search
+  LayoutList, Grid2X2, ChevronDown, ChevronUp, Search
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -32,7 +32,7 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
-import { JobFilters, defaultFilters } from '@/hooks/useApiActions';
+import { JobFilters } from '@/hooks/useApiActions';
 
 interface Job {
   id: number;
@@ -71,6 +71,7 @@ interface CompanyCategory {
   types: string[];
 }
 
+// 회사 유형 카테고리 정의 - useApiActions.ts의 정의와 일치해야 함
 const COMPANY_CATEGORIES: CompanyCategory[] = [
   {
     label: "대기업",
@@ -234,7 +235,7 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
-  const handleFilterChange = (key: keyof JobFilters, value: any) => {
+  const handleFilterChange = (key: keyof JobFilters, value: string | number | boolean | string[]) => {
     onUpdateFilters({ [key]: value });
   };
 

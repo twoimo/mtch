@@ -11,7 +11,6 @@ import {
   saveToStorage, 
   loadFromStorage, 
   clearAllCache,
-  DEFAULT_CACHE_TTL,
   CACHE_KEYS 
 } from '@/utils/storage';
 
@@ -70,6 +69,48 @@ export const useApiActions = () => {
   
   const { toast } = useToast();
 
+  // 회사 유형 카테고리 정의
+  const COMPANY_CATEGORIES = useMemo(() => [
+    {
+      label: "대기업",
+      value: "large",
+      types: [
+        "대기업", "대기업 계열사", "상장기업", "외국계기업", "금융기업"
+      ]
+    },
+    {
+      label: "중견기업",
+      value: "medium",
+      types: [
+        "중견기업", "중견", "준대기업"
+      ]
+    },
+    {
+      label: "중소기업",
+      value: "small",
+      types: [
+        "중소기업", "소기업", "스타트업", "벤처기업"
+      ]
+    },
+    {
+      label: "공공기관",
+      value: "public",
+      types: [
+        "공기업", "공공기관", "정부기관", "비영리기관", "협회"
+      ]
+    }
+  ], []);
+
+  // 필드 값을 안전하게 가져오는 헬퍼 함수
+  const getFieldValue = useCallback((job: Job, fields: string[]) => {
+    for (const field of fields) {
+      if (job[field as keyof Job] !== undefined) {
+        return String(job[field as keyof Job]).toLowerCase();
+      }
+    }
+    return '';
+  }, []);
+
   // Optimize filtering with useMemo
   const filteredJobs = useMemo(() => {
     if (!recommendedJobs || recommendedJobs.length === 0) return [];
@@ -78,9 +119,9 @@ export const useApiActions = () => {
       // Keyword filtering
       if (filters.keyword) {
         const keyword = filters.keyword.toLowerCase();
-        const jobTitle = job.jobTitle?.toLowerCase() || '';
-        const companyName = job.companyName?.toLowerCase() || '';
-        const jobLocation = job.jobLocation?.toLowerCase() || '';
+        const jobTitle = job.jobTitle?.toLowerCase() || job.job_title?.toLowerCase() || '';
+        const companyName = job.companyName?.toLowerCase() || job.company_name?.toLowerCase() || '';
+        const jobLocation = job.jobLocation?.toLowerCase() || job.job_location?.toLowerCase() || '';
         
         if (!jobTitle.includes(keyword) && 
             !companyName.includes(keyword) && 
@@ -90,42 +131,67 @@ export const useApiActions = () => {
       }
       
       // Minimum score filtering
-      if (filters.minScore > 0 && job.score < filters.minScore) {
-        return false;
+      if (filters.minScore > 0) {
+        const score = job.score || job.matchScore || job.match_score || 0;
+        if (score < filters.minScore) {
+          return false;
+        }
       }
       
       // Employment type filtering
       if (filters.employmentType.length > 0) {
-        const employmentType = job.employmentType?.toLowerCase() || '';
-        if (!filters.employmentType.some(type => employmentType.includes(type.toLowerCase()))) {
+        const employmentType = getFieldValue(job, ['employmentType', 'employment_type']);
+        if (employmentType === '' || !filters.employmentType.some(type => 
+          employmentType.includes(type.toLowerCase())
+        )) {
           return false;
         }
       }
       
       // Company type filtering
       if (filters.companyType !== 'all') {
-        const companyType = job.companyType?.toLowerCase() || '';
-        if (!companyType.includes(filters.companyType.toLowerCase())) {
-          return false;
+        const companyType = getFieldValue(job, ['companyType', 'company_type']);
+        
+        // 선택된 카테고리에 맞는 회사 유형 배열 가져오기
+        const categoryTypes = COMPANY_CATEGORIES.find(
+          cat => cat.value === filters.companyType
+        )?.types || [];
+        
+        // 회사 유형이 선택된 카테고리에 포함되는지 확인
+        if (categoryTypes.length > 0) {
+          if (!categoryTypes.some(type => companyType.includes(type.toLowerCase()))) {
+            return false;
+          }
+        } else if (filters.companyType === 'other') {
+          // '기타' 카테고리는 다른 모든 카테고리에 속하지 않는 경우
+          const allCategoryTypes = COMPANY_CATEGORIES.flatMap(cat => cat.types);
+          if (allCategoryTypes.some(type => companyType.includes(type.toLowerCase()))) {
+            return false;
+          }
         }
       }
       
       // Job type filtering
       if (filters.jobType.length > 0) {
-        const jobType = job.jobType?.toLowerCase() || '';
-        if (!filters.jobType.some(type => jobType.includes(type.toLowerCase()))) {
+        const jobType = getFieldValue(job, ['jobType', 'job_type']);
+        if (jobType === '' || !filters.jobType.some(type => 
+          jobType.includes(type.toLowerCase())
+        )) {
           return false;
         }
       }
       
       // Applicability filtering
-      if (filters.onlyApplicable && job.apply_yn !== 1) {
-        return false;
+      if (filters.onlyApplicable) {
+        const isApplicable = job.apply_yn === 1 || job.isApplied === 1 || job.is_applied === 1;
+        if (!isApplicable) {
+          return false;
+        }
       }
       
       return true;
     });
-  }, [recommendedJobs, filters]);
+  }, [recommendedJobs, filters, COMPANY_CATEGORIES, getFieldValue]);
 
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<JobFilters>) => {
