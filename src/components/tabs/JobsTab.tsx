@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import JobCard from '@/components/JobCard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -156,6 +157,17 @@ const JobsTab: React.FC<JobsTabProps> = ({
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
+  // Ensure filters always has valid values, especially arrays
+  const safeFilters = {
+    keyword: filters?.keyword || '',
+    minScore: filters?.minScore || 0,
+    employmentType: Array.isArray(filters?.employmentType) ? filters.employmentType : [],
+    companyType: filters?.companyType || 'all',
+    jobType: Array.isArray(filters?.jobType) ? filters.jobType : [],
+    salaryRange: filters?.salaryRange || 'all',
+    onlyApplicable: filters?.onlyApplicable || false
+  };
+
   const toggleGridLayout = useCallback(() => {
     const newLayout = gridLayout === 'single' ? 'double' : 'single';
     setGridLayout(newLayout);
@@ -243,7 +255,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
 
   const handleMultiSelectChange = (key: keyof JobFilters, value: string, checked: boolean) => {
-    const currentValues = filters[key] as string[] || [];
+    // Ensure we're working with an array
+    const currentValues = Array.isArray(safeFilters[key]) ? safeFilters[key] as string[] : [];
     let newValues: string[];
 
     if (checked) {
@@ -257,13 +270,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters.keyword) count++;
-    if (filters.minScore > 0) count++;
-    if (filters.employmentType.length > 0) count++;
-    if (filters.companyType !== 'all') count++;
-    if (filters.jobType.length > 0) count++;
-    if (filters.salaryRange !== 'all') count++;
-    if (filters.onlyApplicable) count++;
+    if (safeFilters.keyword) count++;
+    if (safeFilters.minScore > 0) count++;
+    if (safeFilters.employmentType && safeFilters.employmentType.length > 0) count++;
+    if (safeFilters.companyType !== 'all') count++;
+    if (safeFilters.jobType && safeFilters.jobType.length > 0) count++;
+    if (safeFilters.salaryRange !== 'all') count++;
+    if (safeFilters.onlyApplicable) count++;
     return count;
   };
 
@@ -319,7 +332,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                     <Input 
                       id="search" 
                       placeholder="직무, 회사명, 지역 검색..."
-                      value={filters.keyword}
+                      value={safeFilters.keyword}
                       onChange={(e) => handleFilterChange('keyword', e.target.value)}
                       className="pl-8"
                     />
@@ -330,7 +343,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="company-category">회사 유형</Label>
                   <Select 
-                    value={filters.companyType} 
+                    value={safeFilters.companyType} 
                     onValueChange={(value) => handleFilterChange('companyType', value)}
                   >
                     <SelectTrigger id="company-category">
@@ -350,14 +363,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="min-score">최소 매칭 점수: {filters.minScore}</Label>
+                    <Label htmlFor="min-score">최소 매칭 점수: {safeFilters.minScore}</Label>
                   </div>
                   <Slider 
                     id="min-score"
                     min={0}
                     max={100}
                     step={5}
-                    value={[filters.minScore]}
+                    value={[safeFilters.minScore]}
                     onValueChange={(values) => handleFilterChange('minScore', values[0])}
                     className="py-2"
                   />
@@ -371,8 +384,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         className="w-full justify-between"
                       >
-                        {filters.employmentType && filters.employmentType.length > 0 
-                          ? `${filters.employmentType.length}개 선택됨` 
+                        {safeFilters.employmentType && safeFilters.employmentType.length > 0 
+                          ? `${safeFilters.employmentType.length}개 선택됨` 
                           : "고용 형태 선택"}
                         <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                       </Button>
@@ -386,20 +399,21 @@ const JobsTab: React.FC<JobsTabProps> = ({
                             <CommandItem
                               key={type.value}
                               onSelect={() => {
-                                const isSelected = Array.isArray(filters.employmentType) && 
-                                                  filters.employmentType.includes(type.value);
+                                const isSelected = Array.isArray(safeFilters.employmentType) && 
+                                                  safeFilters.employmentType.includes(type.value);
                                 handleMultiSelectChange('employmentType', type.value, !isSelected);
                               }}
                               className="flex items-center gap-2"
                             >
                               <Checkbox 
-                                checked={Array.isArray(filters.employmentType) && 
-                                        filters.employmentType.includes(type.value)}
+                                checked={Array.isArray(safeFilters.employmentType) && 
+                                        safeFilters.employmentType.includes(type.value)}
                                 onCheckedChange={(checked) => {
                                   handleMultiSelectChange('employmentType', type.value, !!checked);
                                 }}
+                                id={`employment-${type.value}`}
                               />
-                              {type.label}
+                              <label htmlFor={`employment-${type.value}`}>{type.label}</label>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -416,8 +430,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         className="w-full justify-between"
                       >
-                        {filters.jobType && filters.jobType.length > 0 
-                          ? `${filters.jobType.length}개 선택됨` 
+                        {safeFilters.jobType && safeFilters.jobType.length > 0 
+                          ? `${safeFilters.jobType.length}개 선택됨` 
                           : "직무 유형 선택"}
                         <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                       </Button>
@@ -431,20 +445,21 @@ const JobsTab: React.FC<JobsTabProps> = ({
                             <CommandItem
                               key={type.value}
                               onSelect={() => {
-                                const isSelected = Array.isArray(filters.jobType) && 
-                                                 filters.jobType.includes(type.value);
+                                const isSelected = Array.isArray(safeFilters.jobType) && 
+                                                 safeFilters.jobType.includes(type.value);
                                 handleMultiSelectChange('jobType', type.value, !isSelected);
                               }}
                               className="flex items-center gap-2"
                             >
                               <Checkbox 
-                                checked={Array.isArray(filters.jobType) && 
-                                       filters.jobType.includes(type.value)}
+                                checked={Array.isArray(safeFilters.jobType) && 
+                                       safeFilters.jobType.includes(type.value)}
                                 onCheckedChange={(checked) => {
                                   handleMultiSelectChange('jobType', type.value, !!checked);
                                 }}
+                                id={`job-type-${type.value}`}
                               />
-                              {type.label}
+                              <label htmlFor={`job-type-${type.value}`}>{type.label}</label>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -460,7 +475,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                     </Label>
                     <Switch 
                       id="only-applicable" 
-                      checked={filters.onlyApplicable}
+                      checked={safeFilters.onlyApplicable}
                       onCheckedChange={(checked) => handleFilterChange('onlyApplicable', checked)}
                     />
                   </div>
@@ -552,9 +567,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </p>
         
         <div className="flex flex-wrap gap-1.5 justify-end">
-          {filters.keyword && (
+          {safeFilters.keyword && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 group">
-              <span>검색: {filters.keyword}</span>
+              <span>검색: {safeFilters.keyword}</span>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -566,10 +581,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </Badge>
           )}
           
-          {filters.companyType !== 'all' && (
+          {safeFilters.companyType !== 'all' && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
               <span>
-                {COMPANY_CATEGORIES.find(c => c.value === filters.companyType)?.label || '기타'}
+                {COMPANY_CATEGORIES.find(c => c.value === safeFilters.companyType)?.label || '기타'}
               </span>
               <Button 
                 variant="ghost" 
@@ -582,9 +597,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </Badge>
           )}
           
-          {filters.minScore > 0 && (
+          {safeFilters.minScore > 0 && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
-              <span>점수: {filters.minScore}+</span>
+              <span>점수: {safeFilters.minScore}+</span>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -596,7 +611,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </Badge>
           )}
           
-          {filters.onlyApplicable && (
+          {safeFilters.onlyApplicable && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
               <span>지원가능만</span>
               <Button 
