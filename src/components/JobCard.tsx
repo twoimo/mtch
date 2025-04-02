@@ -152,15 +152,15 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           >
             <CardHeader className="pb-2 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex justify-between items-start">
-                <div>
+                <div className="flex-1 min-w-0 pr-4"> {/* Added min-width-0 and padding-right */}
                   <CardTitle className="text-lg font-bold line-clamp-2 hover:line-clamp-none transition-all duration-300">
                     {job.jobTitle}
                   </CardTitle>
-                  <CardDescription className="text-base font-medium mt-1">
+                  <CardDescription className="text-base font-medium mt-1 truncate"> {/* Added truncate */}
                     {job.companyName}
                   </CardDescription>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end flex-shrink-0"> {/* Added flex-shrink-0 to prevent shrinking */}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
