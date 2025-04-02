@@ -1,8 +1,12 @@
 
-import { useContext } from "react";
-import { ThemeProviderContext } from "@/contexts/theme-context";
-import { Theme, ThemeProviderProps } from "@/types/theme";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState, createContext } from "react";
+import { Theme, ThemeProviderProps, ThemeProviderState } from "@/types/theme";
+
+// Create the theme context
+const ThemeProviderContext = createContext<ThemeProviderState>({
+  theme: "system",
+  setTheme: () => null,
+});
 
 /**
  * Custom hook to access theme context
