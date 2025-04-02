@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import JobCard from '@/components/JobCard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,7 +34,6 @@ import {
 } from '@/components/ui/tooltip';
 import { JobFilters, defaultFilters } from '@/hooks/useApiActions';
 
-// 타입 정의 추가
 interface Job {
   id: number;
   score: number;
@@ -49,7 +47,6 @@ interface Job {
   companyType: string;
   url: string;
   deadline?: string;
-  // Add missing properties
   matchScore?: number;
   isApplied?: number;
   isRecommended?: number;
@@ -68,14 +65,12 @@ interface JobsTabProps {
   onResetFilters: () => void;
 }
 
-// 회사 유형 카테고리 정의
 interface CompanyCategory {
   label: string;
   value: string;
   types: string[];
 }
 
-// 회사 유형 카테고리 (대분류)
 const COMPANY_CATEGORIES: CompanyCategory[] = [
   {
     label: "대기업",
@@ -107,7 +102,6 @@ const COMPANY_CATEGORIES: CompanyCategory[] = [
   }
 ];
 
-// 고용 형태 목록
 const EMPLOYMENT_TYPES = [
   { value: "정규직", label: "정규직" },
   { value: "계약직", label: "계약직" },
@@ -117,7 +111,6 @@ const EMPLOYMENT_TYPES = [
   { value: "아르바이트", label: "아르바이트" },
 ];
 
-// 직무 유형 목록
 const JOB_TYPES = [
   { value: "경력", label: "경력" },
   { value: "신입", label: "신입" },
@@ -125,7 +118,6 @@ const JOB_TYPES = [
   { value: "인턴", label: "인턴" },
 ];
 
-// 급여 범위 옵션
 const SALARY_RANGES = [
   { value: "all", label: "전체" },
   { value: "high", label: "상위 급여" },
@@ -135,7 +127,6 @@ const SALARY_RANGES = [
 
 const ITEMS_PER_PAGE = 10;
 
-// 로컬 스토리지 키
 const LAYOUT_STORAGE_KEY = 'job-grid-layout-preference';
 const FILTER_EXPANDED_KEY = 'job-filter-expanded';
 
@@ -147,92 +138,76 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
   const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(
     () => {
       const savedState = localStorage.getItem(FILTER_EXPANDED_KEY);
-      // 기본값은 true (펼쳐짐)
       return savedState === null ? true : savedState === 'true';
     }
   );
-  
-  // 그리드 레이아웃 상태 추가 ('single' 또는 'double')
+
   const [gridLayout, setGridLayout] = useState<'single' | 'double'>(
     () => {
-      // 로컬 스토리지에서 설정 불러오기
       const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
-      // 저장된 값이 'single'이면 'single', 그렇지 않으면 'double'을 기본값으로 사용
       return (savedLayout === 'single') ? 'single' : 'double';
     }
   );
-  
-  // 정렬 상태
+
   const [sortOrder, setSortOrder] = useState<'score' | 'name'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
-  // 그리드 레이아웃 변경 함수
+
   const toggleGridLayout = useCallback(() => {
     const newLayout = gridLayout === 'single' ? 'double' : 'single';
     setGridLayout(newLayout);
-    // 로컬 스토리지에 설정 저장
     localStorage.setItem(LAYOUT_STORAGE_KEY, newLayout);
   }, [gridLayout]);
-  
-  // 필터 펼침/접힘 상태 저장
+
   useEffect(() => {
     localStorage.setItem(FILTER_EXPANDED_KEY, isFilterExpanded.toString());
   }, [isFilterExpanded]);
-  
-  // 필터링된 작업 목록 변경 시 표시 목록 업데이트
+
   useEffect(() => {
     if (!filteredJobs || filteredJobs.length === 0) {
       setDisplayedJobs([]);
       setCurrentPage(1);
       return;
     }
-    
-    // 정렬 적용
+
     const sortedJobs = sortJobs(filteredJobs, sortOrder, sortDirection);
     setDisplayedJobs(sortedJobs.slice(0, ITEMS_PER_PAGE));
     setCurrentPage(1);
-    
   }, [filteredJobs, sortOrder, sortDirection]);
-  
-  // 정렬 함수
+
   const sortJobs = (jobsToSort: Job[], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
     return [...jobsToSort].sort((a, b) => {
       let comparison = 0;
-      
+
       if (order === 'score') {
-        // 사용 가능한 점수 필드를 확인 (score 또는 matchScore 중 하나 사용)
         const scoreA = a.score || a.matchScore || 0;
         const scoreB = b.score || b.matchScore || 0;
         comparison = scoreA - scoreB;
       } else {
         comparison = a.companyName.localeCompare(b.companyName);
       }
-      
+
       return direction === 'desc' ? -comparison : comparison;
     });
   };
-  
-  // 더 많은 직업 로드하기
+
   const loadMoreJobs = useCallback(() => {
     if (loading || displayedJobs.length >= filteredJobs.length) return;
-    
+
     setLoading(true);
     setTimeout(() => {
       const nextPage = currentPage + 1;
       const startIndex = 0;
       const endIndex = nextPage * ITEMS_PER_PAGE;
-      
-      // 정렬 적용
+
       const sortedJobs = sortJobs(filteredJobs, sortOrder, sortDirection);
       setDisplayedJobs(sortedJobs.slice(startIndex, endIndex));
       setCurrentPage(nextPage);
       setLoading(false);
-    }, 300); // 로딩 효과를 위한 지연
+    }, 300);
   }, [currentPage, displayedJobs.length, filteredJobs, loading, sortOrder, sortDirection]);
-  
-  // 무한 스크롤을 위한 IntersectionObserver 설정
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -242,43 +217,40 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
       },
       { threshold: 0.1 }
     );
-    
+
     const currentLoadMoreRef = loadMoreRef.current;
     if (currentLoadMoreRef) {
       observer.observe(currentLoadMoreRef);
     }
-    
+
     return () => {
       if (currentLoadMoreRef) {
         observer.unobserve(currentLoadMoreRef);
       }
     };
   }, [loadMoreJobs, loading]);
-  
+
   const toggleSortDirection = () => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
-  
-  // 필터 변경 핸들러
+
   const handleFilterChange = (key: keyof JobFilters, value: any) => {
     onUpdateFilters({ [key]: value });
   };
-  
-  // 다중 선택 필터 (체크박스) 처리
+
   const handleMultiSelectChange = (key: keyof JobFilters, value: string, checked: boolean) => {
     const currentValues = filters[key] as string[];
     let newValues: string[];
-    
+
     if (checked) {
       newValues = [...currentValues, value];
     } else {
       newValues = currentValues.filter(v => v !== value);
     }
-    
+
     onUpdateFilters({ [key]: newValues });
   };
-  
-  // 선택된 필터 수 계산
+
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.keyword) count++;
@@ -290,7 +262,7 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
     if (filters.onlyApplicable) count++;
     return count;
   };
-  
+
   if (!jobs || jobs.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40">
@@ -303,39 +275,37 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
 
   return (
     <div className="w-full space-y-4">
-      {/* 필터 영역 - 접을 수 있는 Collapsible 컴포넌트로 감싸기 */}
-      <Card className="border border-border/60 shadow-sm bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md">
-        <CardHeader className="py-3 flex flex-row items-center justify-between space-x-0">
-          <CardTitle className="text-xl flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-primary" />
-            <span>필터 옵션</span>
-            {getActiveFiltersCount() > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {getActiveFiltersCount()}
-              </Badge>
-            )}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={onResetFilters} disabled={getActiveFiltersCount() === 0}>
-              초기화
-            </Button>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>
-                {isFilterExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
+      <Collapsible open={isFilterExpanded} onOpenChange={setIsFilterExpanded}>
+        <Card className="border border-border/60 shadow-sm bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md">
+          <CardHeader className="py-3 flex flex-row items-center justify-between space-x-0">
+            <CardTitle className="text-xl flex items-center space-x-2">
+              <Filter className="h-5 w-5 text-primary" />
+              <span>필터 옵션</span>
+              {getActiveFiltersCount() > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {getActiveFiltersCount()}
+                </Badge>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onResetFilters} disabled={getActiveFiltersCount() === 0}>
+                초기화
               </Button>
-            </CollapsibleTrigger>
-          </div>
-        </CardHeader>
-        
-        <Collapsible open={isFilterExpanded} onOpenChange={setIsFilterExpanded}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>
+                  {isFilterExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          
           <CollapsibleContent>
             <CardContent className="pb-4 pt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* 검색어 */}
                 <div className="space-y-2">
                   <Label htmlFor="search" className="flex items-center gap-1.5">
                     <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -353,7 +323,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                   </div>
                 </div>
                 
-                {/* 회사 유형 (카테고리 기반) */}
                 <div className="space-y-2">
                   <Label htmlFor="company-category">회사 유형</Label>
                   <Select 
@@ -375,7 +344,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                   </Select>
                 </div>
                 
-                {/* 최소 점수 */}
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="min-score">최소 매칭 점수: {filters.minScore}</Label>
@@ -391,7 +359,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                   />
                 </div>
                 
-                {/* 고용 형태 (다중 선택) */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">고용 형태</Label>
                   <Popover>
@@ -435,7 +402,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                   </Popover>
                 </div>
                 
-                {/* 직무 유형 (다중 선택) */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">직무 유형</Label>
                   <Popover>
@@ -479,7 +445,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
                   </Popover>
                 </div>
                 
-                {/* 지원 가능 여부 */}
                 <div className="space-y-2 flex flex-col justify-end">
                   <div className="flex items-center justify-between space-x-2 h-10">
                     <Label htmlFor="only-applicable" className="flex items-center gap-1.5">
@@ -495,92 +460,89 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
               </div>
             </CardContent>
           </CollapsibleContent>
-        </Collapsible>
         
-        {/* 정렬 및 레이아웃 설정 영역 */}
-        <CardContent className="pt-0 pb-4 border-t border-border/30 mt-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Label className="text-sm text-muted-foreground">그리드:</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={toggleGridLayout}
-                      className="flex items-center gap-1 h-8"
-                    >
-                      {gridLayout === 'single' ? (
-                        <>
-                          <LayoutList className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline text-xs">1열 보기</span>
-                        </>
-                      ) : (
-                        <>
-                          <Grid2X2 className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline text-xs">2열 보기</span>
-                        </>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>{gridLayout === 'single' ? '2열 그리드로 변경' : '1열 목록으로 변경'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Label className="text-sm text-muted-foreground">정렬:</Label>
-              <Select 
-                value={sortOrder} 
-                onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
-              >
-                <SelectTrigger className="w-[130px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="score">
-                    <div className="flex items-center">
-                      <Star className="w-3.5 h-3.5 mr-2" />
-                      매칭 점수순
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="name">
-                    <div className="flex items-center">
-                      <MapPin className="w-3.5 h-3.5 mr-2" />
-                      회사명순
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+          <CardContent className="pt-0 pb-4 border-t border-border/30 mt-2">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <Label className="text-sm text-muted-foreground">그리드:</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={toggleGridLayout}
+                        className="flex items-center gap-1 h-8"
+                      >
+                        {gridLayout === 'single' ? (
+                          <>
+                            <LayoutList className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline text-xs">1열 보기</span>
+                          </>
+                        ) : (
+                          <>
+                            <Grid2X2 className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline text-xs">2열 보기</span>
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{gridLayout === 'single' ? '2열 그리드로 변경' : '1열 목록으로 변경'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleSortDirection}
-                className="flex items-center justify-center h-8 w-8"
-              >
-                {sortDirection === 'desc' ? (
-                  <ArrowDownAZ className="h-4 w-4" />
-                ) : (
-                  <ArrowDownZA className="h-4 w-4" />
-                )}
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Label className="text-sm text-muted-foreground">정렬:</Label>
+                <Select 
+                  value={sortOrder} 
+                  onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
+                >
+                  <SelectTrigger className="w-[130px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="score">
+                      <div className="flex items-center">
+                        <Star className="w-3.5 h-3.5 mr-2" />
+                        매칭 점수순
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="name">
+                      <div className="flex items-center">
+                        <MapPin className="w-3.5 h-3.5 mr-2" />
+                        회사명순
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleSortDirection}
+                  className="flex items-center justify-center h-8 w-8"
+                >
+                  {sortDirection === 'desc' ? (
+                    <ArrowDownAZ className="h-4 w-4" />
+                  ) : (
+                    <ArrowDownZA className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Collapsible>
       
-      {/* 필터 결과 정보 */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
           총 <span className="font-medium text-foreground">{filteredJobs.length}</span>개 중 
           <span className="font-medium text-foreground"> {displayedJobs.length}</span>개 표시 중
         </p>
         
-        {/* 적용된 필터 태그 표시 */}
         <div className="flex flex-wrap gap-1.5 justify-end">
           {filters.keyword && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 group">
@@ -642,10 +604,8 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
         </div>
       </div>
       
-      {/* 채용 정보 목록 - 그리드 컨테이너 부분 수정 */}
       <div className={cn(
         "w-full grid gap-4",
-        // 그리드 아이템 행 높이 통일을 위한 설정 추가
         "grid-auto-rows-fr",
         gridLayout === 'single' 
           ? "grid-cols-1" 
@@ -659,7 +619,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
           </div>
         ))}
         
-        {/* 로딩 표시기 */}
         {loading && (
           <div className={cn(
             "mt-4 space-y-4",
@@ -671,7 +630,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
           </div>
         )}
         
-        {/* 더 로드할 항목이 있는지 확인하는 참조 요소 */}
         {filteredJobs.length > displayedJobs.length && (
           <div ref={loadMoreRef} className={cn(
             "h-4",
@@ -680,7 +638,6 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
         )}
       </div>
       
-      {/* 더 이상 표시할 항목이 없는 경우 메시지 */}
       {filteredJobs.length === 0 && (
         <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40">
           <p className="text-muted-foreground text-center">
