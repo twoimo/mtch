@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
 import { ArrowUp, ArrowDownUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,17 +31,41 @@ interface JobListProps {
   isLoading?: boolean;
 }
 
+// 스크롤 위치를 로컬 스토리지에 저장/복원하기 위한 키
+const SCROLL_POSITION_KEY = 'job-list-scroll-position';
+
 // 채용 정보 목록을 표시하는 컴포넌트
 const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [page, setPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'score' | 'apply'>('score');
+  const [sortOrder, setSortOrder] = useState<'score' | 'apply'>(() => {
+    // 로컬 스토리지에서 정렬 설정 복원
+    const savedSort = localStorage.getItem('job-list-sort-order');
+    return (savedSort as 'score' | 'apply') || 'score';
+  });
   const loaderRef = useRef<HTMLDivElement>(null);
-  const itemsPerPage = 9;
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemsPerPage = 15; // 성능을 위해 항목 수 증가
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
+  const lastScrollTop = useRef(0);
 
-  // 정렬 함수
-  const sortJobs = (jobsToSort: Job[], order: 'score' | 'apply') => {
+  // 디바운스 함수
+  const debounce = <F extends (...args: any[]) => any>(
+    func: F,
+    wait: number
+  ): ((...args: Parameters<F>) => void) => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    
+    return (...args: Parameters<F>) => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
+
+  // 정렬 함수 - useMemo 사용하여 계산 최적화
+  const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply') => {
     if (order === 'score') {
       return [...jobsToSort].sort((a, b) => b.score - a.score);
     } else {
@@ -51,58 +76,121 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         return b.score - a.score; // 동점이면 점수로 정렬
       });
     }
-  };
+  }, []);
 
-  // 초기 데이터 로드 및 jobs prop이 변경될 때 실행
+  // 전체 정렬된 작업 목록 계산 - useMemo로 최적화
+  const sortedAllJobs = useMemo(() => sortJobs(jobs, sortOrder), [jobs, sortOrder, sortJobs]);
+
+  // jobs prop이 변경될 때 실행
   useEffect(() => {
-    if (jobs.length > 0) {
-      const sortedJobs = sortJobs(jobs, sortOrder);
-      setDisplayedJobs(sortedJobs.slice(0, itemsPerPage));
+    if (isInitialLoad && jobs.length > 0) {
+      // 마지막 스크롤 위치 복원
+      const savedScrollPosition = localStorage.getItem(SCROLL_POSITION_KEY);
+      if (savedScrollPosition) {
+        const position = parseInt(savedScrollPosition, 10);
+        const sortedJobs = sortJobs(jobs, sortOrder);
+        
+        // 충분한 항목을 로드하여 이전 스크롤 위치를 복원
+        const itemsToLoad = Math.ceil(position / 100) * itemsPerPage;
+        const pageToLoad = Math.ceil(itemsToLoad / itemsPerPage);
+        
+        setPage(pageToLoad);
+        setDisplayedJobs(sortedJobs.slice(0, pageToLoad * itemsPerPage));
+        
+        // 비동기적으로 스크롤 위치 복원
+        setTimeout(() => {
+          window.scrollTo(0, position);
+        }, 100);
+      } else {
+        // 초기 로드
+        setDisplayedJobs(sortedAllJobs.slice(0, itemsPerPage));
+      }
+      
+      setIsInitialLoad(false);
+    } else if (jobs.length > 0) {
+      // 새 데이터가 로드된 경우 처음부터 표시
+      setDisplayedJobs(sortedAllJobs.slice(0, itemsPerPage));
       setPage(1);
+      window.scrollTo(0, 0);
     } else {
       setDisplayedJobs([]);
     }
-  }, [jobs, sortOrder]);
+    
+    // 언마운트 시 스크롤 위치 저장
+    return () => {
+      if (jobs.length > 0) {
+        localStorage.setItem(SCROLL_POSITION_KEY, window.scrollY.toString());
+      }
+    };
+  }, [jobs, sortedAllJobs, sortOrder, isInitialLoad, sortJobs]);
+
+  // 정렬 순서가 변경될 때 실행
+  useEffect(() => {
+    if (jobs.length > 0) {
+      const sorted = sortJobs(jobs, sortOrder);
+      setDisplayedJobs(sorted.slice(0, page * itemsPerPage));
+      
+      // 정렬 설정 저장
+      localStorage.setItem('job-list-sort-order', sortOrder);
+    }
+  }, [sortOrder, page, jobs, sortJobs]);
 
   // 추가 데이터 로드 함수 - useCallback으로 메모이제이션
   const loadMoreJobs = useCallback(() => {
-    const sortedJobs = sortJobs(jobs, sortOrder);
-    const nextItems = sortedJobs.slice(0, (page + 1) * itemsPerPage);
-    if (nextItems.length > displayedJobs.length) {
-      setDisplayedJobs(nextItems);
-      setPage(page + 1);
+    if (jobs.length === 0 || isLoading) return;
+    
+    const nextPage = page + 1;
+    const endIndex = nextPage * itemsPerPage;
+    
+    if (endIndex <= sortedAllJobs.length) {
+      setDisplayedJobs(sortedAllJobs.slice(0, endIndex));
+      setPage(nextPage);
     }
-  }, [jobs, sortOrder, page, displayedJobs.length, itemsPerPage]);
+  }, [jobs.length, isLoading, page, itemsPerPage, sortedAllJobs]);
 
-  // 스크롤 감지하여 추가 데이터 로드
+  // 무한 스크롤 관찰자 설정
   useEffect(() => {
+    if (!loaderRef.current || isLoading) return;
+    
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
-        if (first.isIntersecting && !isLoading) {
+        if (first.isIntersecting && scrollDirection === 'down') {
           loadMoreJobs();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: '100px' }
     );
 
-    const currentLoader = loaderRef.current;
-    if (currentLoader) {
-      observer.observe(currentLoader);
-    }
-
+    observer.observe(loaderRef.current);
+    
     return () => {
-      if (currentLoader) {
-        observer.unobserve(currentLoader);
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
       }
     };
-  }, [page, jobs, isLoading, sortOrder, loadMoreJobs]);
+  }, [loadMoreJobs, isLoading, scrollDirection]);
 
-  // 스크롤 위치 감지
+  // 스크롤 위치 및 방향 감지
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
+    const handleScroll = debounce(() => {
+      const scrollTop = window.scrollY;
+      
+      // 스크롤 방향 감지
+      if (scrollTop > lastScrollTop.current) {
+        setScrollDirection('down');
+      } else {
+        setScrollDirection('up');
+      }
+      
+      lastScrollTop.current = scrollTop;
+      
+      // 스크롤 위치에 따라 상단으로 이동 버튼 표시/숨김
+      setShowScrollTop(scrollTop > 300);
+      
+      // 스크롤 위치 저장
+      localStorage.setItem(SCROLL_POSITION_KEY, scrollTop.toString());
+    }, 50);
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -118,11 +206,11 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     setSortOrder(value as 'score' | 'apply');
   };
 
-  // 로딩 중인 경우 스켈레톤 UI 표시
+  // 로딩 중인 경우 스켈레톤 UI 표시 - 최적화된 렌더링
   if (isLoading) {
     return (
       <div className="grid gap-4 grid-cols-1">
-        {Array(6).fill(0).map((_, index) => (
+        {Array(3).fill(0).map((_, index) => (
           <Card key={index} className="mb-4">
             <CardHeader className="pb-2">
               <Skeleton className="h-6 w-3/4 mb-2" />
@@ -153,7 +241,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={listRef}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-lg font-semibold">
           총 <span className="text-blue-600">{jobs.length}</span>개의 추천 채용정보
@@ -179,15 +267,21 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         {displayedJobs.map((job, index) => (
           <div 
             key={job.id} 
-            className="transition-all duration-300 opacity-0 animate-fade-in"
-            style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
+            className={`transition-all duration-300 ${
+              index >= (page - 1) * itemsPerPage ? 'opacity-0 animate-fade-in' : ''
+            }`}
+            style={{ 
+              animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
+              animationFillMode: 'forwards',
+              willChange: 'opacity, transform' // 성능 최적화
+            }}
           >
             <JobCard job={job} />
           </div>
         ))}
       </div>
       
-      {/* 더 로드하기 위한 관찰자 요소 */}
+      {/* 더 로드하기 위한 관찰자 요소 - 최적화된 표시 로직 */}
       {displayedJobs.length < jobs.length && (
         <div 
           ref={loaderRef} 
@@ -197,7 +291,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         </div>
       )}
       
-      {/* 페이지 상단으로 이동 버튼 */}
+      {/* 페이지 상단으로 이동 버튼 - 최적화된 렌더링 */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -216,4 +310,4 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   );
 };
 
-export default JobList;
+export default React.memo(JobList); // 메모이제이션으로 불필요한 리렌더링 방지

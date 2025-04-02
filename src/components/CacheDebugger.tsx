@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -9,7 +10,9 @@ const CACHE_KEYS = {
   RECOMMENDED_JOBS: 'recommended-jobs-cache',
   TEST_RESULT: 'test-result-cache',
   AUTO_MATCHING: 'auto-matching-cache',
-  APPLY_RESULT: 'apply-result-cache'
+  APPLY_RESULT: 'apply-result-cache',
+  SCROLL_POSITION: 'job-list-scroll-position',
+  SORT_ORDER: 'job-list-sort-order'
 };
 
 interface CacheItem {
@@ -28,7 +31,7 @@ interface CacheDebuggerProps {
 export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
   const [cacheStatus, setCacheStatus] = useState<CacheItem[]>([]);
   
-  const checkCache = () => {
+  const checkCache = React.useCallback(() => {
     try {
       const keys = Object.values(CACHE_KEYS);
       const status = keys.map(key => {
@@ -40,21 +43,30 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
         
         try {
           if (item) {
-            parsedData = JSON.parse(item);
-            isValid = true;
-            if (parsedData.timestamp) {
-              age = Math.round((Date.now() - parsedData.timestamp) / 1000);
-              expired = Date.now() - parsedData.timestamp > 30 * 60 * 1000; // 30분
+            if (key === CACHE_KEYS.SCROLL_POSITION || key === CACHE_KEYS.SORT_ORDER) {
+              // 단순 값 캐시는 항상 유효
+              isValid = true;
+              age = 'N/A';
+              expired = false;
+            } else {
+              parsedData = JSON.parse(item);
+              isValid = true;
+              if (parsedData.timestamp) {
+                age = Math.round((Date.now() - parsedData.timestamp) / 1000);
+                // 30분 캐시 TTL 체크
+                expired = Date.now() - parsedData.timestamp > 30 * 60 * 1000;
+              }
             }
           }
         } catch (e) {
           // 파싱 실패
+          console.error(`Cache parsing error for ${key}:`, e);
         }
         
         return {
           key,
           exists: !!item,
-          size: item ? item.length : 0,
+          size: item ? new Blob([item]).size : 0, // 정확한 바이트 크기 계산
           valid: isValid,
           age: age !== null ? `${age}초` : 'N/A',
           expired
@@ -65,7 +77,7 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
     } catch (error) {
       console.error("Error checking cache:", error);
     }
-  };
+  }, []);
   
   // 페이지 로드 시 캐시 확인
   useEffect(() => {
@@ -74,7 +86,13 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
     // 5초마다 자동 갱신
     const interval = setInterval(checkCache, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [checkCache]);
+
+  // 캐시 삭제 처리
+  const handleClearCache = () => {
+    onClearCache();
+    setTimeout(checkCache, 100); // 캐시 상태 업데이트
+  };
 
   return (
     <Card className="mb-6 border-dashed">
@@ -85,7 +103,7 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
             <Button variant="ghost" size="sm" onClick={checkCache}>
               <RefreshCw className="h-4 w-4 mr-1" /> 새로고침
             </Button>
-            <Button variant="destructive" size="sm" onClick={onClearCache}>
+            <Button variant="destructive" size="sm" onClick={handleClearCache}>
               <Trash2 className="h-4 w-4 mr-1" /> 캐시 삭제
             </Button>
           </div>
