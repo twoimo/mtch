@@ -1,8 +1,9 @@
+
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info, Sparkles } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -24,6 +25,8 @@ const Index = () => {
     // 상태
     testResult,
     recommendedJobs,
+    filteredJobs,
+    filters,
     autoMatchingResult,
     applyResult,
     
@@ -37,7 +40,11 @@ const Index = () => {
     handleTestApi,
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
-    handleApplySaraminJobs
+    handleApplySaraminJobs,
+    
+    // 필터 관련 메서드
+    updateFilters,
+    resetFilters
   } = useApiActions();
 
   const [activeTab, setActiveTab] = useState<string>("jobs");
@@ -107,7 +114,7 @@ const Index = () => {
           <div className="flex items-center gap-2">
             <LayoutDashboard className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
-            <Badge variant="outline" className="ml-2 bg-primary/10">v1.0.0</Badge>
+            <Badge variant="outline" className="ml-2 bg-primary/10">v1.1.0</Badge>
           </div>
           <p className="text-muted-foreground mt-1">
             사람인 채용 정보 자동화 시스템
@@ -161,7 +168,7 @@ const Index = () => {
         </div>
       )}
       
-      {/* API 작업 버튼 그룹 - 복원된 부분 */}
+      {/* API 작업 버튼 그룹 */}
       <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-xl gap-2">
@@ -198,9 +205,9 @@ const Index = () => {
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
-              {recommendedJobs.length > 0 && (
+              {filteredJobs.length > 0 && (
                 <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {recommendedJobs.length}
+                  {filteredJobs.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -217,7 +224,13 @@ const Index = () => {
           
           <TabsContent value="jobs" className="mt-0">
             <div className="pb-8">
-              <JobsTab jobs={recommendedJobs} />
+              <JobsTab 
+                jobs={recommendedJobs}
+                filteredJobs={filteredJobs}
+                filters={filters}
+                onUpdateFilters={updateFilters}
+                onResetFilters={resetFilters}
+              />
             </div>
           </TabsContent>
           
