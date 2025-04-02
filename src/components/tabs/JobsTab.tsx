@@ -384,11 +384,11 @@ const JobsTab: React.FC<JobsTabProps> = ({
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-5">
       <Collapsible open={isFilterExpanded} onOpenChange={setIsFilterExpanded}>
         <Card className="border border-border/60 shadow-sm bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md overflow-hidden">
           <CardHeader className="py-3 flex flex-row items-center justify-between space-x-0 border-b border-border/20">
-            <CardTitle className="text-xl flex items-center space-x-2">
+            <CardTitle className="text-xl flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-primary" />
               <span>필터 옵션</span>
               {activeFiltersCount > 0 && (
@@ -430,13 +430,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
           </CardHeader>
           
           <CollapsibleContent>
-            <CardContent className="pb-4 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
+            <CardContent className="pb-5 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4.5">
+                {/* 검색어 필터 */}
+                <div className="space-y-2.5">
                   <Label 
                     htmlFor="search" 
                     className={cn(
-                      "flex items-center gap-1.5 transition-colors duration-200",
+                      "flex items-center gap-1.5 transition-colors duration-200 text-sm font-medium",
                       isSearchFocused ? "text-primary" : "text-foreground"
                     )}
                   >
@@ -480,8 +481,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="company-category" className="flex items-center gap-1.5">
+                {/* 회사 유형 필터 */}
+                <div className="space-y-2.5">
+                  <Label htmlFor="company-category" className="flex items-center gap-1.5 text-sm font-medium">
                     <Settings className="h-3.5 w-3.5 text-muted-foreground" />
                     회사 유형
                   </Label>
@@ -504,9 +506,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
+                {/* 최소 매칭 점수 필터 */}
+                <div className="space-y-2.5">
                   <div className="flex justify-between">
-                    <Label htmlFor="min-score" className="flex items-center gap-1.5">
+                    <Label htmlFor="min-score" className="flex items-center gap-1.5 text-sm font-medium">
                       <Star className="h-3.5 w-3.5 text-muted-foreground" />
                       최소 매칭 점수
                       <span className={cn(
@@ -530,8 +533,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="employment-type" className="flex items-center gap-1.5">
+                {/* 고용 형태 필터 - 패딩 추가 */}
+                <div className="space-y-2.5 pt-2.5">
+                  <Label htmlFor="employment-type" className="flex items-center gap-1.5 text-sm font-medium">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                     고용 형태
                   </Label>
@@ -559,8 +563,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="job-type" className="flex items-center gap-1.5">
+                {/* 직무 유형 필터 - 패딩 추가 */}
+                <div className="space-y-2.5 pt-2.5">
+                  <Label htmlFor="job-type" className="flex items-center gap-1.5 text-sm font-medium">
                     <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                     직무 유형
                   </Label>
@@ -588,9 +593,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </Select>
                 </div>
                 
-                <div className="space-y-2 flex flex-col justify-start">
-                  <div className="flex items-center justify-between space-x-2 h-10 mb-2">
-                    <Label htmlFor="only-applicable" className="flex items-center gap-1.5">
+                {/* 추가 필터 옵션 - 토글 스위치 영역 - 패딩 조정 */}
+                <div className="space-y-1 flex flex-col justify-center py-1.5 pt-2.5 pb-0">
+                  <div className="flex items-center justify-between space-x-2 h-7">
+                    <Label htmlFor="only-applicable" className="flex items-center gap-1.5 text-sm font-medium">
                       <Check className="h-3.5 w-3.5 text-muted-foreground" />
                       지원 가능한 공고만 보기
                     </Label>
@@ -603,8 +609,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   </div>
                   
                   {/* 마감일 지난 채용 공고 제외 토글 */}
-                  <div className="flex items-center justify-between space-x-2 h-10">
-                    <Label htmlFor="hide-expired" className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-between space-x-2 h-7 mt-2.5">
+                    <Label htmlFor="hide-expired" className="flex items-center gap-1.5 text-sm font-medium">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       마감일 지난 공고 제외
                     </Label>
@@ -616,12 +622,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
                     />
                   </div>
                 </div>
+                
               </div>
             </CardContent>
           </CollapsibleContent>
         
-          <CardContent className="py-3 border-t border-border/30 mt-0 bg-muted/30">
-            <div className="flex justify-between items-center">
+          <CardContent className="py-3.5 border-t border-border/30 mt-0 bg-muted/30">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center space-x-2">
                 <Label className="text-sm text-muted-foreground">레이아웃:</Label>
                 <TooltipProvider>
@@ -631,7 +638,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         size="sm" 
                         onClick={toggleGridLayout}
-                        className="flex items-center gap-1 h-8 bg-background transition-all duration-200"
+                        className="flex items-center gap-1.5 h-8 bg-background transition-all duration-200"
                       >
                         {gridLayout === 'single' ? (
                           <>
@@ -702,7 +709,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </Card>
       </Collapsible>
       
-      <div className="flex justify-between items-center">
+      {/* 필터 태그 및 결과 요약 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
         <p className="text-sm text-muted-foreground">
           총 <span className="font-medium text-foreground">{filteredJobs.length}</span>개 중 
           <span className="font-medium text-foreground"> {displayedJobs.length}</span>개 표시 중
@@ -726,6 +734,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </Badge>
           )}
           
+          {/* 다른 필터 태그들 */}
           {safeFilters.companyType !== 'all' && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
               <span>
@@ -804,8 +813,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
+      {/* 채용 정보 그리드 */}
       <div className={cn(
-        "w-full grid gap-4",
+        "w-full grid gap-5",
         "grid-auto-rows-fr",
         gridLayout === 'single' 
           ? "grid-cols-1" 
@@ -814,11 +824,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
             : "md:grid-cols-2"
       )}>
         {displayedJobs.map((job) => (
-          <div key={job.id} className="h-full transform transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div key={job.id} className="h-full transform transition-all duration-300 hover:-translate-y-1">
             <JobCard job={job} />
           </div>
         ))}
         
+        {/* 로딩 상태 표시 */}
         {loading && (
           <div className={cn(
             "mt-4 space-y-4",
@@ -830,6 +841,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
           </div>
         )}
         
+        {/* 무한 스크롤을 위한 관찰 요소 */}
         {filteredJobs.length > displayedJobs.length && (
           <div ref={loadMoreRef} className={cn(
             "h-4",
@@ -838,19 +850,21 @@ const JobsTab: React.FC<JobsTabProps> = ({
         )}
       </div>
       
+      {/* 결과가 없을 때 표시 */}
       {filteredJobs.length === 0 && (
-        <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40">
-          <p className="text-muted-foreground text-center">
+        <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40 mt-4">
+          <p className="text-muted-foreground text-center mb-2">
             필터 조건에 맞는 채용 정보가 없습니다.
           </p>
-          <Button variant="outline" size="sm" onClick={onResetFilters} className="mt-2">
+          <Button variant="outline" size="sm" onClick={onResetFilters} className="mt-1">
             필터 초기화
           </Button>
         </div>
       )}
       
+      {/* 모든 결과를 표시했을 때 */}
       {filteredJobs.length > 0 && filteredJobs.length === displayedJobs.length && (
-        <div className="text-center text-sm text-muted-foreground py-4">
+        <div className="text-center text-sm text-muted-foreground py-4 mt-2">
           모든 채용 정보를 불러왔습니다.
         </div>
       )}
