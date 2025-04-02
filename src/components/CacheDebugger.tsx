@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw, Trash2 } from 'lucide-react';
 
-// Cache Key Constants
-const CACHE_KEYS = {
+// Cache Key Constants - Consolidated in one place for reusability
+export const CACHE_KEYS = {
   RECOMMENDED_JOBS: 'recommended-jobs-cache',
   TEST_RESULT: 'test-result-cache',
   AUTO_MATCHING: 'auto-matching-cache',
@@ -28,15 +28,19 @@ interface CacheDebuggerProps {
   onClearCache: () => void;
 }
 
+/**
+ * CacheDebugger - Displays and manages localStorage cache information
+ * @param onClearCache Function to execute when clearing the cache
+ */
 export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
   const [cacheStatus, setCacheStatus] = useState<CacheItem[]>([]);
   
+  // Improved cache checking with more explicit error handling
   const checkCache = React.useCallback(() => {
     try {
       const keys = Object.values(CACHE_KEYS);
       const status = keys.map(key => {
         const item = localStorage.getItem(key);
-        let parsedData = null;
         let isValid = false;
         let age = null;
         let expired = false;
@@ -44,31 +48,32 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
         try {
           if (item) {
             if (key === CACHE_KEYS.SCROLL_POSITION || key === CACHE_KEYS.SORT_ORDER) {
-              // 단순 값 캐시는 항상 유효
+              // Simple value caches are always valid
               isValid = true;
               age = 'N/A';
               expired = false;
             } else {
-              parsedData = JSON.parse(item);
+              const parsedData = JSON.parse(item);
               isValid = true;
+              
               if (parsedData.timestamp) {
-                age = Math.round((Date.now() - parsedData.timestamp) / 1000);
-                // 30분 캐시 TTL 체크
+                const secondsElapsed = Math.round((Date.now() - parsedData.timestamp) / 1000);
+                age = `${secondsElapsed}초`;
+                // Check 30 minute TTL
                 expired = Date.now() - parsedData.timestamp > 30 * 60 * 1000;
               }
             }
           }
         } catch (e) {
-          // 파싱 실패
           console.error(`Cache parsing error for ${key}:`, e);
         }
         
         return {
           key,
           exists: !!item,
-          size: item ? new Blob([item]).size : 0, // 정확한 바이트 크기 계산
+          size: item ? new Blob([item]).size : 0, // Calculate exact byte size
           valid: isValid,
-          age: age !== null ? `${age}초` : 'N/A',
+          age: age !== null ? age : 'N/A',
           expired
         };
       });
@@ -79,19 +84,19 @@ export function CacheDebugger({ onClearCache }: CacheDebuggerProps) {
     }
   }, []);
   
-  // 페이지 로드 시 캐시 확인
+  // Check cache on page load
   useEffect(() => {
     checkCache();
     
-    // 5초마다 자동 갱신
+    // Refresh every 5 seconds
     const interval = setInterval(checkCache, 5000);
     return () => clearInterval(interval);
   }, [checkCache]);
 
-  // 캐시 삭제 처리
+  // Handle cache clearing
   const handleClearCache = () => {
     onClearCache();
-    setTimeout(checkCache, 100); // 캐시 상태 업데이트
+    setTimeout(checkCache, 100); // Update cache status after clearing
   };
 
   return (

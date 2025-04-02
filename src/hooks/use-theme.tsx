@@ -1,16 +1,16 @@
+
 import { useEffect, useState } from "react";
-// Fix import path to use the correct location
-import { ThemeProviderContext, type Theme } from "@/contexts/theme-context";
+import { Theme, ThemeProviderProps } from "@/types/theme";
+import { ThemeProviderContext } from "@/contexts/theme-context";
 
-type ThemeProviderProps = {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-};
-
+/**
+ * Theme provider component to manage application theme
+ * @param props Component props including children, defaultTheme, and storageKey
+ * @returns ThemeProvider component
+ */
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
+  defaultTheme = "system",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {

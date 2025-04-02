@@ -1,14 +1,13 @@
-import { ReactNode } from "react";
 
 export type Theme = "dark" | "light" | "system";
 
-export type ThemeProviderProps = {
-  children: ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-};
-
-export type ThemeProviderState = {
+export interface ThemeProviderState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-};
+}
+
+export interface ThemeProviderProps {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+}

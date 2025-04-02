@@ -1,5 +1,6 @@
+
 import { createContext } from "react";
-import { ThemeProviderState } from "@/types/theme";
+import { Theme, ThemeProviderState } from "@/types/theme";
 
 const initialState: ThemeProviderState = {
   theme: "system",
