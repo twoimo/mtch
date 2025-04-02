@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
@@ -138,8 +139,8 @@ export const useApiActions = () => {
         }
       }
       
-      // Employment type filtering
-      if (filters.employmentType.length > 0) {
+      // Employment type filtering - Ensure it's an array before filtering
+      if (filters.employmentType && filters.employmentType.length > 0) {
         const employmentType = getFieldValue(job, ['employmentType', 'employment_type']);
         if (employmentType === '' || !filters.employmentType.some(type => 
           employmentType.includes(type.toLowerCase())
@@ -171,8 +172,8 @@ export const useApiActions = () => {
         }
       }
       
-      // Job type filtering
-      if (filters.jobType.length > 0) {
+      // Job type filtering - Ensure it's an array before filtering
+      if (filters.jobType && filters.jobType.length > 0) {
         const jobType = getFieldValue(job, ['jobType', 'job_type']);
         if (jobType === '' || !filters.jobType.some(type => 
           jobType.includes(type.toLowerCase())

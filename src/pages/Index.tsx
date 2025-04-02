@@ -1,3 +1,4 @@
+
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,8 +24,8 @@ const Index = () => {
   const {
     // 상태
     testResult,
-    recommendedJobs,
-    filteredJobs,
+    recommendedJobs = [], // Default to empty array
+    filteredJobs = [], // Default to empty array
     filters,
     autoMatchingResult,
     applyResult,
@@ -204,7 +205,7 @@ const Index = () => {
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
-              {filteredJobs.length > 0 && (
+              {filteredJobs && filteredJobs.length > 0 && (
                 <Badge variant="secondary" className="ml-1 bg-primary/20">
                   {filteredJobs.length}
                 </Badge>
@@ -213,9 +214,9 @@ const Index = () => {
             <TabsTrigger value="console" className="flex items-center gap-2">
               <Terminal className="h-4 w-4" />
               <span>콘솔 출력</span>
-              {(testResult || autoMatchingResult || applyResult) && (
+              {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
                 <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {[testResult, recommendedJobs.length > 0, autoMatchingResult, applyResult].filter(Boolean).length}
+                  {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -224,8 +225,8 @@ const Index = () => {
           <TabsContent value="jobs" className="mt-0">
             <div className="pb-8">
               <JobsTab 
-                jobs={recommendedJobs}
-                filteredJobs={filteredJobs}
+                jobs={recommendedJobs || []}
+                filteredJobs={filteredJobs || []}
                 filters={filters}
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
@@ -237,7 +238,7 @@ const Index = () => {
             <div className="pb-8">
               <ConsoleTab 
                 testResult={testResult}
-                recommendedJobs={recommendedJobs}
+                recommendedJobs={recommendedJobs || []}
                 autoMatchingResult={autoMatchingResult}
                 applyResult={applyResult}
               />

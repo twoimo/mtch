@@ -71,7 +71,6 @@ interface CompanyCategory {
   types: string[];
 }
 
-// 회사 유형 카테고리 정의 - useApiActions.ts의 정의와 일치해야 함
 const COMPANY_CATEGORIES: CompanyCategory[] = [
   {
     label: "대기업",
@@ -131,24 +130,26 @@ const ITEMS_PER_PAGE = 10;
 const LAYOUT_STORAGE_KEY = 'job-grid-layout-preference';
 const FILTER_EXPANDED_KEY = 'job-filter-expanded';
 
-const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdateFilters, onResetFilters }) => {
+const JobsTab: React.FC<JobsTabProps> = ({ 
+  jobs = [],
+  filteredJobs = [],
+  filters,
+  onUpdateFilters,
+  onResetFilters 
+}) => {
   const isMobile = useIsMobile();
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(
-    () => {
-      const savedState = localStorage.getItem(FILTER_EXPANDED_KEY);
-      return savedState === null ? true : savedState === 'true';
-    }
-  );
+  const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(() => {
+    const savedState = localStorage.getItem(FILTER_EXPANDED_KEY);
+    return savedState === null ? true : savedState === 'true';
+  });
 
-  const [gridLayout, setGridLayout] = useState<'single' | 'double'>(
-    () => {
-      const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
-      return (savedLayout === 'single') ? 'single' : 'double';
-    }
-  );
+  const [gridLayout, setGridLayout] = useState<'single' | 'double'>(() => {
+    const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    return (savedLayout === 'single') ? 'single' : 'double';
+  });
 
   const [sortOrder, setSortOrder] = useState<'score' | 'name'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -177,7 +178,9 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
     setCurrentPage(1);
   }, [filteredJobs, sortOrder, sortDirection]);
 
-  const sortJobs = (jobsToSort: Job[], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
+  const sortJobs = (jobsToSort: Job[] = [], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
+    if (!jobsToSort || !Array.isArray(jobsToSort)) return [];
+    
     return [...jobsToSort].sort((a, b) => {
       let comparison = 0;
 
@@ -240,7 +243,7 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, filteredJobs, filters, onUpdate
   };
 
   const handleMultiSelectChange = (key: keyof JobFilters, value: string, checked: boolean) => {
-    const currentValues = filters[key] as string[];
+    const currentValues = filters[key] as string[] || [];
     let newValues: string[];
 
     if (checked) {
