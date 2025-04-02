@@ -139,9 +139,11 @@ export const useApiActions = () => {
         }
       }
       
-      // Employment type filtering - Ensure it's an array before filtering
+      // Employment type filtering - 정규직, 계약직, 인턴 필터링 로직 업데이트
       if (filters.employmentType && filters.employmentType.length > 0) {
-        const employmentType = getFieldValue(job, ['employmentType', 'employment_type']);
+        const employmentType = getFieldValue(job, ['employmentType', 'employment_type']).toLowerCase();
+        
+        // 고용 형태가 없거나 선택된 고용 형태에 포함되지 않으면 필터링
         if (employmentType === '' || !filters.employmentType.some(type => 
           employmentType.includes(type.toLowerCase())
         )) {
@@ -172,9 +174,11 @@ export const useApiActions = () => {
         }
       }
       
-      // Job type filtering - Ensure it's an array before filtering
+      // Job type filtering - 신입, 경력 필터링 로직 업데이트
       if (filters.jobType && filters.jobType.length > 0) {
-        const jobType = getFieldValue(job, ['jobType', 'job_type']);
+        const jobType = getFieldValue(job, ['jobType', 'job_type']).toLowerCase();
+        
+        // 직무 유형이 없거나 선택된 직무 유형에 포함되지 않으면 필터링
         if (jobType === '' || !filters.jobType.some(type => 
           jobType.includes(type.toLowerCase())
         )) {

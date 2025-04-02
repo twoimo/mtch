@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import JobCard from '@/components/JobCard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -107,24 +106,19 @@ const COMPANY_CATEGORIES: CompanyCategory[] = [
 const EMPLOYMENT_TYPES = [
   { value: "정규직", label: "정규직" },
   { value: "계약직", label: "계약직" },
-  { value: "인턴", label: "인턴" },
-  { value: "파견직", label: "파견직" },
-  { value: "프리랜서", label: "프리랜서" },
-  { value: "아르바이트", label: "아르바이트" },
+  { value: "인턴", label: "인턴" }
 ];
 
 const JOB_TYPES = [
-  { value: "경력", label: "경력" },
   { value: "신입", label: "신입" },
-  { value: "경력무관", label: "경력무관" },
-  { value: "인턴", label: "인턴" },
+  { value: "경력", label: "경력" }
 ];
 
 const SALARY_RANGES = [
   { value: "all", label: "전체" },
   { value: "high", label: "상위 급여" },
   { value: "medium", label: "중간 급여" },
-  { value: "low", label: "하위 급여" },
+  { value: "low", label: "하위 급여" }
 ];
 
 const ITEMS_PER_PAGE = 10;
@@ -160,7 +154,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Ensure filters always has valid values, especially arrays
   const safeFilters = {
     keyword: filters?.keyword || '',
     minScore: filters?.minScore || 0,
@@ -193,17 +186,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
     setCurrentPage(1);
   }, [filteredJobs, sortOrder, sortDirection]);
 
-  // 단축키 이벤트 리스너 - 검색창에 포커스(/)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // '/' 키를 누르고 input, textarea 등에 포커스가 없을 때만 검색창에 포커스
       if (e.key === '/' && 
           !['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement?.tagName || '').toUpperCase())) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
       
-      // ESC 키로 검색창 포커스 해제
       if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
         searchInputRef.current?.blur();
       }
@@ -278,8 +268,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
 
   const handleMultiSelectChange = (key: keyof JobFilters, value: string, checked: boolean) => {
-    // Ensure we're working with an array
-    const currentValues = Array.isArray(safeFilters[key]) ? safeFilters[key] as string[] : [];
+    if (!Array.isArray(safeFilters[key])) {
+      const newValues = checked ? [value] : [];
+      onUpdateFilters({ [key]: newValues });
+      return;
+    }
+
+    const currentValues = safeFilters[key] as string[];
     let newValues: string[];
 
     if (checked) {
@@ -293,7 +288,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
 
   const handleSearchClear = () => {
     handleFilterChange('keyword', '');
-    // 검색창 포커스 유지
     setTimeout(() => searchInputRef.current?.focus(), 0);
   };
 
