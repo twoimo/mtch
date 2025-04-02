@@ -34,6 +34,15 @@ interface Job {
   companyType: string;
   url: string;
   deadline?: string;
+  // Add missing properties
+  matchScore?: number;
+  isApplied?: number;
+  isRecommended?: number;
+  jobType?: string;
+  jobSalary?: string;
+  employmentType?: string;
+  createdAt?: string;
+  isGptChecked?: number;
 }
 
 interface JobsTabProps {
@@ -179,7 +188,10 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs }) => {
       let comparison = 0;
       
       if (order === 'score') {
-        comparison = a.score - b.score;
+        // 사용 가능한 점수 필드를 확인 (score 또는 matchScore 중 하나 사용)
+        const scoreA = a.score || a.matchScore || 0;
+        const scoreB = b.score || b.matchScore || 0;
+        comparison = scoreA - scoreB;
       } else {
         comparison = a.companyName.localeCompare(b.companyName);
       }

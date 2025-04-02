@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   ExternalLink, Star, CheckCircle2, XCircle, MapPin, Building, 
-  Info, Calendar, ChevronUp, Copy, Share2, Bookmark, BookmarkCheck,
+  Info, Calendar, Copy, Share2, Bookmark, BookmarkCheck,
   AlertCircle, CheckSquare
 } from 'lucide-react';
 import { 
@@ -235,20 +234,35 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <span className="line-clamp-2 dark:text-gray-300">{job.companyType}</span>
                 </div>
                 
-                {/* 새로 추가된 필드 표시 */}
-                {job.jobType && (
-                  <div className="flex items-start">
-                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                    <span className="dark:text-gray-300">경력: {job.jobType}</span>
-                  </div>
-                )}
-                
-                {job.jobSalary && (
-                  <div className="flex items-start">
-                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                    <span className="dark:text-gray-300">급여: {job.jobSalary}</span>
-                  </div>
-                )}
+                {/* 직무 유형, 급여, 고용형태를 그룹으로 표시 */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-800/20 p-2 rounded-md">
+                  {job.jobType && (
+                    <div className="flex items-start">
+                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                      <span className="dark:text-gray-300 text-xs">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">경력:</span> {job.jobType}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {job.jobSalary && (
+                    <div className="flex items-start">
+                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                      <span className="dark:text-gray-300 text-xs">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">급여:</span> {job.jobSalary}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {job.employmentType && (
+                    <div className="flex items-start">
+                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                      <span className="dark:text-gray-300 text-xs">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">고용형태:</span> {job.employmentType}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 
                 {job.deadline && (
                   <div className="flex items-start">

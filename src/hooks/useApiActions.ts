@@ -77,6 +77,11 @@ export const useApiActions = () => {
     try {
       const result = await apiService.getRecommendedJobs();
       if (result.success && result.recommendedJobs) {
+        console.log('추천 채용 정보 필드 확인:', 
+          result.recommendedJobs.length > 0 ? 
+          `직무유형: ${result.recommendedJobs[0].jobType}, 급여: ${result.recommendedJobs[0].jobSalary}, 고용형태: ${result.recommendedJobs[0].employmentType}` : 
+          '데이터 없음');
+        
         setRecommendedJobs(result.recommendedJobs);
         toast({
           title: '추천 채용 정보 조회 완료',

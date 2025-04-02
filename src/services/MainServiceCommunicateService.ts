@@ -199,20 +199,30 @@ class MainServiceCommunicateService {
           jobTitle: "[의료IT 1위 이지케어텍] AI 개발자 채용",
           jobLocation: "서울 중구",
           companyType: "코스닥, 중소기업, 주식회사, 병역특례 인증업체",
-          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=49964277"
+          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=49964277",
+          deadline: "2025.04.06 18:00",
+          jobSalary: "면접 후 결정",
+          jobType: "경력(년수무관)",
+          employmentType: "정규직"
         },
         {
-          id: 123,
-          score: 50,
-          reason: "데이터 사이언티스트 직무 일치, 필요 기술 스택 보유",
-          strength: "머신러닝, 딥러닝 경험 보유, 석사학위 취득",
-          weakness: "경력 요구사항이 5년이나 현재 2년 경력",
-          apply_yn: 0,
-          companyName: "네이버(주)",
-          jobTitle: "2024 데이터 사이언티스트 채용",
-          jobLocation: "경기 성남시",
-          companyType: "대기업, 코스피, 외국계",
-          url: "https://www.saramin.co.kr/zf_user/jobs/relay/example3"
+          id: 36,
+          score: 95,
+          reason: "AI 연구원 직무로 기술 스택이 일치하며, 경력 요구사항도 부합, 대기업 및 관심 산업",
+          strength: "AI, 머신러닝, 딥러닝, 컴퓨터 비전 관련 기술 스택이 풍부하며, 연구 및 개발 경험이 있습니다.",
+          weakness: "해외 대학 석/박사 또는 Postdoc 재학/졸업(예정)자만 지원 가능",
+          apply_yn: 1,
+          companyName: "(주)엘지씨엔에스",
+          jobTitle: "2025년 상반기 Global 해외 석/박사 채용",
+          jobLocation: "서울 강서구, 서울전체",
+          companyType: "코스피, 대기업, 1000대기업, 외부감사법인, 수출입 기업",
+          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=50226248",
+          deadline: "2025.03.31 18:00",
+          jobSalary: "면접 후 결정",
+          jobType: "신입",
+          employmentType: "정규직",
+          isRecommended: 1,
+          matchScore: 95
         }
       ]
     };

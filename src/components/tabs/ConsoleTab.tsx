@@ -21,13 +21,6 @@ interface ConsoleTabProps {
   applyResult: ApplyResponse | null;
 }
 
-// 추천 채용 정보 타입 (ConsoleOutput에서 사용)
-interface RecommendedJobsData {
-  success: boolean;
-  message?: string;
-  recommendedJobs: Job[];
-}
-
 // Console Output 컴포넌트의 data 타입을 안전하게 정의
 interface ConsoleOutputBaseData {
   success: boolean;
