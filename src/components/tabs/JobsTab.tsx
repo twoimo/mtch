@@ -24,7 +24,8 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { 
   Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin,
-  LayoutList, Grid2X2, ChevronDown, ChevronUp, Search
+  LayoutList, Grid2X2, ChevronDown, ChevronUp, Search,
+  SlidersHorizontal, X, Settings, Check
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -154,8 +155,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
 
   const [sortOrder, setSortOrder] = useState<'score' | 'name'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Ensure filters always has valid values, especially arrays
   const safeFilters = {
@@ -189,6 +192,26 @@ const JobsTab: React.FC<JobsTabProps> = ({
     setDisplayedJobs(sortedJobs.slice(0, ITEMS_PER_PAGE));
     setCurrentPage(1);
   }, [filteredJobs, sortOrder, sortDirection]);
+
+  // 단축키 이벤트 리스너 - 검색창에 포커스(/)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // '/' 키를 누르고 input, textarea 등에 포커스가 없을 때만 검색창에 포커스
+      if (e.key === '/' && 
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement?.tagName || '').toUpperCase())) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      
+      // ESC 키로 검색창 포커스 해제
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        searchInputRef.current?.blur();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const sortJobs = (jobsToSort: Job[] = [], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
     if (!jobsToSort || !Array.isArray(jobsToSort)) return [];
@@ -268,6 +291,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
     onUpdateFilters({ [key]: newValues });
   };
 
+  const handleSearchClear = () => {
+    handleFilterChange('keyword', '');
+    // 검색창 포커스 유지
+    setTimeout(() => searchInputRef.current?.focus(), 0);
+  };
+
   const getActiveFiltersCount = () => {
     let count = 0;
     if (safeFilters.keyword) count++;
@@ -279,6 +308,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
     if (safeFilters.onlyApplicable) count++;
     return count;
   };
+
+  const activeFiltersCount = getActiveFiltersCount();
 
   if (!jobs || jobs.length === 0) {
     return (
@@ -293,60 +324,110 @@ const JobsTab: React.FC<JobsTabProps> = ({
   return (
     <div className="w-full space-y-4">
       <Collapsible open={isFilterExpanded} onOpenChange={setIsFilterExpanded}>
-        <Card className="border border-border/60 shadow-sm bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md">
-          <CardHeader className="py-3 flex flex-row items-center justify-between space-x-0">
+        <Card className="border border-border/60 shadow-sm bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md overflow-hidden">
+          <CardHeader className="py-3 flex flex-row items-center justify-between space-x-0 border-b border-border/20">
             <CardTitle className="text-xl flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-primary" />
+              <SlidersHorizontal className="h-5 w-5 text-primary" />
               <span>필터 옵션</span>
-              {getActiveFiltersCount() > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {getActiveFiltersCount()}
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-primary/10 transition-all duration-300 animate-in fade-in slide-in-from-left-1">
+                  {activeFiltersCount}
                 </Badge>
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onResetFilters} disabled={getActiveFiltersCount() === 0}>
-                초기화
-              </Button>
+              {activeFiltersCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onResetFilters}
+                  className="gap-1.5 text-xs font-normal h-8 transition-all duration-150 hover:bg-destructive/10"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  초기화
+                </Button>
+              )}
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                  className="h-8 w-8 p-0"
+                >
                   {isFilterExpanded ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
+                  <span className="sr-only">
+                    {isFilterExpanded ? "필터 접기" : "필터 펼치기"}
+                  </span>
                 </Button>
               </CollapsibleTrigger>
             </div>
           </CardHeader>
           
           <CollapsibleContent>
-            <CardContent className="pb-4 pt-0">
+            <CardContent className="pb-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="search" className="flex items-center gap-1.5">
-                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                    검색어
+                  <Label 
+                    htmlFor="search" 
+                    className={cn(
+                      "flex items-center gap-1.5 transition-colors duration-200",
+                      isSearchFocused ? "text-primary" : "text-foreground"
+                    )}
+                  >
+                    <Search className={cn(
+                      "h-3.5 w-3.5 transition-colors duration-200",
+                      isSearchFocused ? "text-primary" : "text-muted-foreground"
+                    )} />
+                    검색어 <span className="text-muted-foreground text-xs ml-1">(단축키: /)</span>
                   </Label>
                   <div className="relative">
                     <Input 
                       id="search" 
+                      ref={searchInputRef}
                       placeholder="직무, 회사명, 지역 검색..."
                       value={safeFilters.keyword}
                       onChange={(e) => handleFilterChange('keyword', e.target.value)}
-                      className="pl-8"
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setIsSearchFocused(false)}
+                      className={cn(
+                        "pl-8 pr-8 transition-all duration-200",
+                        isSearchFocused ? "border-primary ring-1 ring-primary/20" : ""
+                      )}
                     />
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground opacity-70" />
+                    <Search className={cn(
+                      "absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground opacity-70 transition-colors duration-200",
+                      isSearchFocused ? "text-primary" : ""
+                    )} />
+                    
+                    {safeFilters.keyword && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSearchClear}
+                        className="absolute right-1 top-1 h-7 w-7 opacity-70 hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span className="sr-only">검색어 지우기</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="company-category">회사 유형</Label>
+                  <Label htmlFor="company-category" className="flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                    회사 유형
+                  </Label>
                   <Select 
                     value={safeFilters.companyType} 
                     onValueChange={(value) => handleFilterChange('companyType', value)}
                   >
-                    <SelectTrigger id="company-category">
+                    <SelectTrigger id="company-category" className="transition-all duration-200 hover:border-primary/50">
                       <SelectValue placeholder="회사 유형 선택" />
                     </SelectTrigger>
                     <SelectContent>
@@ -363,7 +444,18 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="min-score">최소 매칭 점수: {safeFilters.minScore}</Label>
+                    <Label htmlFor="min-score" className="flex items-center gap-1.5">
+                      <Star className="h-3.5 w-3.5 text-muted-foreground" />
+                      최소 매칭 점수
+                      <span className={cn(
+                        "ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium transition-colors duration-200",
+                        safeFilters.minScore > 0 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        {safeFilters.minScore}점
+                      </span>
+                    </Label>
                   </div>
                   <Slider 
                     id="min-score"
@@ -377,12 +469,20 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">고용 형태</Label>
+                  <Label className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    고용 형태
+                  </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-between"
+                        className={cn(
+                          "w-full justify-between transition-all duration-200 hover:border-primary/50",
+                          safeFilters.employmentType && safeFilters.employmentType.length > 0 
+                            ? "border-primary/50 text-foreground font-medium" 
+                            : "text-muted-foreground"
+                        )}
                       >
                         {safeFilters.employmentType && safeFilters.employmentType.length > 0 
                           ? `${safeFilters.employmentType.length}개 선택됨` 
@@ -396,30 +496,35 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
                           {EMPLOYMENT_TYPES.map((type) => {
-                            const isSelected = safeFilters.employmentType.includes(type.value);
+                            const isSelected = Array.isArray(safeFilters.employmentType) && 
+                                            safeFilters.employmentType.includes(type.value);
                             return (
                               <CommandItem
                                 key={type.value}
                                 onSelect={() => {
                                   handleMultiSelectChange('employmentType', type.value, !isSelected);
                                 }}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 aria-selected:bg-primary/10"
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                   <Checkbox 
                                     id={`employment-${type.value}`}
                                     checked={isSelected}
                                     onCheckedChange={(checked) => {
                                       handleMultiSelectChange('employmentType', type.value, !!checked);
                                     }}
+                                    className={cn(
+                                      isSelected ? "border-primary" : "border-muted-foreground"
+                                    )}
                                   />
                                   <label 
                                     htmlFor={`employment-${type.value}`}
-                                    className="text-sm cursor-pointer"
+                                    className="text-sm cursor-pointer flex-1"
                                   >
                                     {type.label}
                                   </label>
                                 </div>
+                                {isSelected && <Check className="h-4 w-4 text-primary" />}
                               </CommandItem>
                             );
                           })}
@@ -430,12 +535,20 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">직무 유형</Label>
+                  <Label className="flex items-center gap-1.5">
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                    직무 유형
+                  </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-between"
+                        className={cn(
+                          "w-full justify-between transition-all duration-200 hover:border-primary/50",
+                          safeFilters.jobType && safeFilters.jobType.length > 0 
+                            ? "border-primary/50 text-foreground font-medium" 
+                            : "text-muted-foreground"
+                        )}
                       >
                         {safeFilters.jobType && safeFilters.jobType.length > 0 
                           ? `${safeFilters.jobType.length}개 선택됨` 
@@ -449,30 +562,35 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
                           {JOB_TYPES.map((type) => {
-                            const isSelected = safeFilters.jobType.includes(type.value);
+                            const isSelected = Array.isArray(safeFilters.jobType) && 
+                                            safeFilters.jobType.includes(type.value);
                             return (
                               <CommandItem
                                 key={type.value}
                                 onSelect={() => {
                                   handleMultiSelectChange('jobType', type.value, !isSelected);
                                 }}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 aria-selected:bg-primary/10"
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                   <Checkbox 
                                     id={`job-type-${type.value}`}
                                     checked={isSelected}
                                     onCheckedChange={(checked) => {
                                       handleMultiSelectChange('jobType', type.value, !!checked);
                                     }}
+                                    className={cn(
+                                      isSelected ? "border-primary" : "border-muted-foreground"
+                                    )}
                                   />
                                   <label 
                                     htmlFor={`job-type-${type.value}`}
-                                    className="text-sm cursor-pointer"
+                                    className="text-sm cursor-pointer flex-1"
                                   >
                                     {type.label}
                                   </label>
                                 </div>
+                                {isSelected && <Check className="h-4 w-4 text-primary" />}
                               </CommandItem>
                             );
                           })}
@@ -485,12 +603,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 <div className="space-y-2 flex flex-col justify-end">
                   <div className="flex items-center justify-between space-x-2 h-10">
                     <Label htmlFor="only-applicable" className="flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-muted-foreground" />
                       지원 가능한 공고만 보기
                     </Label>
                     <Switch 
                       id="only-applicable" 
                       checked={safeFilters.onlyApplicable}
                       onCheckedChange={(checked) => handleFilterChange('onlyApplicable', checked)}
+                      className={safeFilters.onlyApplicable ? "bg-primary" : ""}
                     />
                   </div>
                 </div>
@@ -498,10 +618,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </CardContent>
           </CollapsibleContent>
         
-          <CardContent className="pt-0 pb-4 border-t border-border/30 mt-2">
+          <CardContent className="py-3 border-t border-border/30 mt-0 bg-muted/30">
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                <Label className="text-sm text-muted-foreground">그리드:</Label>
+                <Label className="text-sm text-muted-foreground">레이아웃:</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -509,7 +629,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         variant="outline" 
                         size="sm" 
                         onClick={toggleGridLayout}
-                        className="flex items-center gap-1 h-8"
+                        className="flex items-center gap-1 h-8 bg-background transition-all duration-200"
                       >
                         {gridLayout === 'single' ? (
                           <>
@@ -537,7 +657,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                   value={sortOrder} 
                   onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
                 >
-                  <SelectTrigger className="w-[130px] h-8">
+                  <SelectTrigger className="w-[130px] h-8 bg-background transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -557,10 +677,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 </Select>
                 
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   size="icon" 
                   onClick={toggleSortDirection}
-                  className="flex items-center justify-center h-8 w-8"
+                  className="flex items-center justify-center h-8 w-8 bg-background transition-all duration-200"
                 >
                   {sortDirection === 'desc' ? (
                     <ArrowDownAZ className="h-4 w-4" />
@@ -582,7 +702,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         
         <div className="flex flex-wrap gap-1.5 justify-end">
           {safeFilters.keyword && (
-            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 group">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 group animate-in fade-in slide-in-from-right-1">
               <span>검색: {safeFilters.keyword}</span>
               <Button 
                 variant="ghost" 
@@ -590,13 +710,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
                 onClick={() => handleFilterChange('keyword', '')}
               >
-                <ChevronDown className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </Button>
             </Badge>
           )}
           
           {safeFilters.companyType !== 'all' && (
-            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
               <span>
                 {COMPANY_CATEGORIES.find(c => c.value === safeFilters.companyType)?.label || '기타'}
               </span>
@@ -606,13 +726,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
                 onClick={() => handleFilterChange('companyType', 'all')}
               >
-                <ChevronDown className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </Button>
             </Badge>
           )}
           
           {safeFilters.minScore > 0 && (
-            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
               <span>점수: {safeFilters.minScore}+</span>
               <Button 
                 variant="ghost" 
@@ -620,13 +740,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
                 onClick={() => handleFilterChange('minScore', 0)}
               >
-                <ChevronDown className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </Button>
             </Badge>
           )}
           
           {safeFilters.onlyApplicable && (
-            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
               <span>지원가능만</span>
               <Button 
                 variant="ghost" 
@@ -634,7 +754,35 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
                 onClick={() => handleFilterChange('onlyApplicable', false)}
               >
-                <ChevronDown className="h-3 w-3" />
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+          
+          {safeFilters.employmentType && safeFilters.employmentType.length > 0 && (
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
+              <span>고용형태: {safeFilters.employmentType.length}개</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
+                onClick={() => handleFilterChange('employmentType', [])}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+          
+          {safeFilters.jobType && safeFilters.jobType.length > 0 && (
+            <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
+              <span>직무: {safeFilters.jobType.length}개</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100" 
+                onClick={() => handleFilterChange('jobType', [])}
+              >
+                <X className="h-3 w-3" />
               </Button>
             </Badge>
           )}
