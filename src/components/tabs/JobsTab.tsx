@@ -395,27 +395,34 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         <CommandInput placeholder="고용 형태 검색..." />
                         <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {EMPLOYMENT_TYPES.map((type) => (
-                            <CommandItem
-                              key={type.value}
-                              onSelect={() => {
-                                const isSelected = Array.isArray(safeFilters.employmentType) && 
-                                                  safeFilters.employmentType.includes(type.value);
-                                handleMultiSelectChange('employmentType', type.value, !isSelected);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <Checkbox 
-                                checked={Array.isArray(safeFilters.employmentType) && 
-                                        safeFilters.employmentType.includes(type.value)}
-                                onCheckedChange={(checked) => {
-                                  handleMultiSelectChange('employmentType', type.value, !!checked);
+                          {EMPLOYMENT_TYPES.map((type) => {
+                            const isSelected = safeFilters.employmentType.includes(type.value);
+                            return (
+                              <CommandItem
+                                key={type.value}
+                                onSelect={() => {
+                                  handleMultiSelectChange('employmentType', type.value, !isSelected);
                                 }}
-                                id={`employment-${type.value}`}
-                              />
-                              <label htmlFor={`employment-${type.value}`}>{type.label}</label>
-                            </CommandItem>
-                          ))}
+                                className="flex items-center gap-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Checkbox 
+                                    id={`employment-${type.value}`}
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      handleMultiSelectChange('employmentType', type.value, !!checked);
+                                    }}
+                                  />
+                                  <label 
+                                    htmlFor={`employment-${type.value}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {type.label}
+                                  </label>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
@@ -441,27 +448,34 @@ const JobsTab: React.FC<JobsTabProps> = ({
                         <CommandInput placeholder="직무 유형 검색..." />
                         <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {JOB_TYPES.map((type) => (
-                            <CommandItem
-                              key={type.value}
-                              onSelect={() => {
-                                const isSelected = Array.isArray(safeFilters.jobType) && 
-                                                 safeFilters.jobType.includes(type.value);
-                                handleMultiSelectChange('jobType', type.value, !isSelected);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <Checkbox 
-                                checked={Array.isArray(safeFilters.jobType) && 
-                                       safeFilters.jobType.includes(type.value)}
-                                onCheckedChange={(checked) => {
-                                  handleMultiSelectChange('jobType', type.value, !!checked);
+                          {JOB_TYPES.map((type) => {
+                            const isSelected = safeFilters.jobType.includes(type.value);
+                            return (
+                              <CommandItem
+                                key={type.value}
+                                onSelect={() => {
+                                  handleMultiSelectChange('jobType', type.value, !isSelected);
                                 }}
-                                id={`job-type-${type.value}`}
-                              />
-                              <label htmlFor={`job-type-${type.value}`}>{type.label}</label>
-                            </CommandItem>
-                          ))}
+                                className="flex items-center gap-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Checkbox 
+                                    id={`job-type-${type.value}`}
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      handleMultiSelectChange('jobType', type.value, !!checked);
+                                    }}
+                                  />
+                                  <label 
+                                    htmlFor={`job-type-${type.value}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {type.label}
+                                  </label>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
