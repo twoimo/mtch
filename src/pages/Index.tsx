@@ -1,4 +1,3 @@
-
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,13 +46,13 @@ const Index = () => {
     resetFilters
   } = useApiActions();
 
-  // Ensure filters is always defined with arrays initialized
+  // More robust approach to ensure filters is always defined with arrays initialized
   const safeFilters = {
     keyword: filters?.keyword || '',
     minScore: filters?.minScore || 0,
-    employmentType: Array.isArray(filters?.employmentType) ? filters.employmentType : [],
+    employmentType: Array.isArray(filters?.employmentType) ? [...filters.employmentType] : [],
     companyType: filters?.companyType || 'all',
-    jobType: Array.isArray(filters?.jobType) ? filters.jobType : [],
+    jobType: Array.isArray(filters?.jobType) ? [...filters.jobType] : [],
     salaryRange: filters?.salaryRange || 'all',
     onlyApplicable: filters?.onlyApplicable || false
   };
@@ -100,6 +99,31 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem(AUTO_FETCH_STORAGE_KEY, autoFetchEnabled.toString());
   }, [autoFetchEnabled]);
+
+  // 웹사이트 접속 시 스크래핑 스케줄링 API 호출
+  useEffect(() => {
+    const startScrapingScheduler = async () => {
+      try {
+        const response = await fetch('/api/developer/main_service_communicate/run', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          console.log('스크래핑 스케줄러가 성공적으로 시작되었습니다.');
+        } else {
+          console.warn('스크래핑 스케줄러 시작 실패:', response.status);
+        }
+      } catch (error) {
+        console.error('스크래핑 스케줄러 시작 중 오류 발생:', error);
+      }
+    };
+    
+    // 앱 시작 시 한 번만 실행
+    startScrapingScheduler();
+  }, []);
 
   // 웹사이트 접속 시 자동으로 추천 채용 정보 불러오기
   useEffect(() => {

@@ -234,35 +234,43 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <span className="line-clamp-2 dark:text-gray-300">{job.companyType}</span>
                 </div>
                 
-                {/* 직무 유형, 급여, 고용형태를 그룹으로 표시 */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-800/20 p-2 rounded-md">
-                  {job.jobType && (
-                    <div className="flex items-start">
-                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                      <span className="dark:text-gray-300 text-xs">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">경력:</span> {job.jobType}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {job.jobSalary && (
-                    <div className="flex items-start">
-                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                      <span className="dark:text-gray-300 text-xs">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">급여:</span> {job.jobSalary}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {job.employmentType && (
-                    <div className="flex items-start">
-                      <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
-                      <span className="dark:text-gray-300 text-xs">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">고용형태:</span> {job.employmentType}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* 직무 유형, 급여, 고용형태를 개별적으로 표시 */}
+                {job.jobType && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="dark:text-gray-300">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">경력:</span> {job.jobType}
+                    </span>
+                  </div>
+                )}
+                
+                {job.jobSalary && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="dark:text-gray-300">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">급여:</span> {job.jobSalary}
+                    </span>
+                  </div>
+                )}
+                
+                {job.employmentType && (
+                  <div className="flex items-start">
+                    <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
+                    <span className="dark:text-gray-300">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">고용형태:</span> {' '}
+                      {(() => {
+                        const empType = job.employmentType.toLowerCase();
+                        const types = [];
+                        
+                        if (empType.includes('정규직')) types.push('정규직');
+                        if (empType.includes('계약직') || empType.includes('계약')) types.push('계약직');
+                        if (empType.includes('인턴') || empType.includes('인턴십')) types.push('인턴');
+                        
+                        return types.length > 0 ? types.join(', ') : job.employmentType;
+                      })()}
+                    </span>
+                  </div>
+                )}
                 
                 {job.deadline && (
                   <div className="flex items-start">

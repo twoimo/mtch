@@ -14,17 +14,15 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { 
   Filter, ArrowDownAZ, ArrowDownZA, Star, MapPin,
   LayoutList, Grid2X2, ChevronDown, ChevronUp, Search,
-  SlidersHorizontal, X, Settings, Check
+  SlidersHorizontal, X, Settings, Check, Calendar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -35,6 +33,7 @@ import {
 } from '@/components/ui/tooltip';
 import { JobFilters } from '@/hooks/useApiActions';
 
+// 채용 정보 인터페이스
 interface Job {
   id: number;
   score: number;
@@ -58,6 +57,7 @@ interface Job {
   isGptChecked?: number;
 }
 
+// JobsTab 컴포넌트 속성
 interface JobsTabProps {
   jobs: Job[];
   filteredJobs: Job[];
@@ -66,12 +66,14 @@ interface JobsTabProps {
   onResetFilters: () => void;
 }
 
+// 회사 카테고리 인터페이스
 interface CompanyCategory {
   label: string;
   value: string;
   types: string[];
 }
 
+// 회사 카테고리 정의
 const COMPANY_CATEGORIES: CompanyCategory[] = [
   {
     label: "대기업",
@@ -103,29 +105,28 @@ const COMPANY_CATEGORIES: CompanyCategory[] = [
   }
 ];
 
+// 고용 형태 정의
 const EMPLOYMENT_TYPES = [
   { value: "정규직", label: "정규직" },
   { value: "계약직", label: "계약직" },
   { value: "인턴", label: "인턴" }
 ];
 
+// 직무 유형 정의
 const JOB_TYPES = [
   { value: "신입", label: "신입" },
   { value: "경력", label: "경력" }
 ];
 
-const SALARY_RANGES = [
-  { value: "all", label: "전체" },
-  { value: "high", label: "상위 급여" },
-  { value: "medium", label: "중간 급여" },
-  { value: "low", label: "하위 급여" }
-];
-
+// 페이지당 항목 수
 const ITEMS_PER_PAGE = 10;
 
+// 로컬 스토리지 키
 const LAYOUT_STORAGE_KEY = 'job-grid-layout-preference';
 const FILTER_EXPANDED_KEY = 'job-filter-expanded';
+const HIDE_EXPIRED_KEY = 'hide-expired-jobs';
 
+// JobsTab 컴포넌트
 const JobsTab: React.FC<JobsTabProps> = ({ 
   jobs = [],
   filteredJobs = [],
@@ -142,18 +143,26 @@ const JobsTab: React.FC<JobsTabProps> = ({
     return savedState === null ? true : savedState === 'true';
   });
 
+  // 만료된 채용 공고 숨김 상태 (기본값 true)
+  const [hideExpired, setHideExpired] = useState<boolean>(() => {
+    const savedState = localStorage.getItem(HIDE_EXPIRED_KEY);
+    return savedState === null ? true : savedState === 'true';
+  });
+
   const [gridLayout, setGridLayout] = useState<'single' | 'double'>(() => {
     const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
     return (savedLayout === 'single') ? 'single' : 'double';
   });
 
-  const [sortOrder, setSortOrder] = useState<'score' | 'name'>('score');
+  // 정렬 상태 (마감일 정렬 옵션 추가)
+  const [sortOrder, setSortOrder] = useState<'score' | 'name' | 'deadline'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // 필터 상태를 안전하게 가져오기
   const safeFilters = {
     keyword: filters?.keyword || '',
     minScore: filters?.minScore || 0,
@@ -161,19 +170,28 @@ const JobsTab: React.FC<JobsTabProps> = ({
     companyType: filters?.companyType || 'all',
     jobType: Array.isArray(filters?.jobType) ? filters.jobType : [],
     salaryRange: filters?.salaryRange || 'all',
-    onlyApplicable: filters?.onlyApplicable || false
+    onlyApplicable: filters?.onlyApplicable || false,
+    hideExpired: hideExpired // 필터에 만료된 공고 숨김 상태 추가
   };
 
+  // 그리드 레이아웃 토글
   const toggleGridLayout = useCallback(() => {
     const newLayout = gridLayout === 'single' ? 'double' : 'single';
     setGridLayout(newLayout);
     localStorage.setItem(LAYOUT_STORAGE_KEY, newLayout);
   }, [gridLayout]);
 
+  // 필터 확장 상태 로컬 스토리지에 저장
   useEffect(() => {
     localStorage.setItem(FILTER_EXPANDED_KEY, isFilterExpanded.toString());
   }, [isFilterExpanded]);
 
+  // 만료 공고 숨김 상태 로컬 스토리지에 저장
+  useEffect(() => {
+    localStorage.setItem(HIDE_EXPIRED_KEY, hideExpired.toString());
+  }, [hideExpired]);
+
+  // 필터링된 채용 정보에 따라 표시할 채용 정보 업데이트
   useEffect(() => {
     if (!filteredJobs || filteredJobs.length === 0) {
       setDisplayedJobs([]);
@@ -181,11 +199,34 @@ const JobsTab: React.FC<JobsTabProps> = ({
       return;
     }
 
-    const sortedJobs = sortJobs(filteredJobs, sortOrder, sortDirection);
+    // 마감일 지난 채용 공고 필터링
+    let jobsToDisplay = filteredJobs;
+    if (hideExpired) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      jobsToDisplay = filteredJobs.filter(job => {
+        if (!job.deadline) return true;
+        
+        // 마감일 형식 처리 (YYYY.MM.DD 또는 YYYY-MM-DD HH:MM)
+        let deadlineDate;
+        if (job.deadline.includes('.')) {
+          const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
+          deadlineDate = new Date(year, month - 1, day);
+        } else {
+          deadlineDate = new Date(job.deadline);
+        }
+        
+        return deadlineDate >= today;
+      });
+    }
+
+    const sortedJobs = sortJobs(jobsToDisplay, sortOrder, sortDirection);
     setDisplayedJobs(sortedJobs.slice(0, ITEMS_PER_PAGE));
     setCurrentPage(1);
-  }, [filteredJobs, sortOrder, sortDirection]);
+  }, [filteredJobs, sortOrder, sortDirection, hideExpired]);
 
+  // 키보드 단축키 처리
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === '/' && 
@@ -203,7 +244,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const sortJobs = (jobsToSort: Job[] = [], order: 'score' | 'name', direction: 'asc' | 'desc'): Job[] => {
+  // 채용 정보 정렬 함수 (마감일 정렬 추가)
+  const sortJobs = (jobsToSort: Job[] = [], order: 'score' | 'name' | 'deadline', direction: 'asc' | 'desc'): Job[] => {
     if (!jobsToSort || !Array.isArray(jobsToSort)) return [];
     
     return [...jobsToSort].sort((a, b) => {
@@ -213,14 +255,28 @@ const JobsTab: React.FC<JobsTabProps> = ({
         const scoreA = a.score || a.matchScore || 0;
         const scoreB = b.score || b.matchScore || 0;
         comparison = scoreA - scoreB;
-      } else {
+      } else if (order === 'name') {
         comparison = a.companyName.localeCompare(b.companyName);
+      } else if (order === 'deadline') {
+        // 마감일이 없는 경우 마지막으로 정렬
+        if (!a.deadline && !b.deadline) {
+          comparison = 0;
+        } else if (!a.deadline) {
+          comparison = 1;
+        } else if (!b.deadline) {
+          comparison = -1;
+        } else {
+          const dateA = new Date(a.deadline.replace(/\./g, '-'));
+          const dateB = new Date(b.deadline.replace(/\./g, '-'));
+          comparison = dateA.getTime() - dateB.getTime();
+        }
       }
 
       return direction === 'desc' ? -comparison : comparison;
     });
   };
 
+  // 더 많은 채용 정보 로드
   const loadMoreJobs = useCallback(() => {
     if (loading || displayedJobs.length >= filteredJobs.length) return;
 
@@ -237,6 +293,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
     }, 300);
   }, [currentPage, displayedJobs.length, filteredJobs, loading, sortOrder, sortDirection]);
 
+  // Intersection Observer로 무한 스크롤 구현
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -259,14 +316,17 @@ const JobsTab: React.FC<JobsTabProps> = ({
     };
   }, [loadMoreJobs, loading]);
 
+  // 정렬 방향 토글
   const toggleSortDirection = () => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
+  // 필터 변경 처리
   const handleFilterChange = (key: keyof JobFilters, value: string | number | boolean | string[]) => {
     onUpdateFilters({ [key]: value });
   };
 
+  // 다중 선택 필터 변경 처리
   const handleMultiSelectChange = (key: keyof JobFilters, value: string, checked: boolean) => {
     if (!Array.isArray(safeFilters[key])) {
       const newValues = checked ? [value] : [];
@@ -286,11 +346,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
     onUpdateFilters({ [key]: newValues });
   };
 
+  // 검색어 지우기
   const handleSearchClear = () => {
     handleFilterChange('keyword', '');
     setTimeout(() => searchInputRef.current?.focus(), 0);
   };
 
+  // 활성화된 필터 개수 계산
   const getActiveFiltersCount = () => {
     let count = 0;
     if (safeFilters.keyword) count++;
@@ -305,6 +367,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
 
   const activeFiltersCount = getActiveFiltersCount();
 
+  // 만료된 공고 숨김 토글 처리
+  const toggleHideExpired = () => {
+    setHideExpired(prev => !prev);
+  };
+
+  // 채용 정보가 없을 때 표시할 컴포넌트
   if (!jobs || jobs.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 bg-muted/20 rounded-lg border border-border/40">
@@ -463,143 +531,65 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
+                  <Label htmlFor="employment-type" className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                     고용 형태
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className={cn(
-                          "w-full justify-between transition-all duration-200 hover:border-primary/50",
-                          safeFilters.employmentType && safeFilters.employmentType.length > 0 
-                            ? "border-primary/50 text-foreground font-medium" 
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {safeFilters.employmentType && safeFilters.employmentType.length > 0 
-                          ? `${safeFilters.employmentType.length}개 선택됨` 
-                          : "고용 형태 선택"}
-                        <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="고용 형태 검색..." />
-                        <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {EMPLOYMENT_TYPES.map((type) => {
-                            const isSelected = Array.isArray(safeFilters.employmentType) && 
-                                            safeFilters.employmentType.includes(type.value);
-                            return (
-                              <CommandItem
-                                key={type.value}
-                                onSelect={() => {
-                                  handleMultiSelectChange('employmentType', type.value, !isSelected);
-                                }}
-                                className="flex items-center gap-2 aria-selected:bg-primary/10"
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Checkbox 
-                                    id={`employment-${type.value}`}
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      handleMultiSelectChange('employmentType', type.value, !!checked);
-                                    }}
-                                    className={cn(
-                                      isSelected ? "border-primary" : "border-muted-foreground"
-                                    )}
-                                    aria-labelledby={`employment-label-${type.value}`}
-                                  />
-                                  <label 
-                                    id={`employment-label-${type.value}`}
-                                    htmlFor={`employment-${type.value}`}
-                                    className="text-sm cursor-pointer flex-1"
-                                  >
-                                    {type.label}
-                                  </label>
-                                </div>
-                                {isSelected && <Check className="h-4 w-4 text-primary" />}
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <Select 
+                    value={safeFilters.employmentType.length ? safeFilters.employmentType[0] : "all"} 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        handleFilterChange('employmentType', []);
+                      } else {
+                        handleFilterChange('employmentType', [value]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="employment-type" className="transition-all duration-200 hover:border-primary/50">
+                      <SelectValue placeholder="고용 형태 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체</SelectItem>
+                      {EMPLOYMENT_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
+                  <Label htmlFor="job-type" className="flex items-center gap-1.5">
                     <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                     직무 유형
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className={cn(
-                          "w-full justify-between transition-all duration-200 hover:border-primary/50",
-                          safeFilters.jobType && safeFilters.jobType.length > 0 
-                            ? "border-primary/50 text-foreground font-medium" 
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {safeFilters.jobType && safeFilters.jobType.length > 0 
-                          ? `${safeFilters.jobType.length}개 선택됨` 
-                          : "직무 유형 선택"}
-                        <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="직무 유형 검색..." />
-                        <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {JOB_TYPES.map((type) => {
-                            const isSelected = Array.isArray(safeFilters.jobType) && 
-                                            safeFilters.jobType.includes(type.value);
-                            return (
-                              <CommandItem
-                                key={type.value}
-                                onSelect={() => {
-                                  handleMultiSelectChange('jobType', type.value, !isSelected);
-                                }}
-                                className="flex items-center gap-2 aria-selected:bg-primary/10"
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Checkbox 
-                                    id={`job-type-${type.value}`}
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      handleMultiSelectChange('jobType', type.value, !!checked);
-                                    }}
-                                    className={cn(
-                                      isSelected ? "border-primary" : "border-muted-foreground"
-                                    )}
-                                    aria-labelledby={`job-type-label-${type.value}`}
-                                  />
-                                  <label 
-                                    id={`job-type-label-${type.value}`}
-                                    htmlFor={`job-type-${type.value}`}
-                                    className="text-sm cursor-pointer flex-1"
-                                  >
-                                    {type.label}
-                                  </label>
-                                </div>
-                                {isSelected && <Check className="h-4 w-4 text-primary" />}
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <Select 
+                    value={safeFilters.jobType.length ? safeFilters.jobType[0] : "all"} 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        handleFilterChange('jobType', []);
+                      } else {
+                        handleFilterChange('jobType', [value]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="job-type" className="transition-all duration-200 hover:border-primary/50">
+                      <SelectValue placeholder="직무 유형 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체</SelectItem>
+                      {JOB_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <div className="space-y-2 flex flex-col justify-end">
-                  <div className="flex items-center justify-between space-x-2 h-10">
+                <div className="space-y-2 flex flex-col justify-start">
+                  <div className="flex items-center justify-between space-x-2 h-10 mb-2">
                     <Label htmlFor="only-applicable" className="flex items-center gap-1.5">
                       <Check className="h-3.5 w-3.5 text-muted-foreground" />
                       지원 가능한 공고만 보기
@@ -609,6 +599,20 @@ const JobsTab: React.FC<JobsTabProps> = ({
                       checked={safeFilters.onlyApplicable}
                       onCheckedChange={(checked) => handleFilterChange('onlyApplicable', checked)}
                       className={safeFilters.onlyApplicable ? "bg-primary" : ""}
+                    />
+                  </div>
+                  
+                  {/* 마감일 지난 채용 공고 제외 토글 */}
+                  <div className="flex items-center justify-between space-x-2 h-10">
+                    <Label htmlFor="hide-expired" className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      마감일 지난 공고 제외
+                    </Label>
+                    <Switch 
+                      id="hide-expired" 
+                      checked={hideExpired}
+                      onCheckedChange={toggleHideExpired}
+                      className={hideExpired ? "bg-primary" : ""}
                     />
                   </div>
                 </div>
@@ -653,7 +657,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
                 <Label className="text-sm text-muted-foreground">정렬:</Label>
                 <Select 
                   value={sortOrder} 
-                  onValueChange={(value) => setSortOrder(value as 'score' | 'name')}
+                  onValueChange={(value) => setSortOrder(value as 'score' | 'name' | 'deadline')}
                 >
                   <SelectTrigger className="w-[130px] h-8 bg-background transition-all duration-200">
                     <SelectValue />
@@ -669,6 +673,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
                       <div className="flex items-center">
                         <MapPin className="w-3.5 h-3.5 mr-2" />
                         회사명
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="deadline">
+                      <div className="flex items-center">
+                        <Calendar className="w-3.5 h-3.5 mr-2" />
+                        마감일
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -696,6 +706,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
         <p className="text-sm text-muted-foreground">
           총 <span className="font-medium text-foreground">{filteredJobs.length}</span>개 중 
           <span className="font-medium text-foreground"> {displayedJobs.length}</span>개 표시 중
+          {hideExpired && filteredJobs.length > 0 && (
+            <span className="text-xs ml-1">(마감일 지난 공고 제외)</span>
+          )}
         </p>
         
         <div className="flex flex-wrap gap-1.5 justify-end">
@@ -759,7 +772,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
           
           {safeFilters.employmentType && safeFilters.employmentType.length > 0 && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
-              <span>고용형태: {safeFilters.employmentType.length}개</span>
+              <span>고용형태: {
+                EMPLOYMENT_TYPES.find(t => t.value === safeFilters.employmentType[0])?.label || safeFilters.employmentType[0]
+              }</span>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -773,7 +788,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
           
           {safeFilters.jobType && safeFilters.jobType.length > 0 && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs py-0.5 h-6 animate-in fade-in slide-in-from-right-1">
-              <span>직무: {safeFilters.jobType.length}개</span>
+              <span>직무: {
+                JOB_TYPES.find(t => t.value === safeFilters.jobType[0])?.label || safeFilters.jobType[0]
+              }</span>
               <Button 
                 variant="ghost" 
                 size="icon" 

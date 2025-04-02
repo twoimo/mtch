@@ -1,6 +1,5 @@
-
 import { 
-  ApiResponse, 
+  // Removed unused ApiResponse import
   AllJobsResponse, 
   RecommendedJobsResponse, 
   TestResponse, 
@@ -15,7 +14,7 @@ class ApiService {
   private baseUrl: string = '/api/developer/main_service_communicate';
 
   /**
-   * Test API endpoint
+   * Test API endpoint - Scraping scheduler
    * @returns Promise with test response
    */
   async test(): Promise<TestResponse> {
@@ -37,12 +36,12 @@ class ApiService {
       
       return { 
         success: true, 
-        message: 'Test request sent successfully.',
+        message: 'Scraping scheduler started successfully.',
         testCompleted: true 
       };
     } catch (error) {
-      console.error('Test API error:', error);
-      return { success: false, error: 'An error occurred during test operation.' };
+      console.error('Scraping scheduler API error:', error);
+      return { success: false, error: 'An error occurred while starting the scraping scheduler.' };
     }
   }
 

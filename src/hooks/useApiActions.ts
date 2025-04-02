@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
@@ -24,17 +23,26 @@ export interface JobFilters {
   jobType: string[];
   salaryRange: string;
   onlyApplicable: boolean;
+  hideExpired?: boolean; // 마감일 지난 공고 제외 필터 추가
 }
 
-// Default filters
+// Simplified employment types for safer filtering
+const EMPLOYMENT_TYPES = {
+  REGULAR: '정규직',
+  CONTRACT: '계약직',
+  INTERN: '인턴'
+};
+
+// Default filters with guaranteed initialized arrays
 export const defaultFilters: JobFilters = {
   keyword: '',
   minScore: 0,
-  employmentType: [],
+  employmentType: [], // Always initialized as empty array
   companyType: 'all',
-  jobType: [],
+  jobType: [], // Always initialized as empty array
   salaryRange: 'all',
   onlyApplicable: false,
+  hideExpired: true, // 기본값으로 항상 켜져있음
 };
 
 /**
@@ -102,17 +110,26 @@ export const useApiActions = () => {
     }
   ], []);
 
-  // 필드 값을 안전하게 가져오는 헬퍼 함수
-  const getFieldValue = useCallback((job: Job, fields: string[]) => {
-    for (const field of fields) {
-      if (job[field as keyof Job] !== undefined) {
-        return String(job[field as keyof Job]).toLowerCase();
-      }
+  // More robust helper function to check if an employment type matches
+  const matchesEmploymentType = useCallback((job: Job, filterType: string): boolean => {
+    // If no employment type data in job, return false
+    if (!job.employmentType && !job.employment_type) return false;
+    
+    const empType = (job.employmentType || job.employment_type || '').toLowerCase();
+    
+    switch(filterType) {
+      case EMPLOYMENT_TYPES.REGULAR:
+        return empType.includes('정규직');
+      case EMPLOYMENT_TYPES.CONTRACT:
+        return empType.includes('계약직') || empType.includes('계약');
+      case EMPLOYMENT_TYPES.INTERN:
+        return empType.includes('인턴') || empType.includes('인턴십');
+      default:
+        return empType.includes(filterType.toLowerCase());
     }
-    return '';
   }, []);
 
-  // Optimize filtering with useMemo
+  // More defensive filtering approach
   const filteredJobs = useMemo(() => {
     if (!recommendedJobs || recommendedJobs.length === 0) return [];
     
@@ -120,9 +137,9 @@ export const useApiActions = () => {
       // Keyword filtering
       if (filters.keyword) {
         const keyword = filters.keyword.toLowerCase();
-        const jobTitle = job.jobTitle?.toLowerCase() || job.job_title?.toLowerCase() || '';
-        const companyName = job.companyName?.toLowerCase() || job.company_name?.toLowerCase() || '';
-        const jobLocation = job.jobLocation?.toLowerCase() || job.job_location?.toLowerCase() || '';
+        const jobTitle = (job.jobTitle || job.job_title || '').toLowerCase();
+        const companyName = (job.companyName || job.company_name || '').toLowerCase();
+        const jobLocation = (job.jobLocation || job.job_location || '').toLowerCase();
         
         if (!jobTitle.includes(keyword) && 
             !companyName.includes(keyword) && 
@@ -131,7 +148,7 @@ export const useApiActions = () => {
         }
       }
       
-      // Minimum score filtering
+      // Minimum score filtering - more defensive approach
       if (filters.minScore > 0) {
         const score = job.score || job.matchScore || job.match_score || 0;
         if (score < filters.minScore) {
@@ -139,71 +156,104 @@ export const useApiActions = () => {
         }
       }
       
-      // Employment type filtering - 정규직, 계약직, 인턴 필터링 로직 업데이트
-      if (filters.employmentType && filters.employmentType.length > 0) {
-        const employmentType = getFieldValue(job, ['employmentType', 'employment_type']).toLowerCase();
-        
-        // 고용 형태가 없거나 선택된 고용 형태에 포함되지 않으면 필터링
-        if (employmentType === '' || !filters.employmentType.some(type => 
-          employmentType.includes(type.toLowerCase())
-        )) {
-          return false;
-        }
+      // Employment type filtering - simplified approach to avoid iteration errors
+      if (filters.employmentType && Array.isArray(filters.employmentType) && filters.employmentType.length > 0) {
+        // Check if any selected employment type matches
+        const matchesAny = filters.employmentType.some(type => matchesEmploymentType(job, type));
+        if (!matchesAny) return false;
       }
       
-      // Company type filtering
-      if (filters.companyType !== 'all') {
-        const companyType = getFieldValue(job, ['companyType', 'company_type']);
+      // Company type filtering - more robust approach
+      if (filters.companyType && filters.companyType !== 'all') {
+        const companyType = (job.companyType || job.company_type || '').toLowerCase();
         
-        // 선택된 카테고리에 맞는 회사 유형 배열 가져오기
-        const categoryTypes = COMPANY_CATEGORIES.find(
-          cat => cat.value === filters.companyType
-        )?.types || [];
+        if (!companyType) return false;
         
-        // 회사 유형이 선택된 카테고리에 포함되는지 확인
+        // Get category types more safely
+        const category = COMPANY_CATEGORIES.find(cat => cat.value === filters.companyType);
+        const categoryTypes = category?.types || [];
+        
         if (categoryTypes.length > 0) {
-          if (!categoryTypes.some(type => companyType.includes(type.toLowerCase()))) {
-            return false;
-          }
+          const matchesCategory = categoryTypes.some(type => 
+            companyType.includes(type.toLowerCase())
+          );
+          if (!matchesCategory) return false;
         } else if (filters.companyType === 'other') {
-          // '기타' 카테고리는 다른 모든 카테고리에 속하지 않는 경우
-          const allCategoryTypes = COMPANY_CATEGORIES.flatMap(cat => cat.types);
-          if (allCategoryTypes.some(type => companyType.includes(type.toLowerCase()))) {
-            return false;
-          }
+          // 'Other' category - doesn't match any defined categories
+          const allCategoryTypes = COMPANY_CATEGORIES.flatMap(cat => cat.types || []);
+          const matchesAnyCategory = allCategoryTypes.some(type => 
+            companyType.includes(type.toLowerCase())
+          );
+          if (matchesAnyCategory) return false;
         }
       }
       
-      // Job type filtering - 신입, 경력 필터링 로직 업데이트
-      if (filters.jobType && filters.jobType.length > 0) {
-        const jobType = getFieldValue(job, ['jobType', 'job_type']).toLowerCase();
+      // Job type filtering - simplified robust approach
+      if (filters.jobType && Array.isArray(filters.jobType) && filters.jobType.length > 0) {
+        // Get jobType safely
+        const jobTypeValue = job.jobType || '';
         
-        // 직무 유형이 없거나 선택된 직무 유형에 포함되지 않으면 필터링
-        if (jobType === '' || !filters.jobType.some(type => 
-          jobType.includes(type.toLowerCase())
-        )) {
-          return false;
-        }
+        if (!jobTypeValue) return false;
+        
+        // Simple includes check instead of iterating
+        const jobTypeLower = jobTypeValue.toLowerCase();
+        const matchesJobType = filters.jobType.some(type => 
+          jobTypeLower.includes(type.toLowerCase())
+        );
+        
+        if (!matchesJobType) return false;
       }
       
-      // Applicability filtering
+      // Applicability filtering - more defensive
       if (filters.onlyApplicable) {
         const isApplicable = job.apply_yn === 1 || job.isApplied === 1 || job.is_applied === 1;
-        if (!isApplicable) {
-          return false;
-        }
+        if (!isApplicable) return false;
       }
       
       return true;
     });
-  }, [recommendedJobs, filters, COMPANY_CATEGORIES, getFieldValue]);
+  }, [recommendedJobs, filters, COMPANY_CATEGORIES, matchesEmploymentType]);
 
-  // Update filters
+  // More robust filter update function
   const updateFilters = useCallback((newFilters: Partial<JobFilters>) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...newFilters
-    }));
+    setFilters(prevFilters => {
+      // Create a new object to avoid reference issues
+      const updatedFilters = { ...prevFilters };
+      
+      // Handle each filter type individually for safety
+      if ('keyword' in newFilters) {
+        updatedFilters.keyword = newFilters.keyword || '';
+      }
+      
+      if ('minScore' in newFilters) {
+        updatedFilters.minScore = newFilters.minScore || 0;
+      }
+      
+      if ('companyType' in newFilters) {
+        updatedFilters.companyType = newFilters.companyType || 'all';
+      }
+      
+      if ('salaryRange' in newFilters) {
+        updatedFilters.salaryRange = newFilters.salaryRange || 'all';
+      }
+      
+      if ('onlyApplicable' in newFilters) {
+        updatedFilters.onlyApplicable = !!newFilters.onlyApplicable;
+      }
+      
+      // Special handling for array types
+      if ('employmentType' in newFilters) {
+        updatedFilters.employmentType = Array.isArray(newFilters.employmentType) ? 
+          [...newFilters.employmentType] : [];
+      }
+      
+      if ('jobType' in newFilters) {
+        updatedFilters.jobType = Array.isArray(newFilters.jobType) ? 
+          [...newFilters.jobType] : [];
+      }
+      
+      return updatedFilters;
+    });
   }, []);
 
   // Reset filters
