@@ -1,5 +1,13 @@
 
-import { CACHE_KEYS } from '@/components/CacheDebugger';
+// Export CACHE_KEYS so it can be imported by other modules
+export const CACHE_KEYS = {
+  RECOMMENDED_JOBS: 'recommended-jobs-cache',
+  TEST_RESULT: 'test-result-cache',
+  AUTO_MATCHING: 'auto-matching-cache',
+  APPLY_RESULT: 'apply-result-cache',
+  SCROLL_POSITION: 'job-list-scroll-position',
+  SORT_ORDER: 'job-list-sort-order'
+};
 
 // Default cache TTL (30 minutes)
 export const DEFAULT_CACHE_TTL = 30 * 60 * 1000;

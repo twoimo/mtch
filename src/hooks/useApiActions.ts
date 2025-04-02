@@ -1,9 +1,7 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
   Job, 
-  JobFilters, 
   TestResultData, 
   AutoMatchingResponse, 
   ApplyResponse 
@@ -16,6 +14,17 @@ import {
   DEFAULT_CACHE_TTL,
   CACHE_KEYS 
 } from '@/utils/storage';
+
+// Export JobFilters interface so it can be imported
+export interface JobFilters {
+  keyword: string;
+  minScore: number;
+  employmentType: string[];
+  companyType: string;
+  jobType: string[];
+  salaryRange: string;
+  onlyApplicable: boolean;
+}
 
 // Default filters
 export const defaultFilters: JobFilters = {
