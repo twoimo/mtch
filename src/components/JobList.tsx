@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
 import { ArrowUp, ArrowDownUp } from 'lucide-react';
@@ -10,9 +11,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 
 interface Job {
   id: number;
@@ -48,15 +46,13 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   });
   const loaderRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const itemsPerPage = isMobile ? 10 : 15; // 모바일에서는 더 적은 항목 표시
+  const itemsPerPage = 15; // 성능을 위해 항목 수 증가
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
   const lastScrollTop = useRef(0);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
 
   // 디바운스 함수
-  const debounce = <F extends (...args: Parameters<F>) => ReturnType<F>>(
+  const debounce = <F extends (...args: any[]) => any>(
     func: F,
     wait: number
   ): ((...args: Parameters<F>) => void) => {
@@ -126,7 +122,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         localStorage.setItem(SCROLL_POSITION_KEY, window.scrollY.toString());
       }
     };
-  }, [jobs, sortedAllJobs, sortOrder, isInitialLoad, sortJobs, itemsPerPage]);
+  }, [jobs, sortedAllJobs, sortOrder, isInitialLoad, sortJobs]);
 
   // 정렬 순서가 변경될 때 실행
   useEffect(() => {
@@ -137,7 +133,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       // 정렬 설정 저장
       localStorage.setItem('job-list-sort-order', sortOrder);
     }
-  }, [sortOrder, page, jobs, sortJobs, itemsPerPage]);
+  }, [sortOrder, page, jobs, sortJobs]);
 
   // 추가 데이터 로드 함수 - useCallback으로 메모이제이션
   const loadMoreJobs = useCallback(() => {
@@ -156,8 +152,6 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   useEffect(() => {
     if (!loaderRef.current || isLoading) return;
     
-    const currentLoader = loaderRef.current;
-    
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
@@ -168,11 +162,12 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       { threshold: 0.1, rootMargin: '100px' }
     );
 
-    observer.observe(currentLoader);
+    observer.observe(loaderRef.current);
     
     return () => {
-      // Use captured reference to avoid the issue with currentLoader changing
-      observer.unobserve(currentLoader);
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
     };
   }, [loadMoreJobs, isLoading, scrollDirection]);
 
@@ -201,49 +196,9 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 모바일 터치 이벤트 처리
-  useEffect(() => {
-    if (!isMobile) return;
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      setTouchStartY(e.touches[0].clientY);
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      if (touchStartY === null) return;
-      
-      const touchY = e.touches[0].clientY;
-      const diff = touchStartY - touchY;
-      
-      // 스크롤 방향 감지 (더 민감하게)
-      if (diff > 5) {
-        setScrollDirection('down');
-      } else if (diff < -5) {
-        setScrollDirection('up');
-      }
-    };
-    
-    const handleTouchEnd = () => {
-      setTouchStartY(null);
-    };
-    
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleTouchEnd, { passive: true });
-    
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile, touchStartY]);
-
   // 페이지 상단으로 스크롤
   const scrollToTop = () => {
-    window.scrollTo({ 
-      top: 0, 
-      behavior: isMobile ? 'auto' : 'smooth' // 모바일에서는 즉시 스크롤
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // 정렬 순서 변경
@@ -254,21 +209,21 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   // 로딩 중인 경우 스켈레톤 UI 표시 - 최적화된 렌더링
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:gap-4 grid-cols-1">
-        {Array(isMobile ? 2 : 3).fill(0).map((_, index) => (
-          <Card key={index} className="mb-3 sm:mb-4">
+      <div className="grid gap-4 grid-cols-1">
+        {Array(3).fill(0).map((_, index) => (
+          <Card key={index} className="mb-4">
             <CardHeader className="pb-2">
-              <Skeleton className="h-5 sm:h-6 w-3/4 mb-2" />
-              <Skeleton className="h-3 sm:h-4 w-1/2" />
+              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-1/2" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-3 sm:h-4 w-full mb-2" />
-              <Skeleton className="h-3 sm:h-4 w-full mb-2" />
-              <Skeleton className="h-3 sm:h-4 w-3/4 mb-2" />
-              <Skeleton className="h-16 sm:h-20 w-full mb-2" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-20 w-full mb-2" />
             </CardContent>
             <CardFooter>
-              <Skeleton className="h-3 sm:h-4 w-1/3" />
+              <Skeleton className="h-4 w-1/3" />
             </CardFooter>
           </Card>
         ))}
@@ -278,29 +233,26 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
 
   if (!jobs || jobs.length === 0) {
     return (
-      <div className="text-center py-6 sm:py-10 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="text-gray-500 text-sm sm:text-lg">표시할 채용 정보가 없습니다.</div>
-        <div className="text-gray-400 text-xs sm:text-sm mt-2">새로운 추천 채용 정보를 가져오려면 '추천 채용 정보 가져오기' 버튼을 클릭하세요.</div>
+      <div className="text-center py-10 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="text-gray-500 text-lg">표시할 채용 정보가 없습니다.</div>
+        <div className="text-gray-400 text-sm mt-2">새로운 추천 채용 정보를 가져오려면 '추천 채용 정보 가져오기' 버튼을 클릭하세요.</div>
       </div>
     );
   }
 
   return (
     <div className="relative" ref={listRef}>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2 sm:gap-0">
-        <div className="text-base sm:text-lg font-semibold">
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-semibold">
           총 <span className="text-blue-600">{jobs.length}</span>개의 추천 채용정보
         </div>
-        <div className="flex items-center w-full sm:w-auto">
+        <div className="flex items-center">
           <div className="flex items-center mr-2">
-            <ArrowDownUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-gray-500" />
-            <span className="text-xs sm:text-sm text-gray-600">정렬:</span>
+            <ArrowDownUp className="h-4 w-4 mr-1 text-gray-500" />
+            <span className="text-sm text-gray-600">정렬:</span>
           </div>
           <Select value={sortOrder} onValueChange={handleSortChange}>
-            <SelectTrigger className={cn(
-              "w-full sm:w-[150px]", 
-              isMobile ? "h-9 text-sm" : "h-8"
-            )}>
+            <SelectTrigger className="w-[150px] h-8">
               <SelectValue placeholder="정렬 기준" />
             </SelectTrigger>
             <SelectContent>
@@ -311,17 +263,15 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1">
+      <div className="grid gap-4 grid-cols-1">
         {displayedJobs.map((job, index) => (
           <div 
             key={job.id} 
-            className={cn(
-              "transition-all duration-300",
-              index >= (page - 1) * itemsPerPage ? 'opacity-0 animate-fade-in' : '',
-              isMobile && "content-visibility-auto"
-            )}
+            className={`transition-all duration-300 ${
+              index >= (page - 1) * itemsPerPage ? 'opacity-0 animate-fade-in' : ''
+            }`}
             style={{ 
-              animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.3)}s`, 
+              animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
               animationFillMode: 'forwards',
               willChange: 'opacity, transform' // 성능 최적화
             }}
@@ -335,30 +285,25 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       {displayedJobs.length < jobs.length && (
         <div 
           ref={loaderRef} 
-          className="w-full h-16 sm:h-20 flex items-center justify-center my-3 sm:my-4"
+          className="w-full h-20 flex items-center justify-center my-4"
         >
-          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       )}
       
-      {/* 페이지 상단으로 이동 버튼 - 모바일 최적화 */}
+      {/* 페이지 상단으로 이동 버튼 - 최적화된 렌더링 */}
       {showScrollTop && (
-        <Button
+        <button
           onClick={scrollToTop}
-          className={cn(
-            "fixed p-2 sm:p-3 bg-blue-500 text-white rounded-full shadow-lg",
-            "hover:bg-blue-600 transition-all duration-300 z-50",
-            "touch-target no-tap-highlight",
-            isMobile ? "bottom-20 right-4 h-10 w-10" : "bottom-8 right-8"
-          )}
+          className="fixed bottom-8 right-8 p-3 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 z-50"
           aria-label="페이지 상단으로 이동"
         >
-          <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
+          <ArrowUp className="h-5 w-5" />
+        </button>
       )}
       
       {/* 로드된 항목 수 표시 */}
-      <div className="text-center text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
+      <div className="text-center text-sm text-gray-500 mt-4">
         {displayedJobs.length}개 표시 중 (총 {jobs.length}개)
       </div>
     </div>
