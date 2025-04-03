@@ -2,7 +2,7 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command, Calendar } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info, BookmarkCheck, Command, Calendar, Menu, Moon, Sun, RotateCw } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -17,17 +17,28 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import BookmarkList from '@/components/BookmarkList';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useTheme } from '@/lib/theme-context';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle,
+  SheetFooter 
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import BottomNav from '@/components/mobile/BottomNav';
 
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
 const Index = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [bookmarkCount, setBookmarkCount] = useState(0);
-  const { isOpen, setIsOpen } = useCommandPalette();
+  const { toggle: toggleCommandPalette } = useCommandPalette();
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
   
   const {
     testResult,
@@ -75,13 +86,7 @@ const Index = () => {
   };
 
   const triggerCommandPalette = () => {
-    const event = new KeyboardEvent('keydown', {
-      key: 'k',
-      code: 'KeyK',
-      ctrlKey: true,
-      bubbles: true
-    });
-    document.dispatchEvent(event);
+    toggleCommandPalette();
   };
 
   useEffect(() => {
@@ -168,70 +173,148 @@ const Index = () => {
   }, [autoFetchEnabled, recommendedJobs.length, isRecommendedLoading, handleGetRecommendedJobs]);
 
   return (
-    <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
-      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
-            <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
+    <div className={cn(
+      "container mx-auto py-3 px-3 min-h-screen flex flex-col",
+      "sm:py-6 sm:px-4 safe-top safe-bottom"
+    )}>
+      <header className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
+              <Badge variant="outline" className="ml-1 sm:ml-2 bg-primary/10">v1.2.0</Badge>
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              사람인 채용 정보 자동화 시스템
+            </p>
           </div>
-          <p className="text-muted-foreground mt-1">
-            사람인 채용 정보 자동화 시스템
-          </p>
+          
+          {isMobile && (
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setMenuOpen(true)}
+              className="sm:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex items-center space-x-2 mr-2">
-            <Switch
-              id="auto-fetch"
-              checked={autoFetchEnabled}
-              onCheckedChange={toggleAutoFetch}
-            />
-            <Label htmlFor="auto-fetch" className="text-sm">
-              자동 조회
-            </Label>
-          </div>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+        {isMobile ? (
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetContent side="right" className="w-[240px] sm:w-[320px]">
+              <SheetHeader>
+                <SheetTitle>설정</SheetTitle>
+              </SheetHeader>
+              <div className="py-4 flex flex-col space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="mobile-auto-fetch"
+                    checked={autoFetchEnabled}
+                    onCheckedChange={toggleAutoFetch}
+                  />
+                  <Label htmlFor="mobile-auto-fetch">자동 조회</Label>
+                </div>
+                
+                <div className="flex flex-col space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={triggerCommandPalette}
+                  >
+                    <Command className="h-4 w-4 mr-2" />
+                    명령어 팔레트
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
+                      <Icons.gitHub className="h-4 w-4 mr-2" />
+                      GitHub 저장소
+                    </a>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  >
+                    <div className="flex items-center">
+                      {theme === "dark" ? <Moon className="h-4 w-4 mr-2" /> : <Sun className="h-4 w-4 mr-2" />}
+                      {theme === "dark" ? "다크 모드" : "라이트 모드"}
+                    </div>
+                    <RotateCw className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <SheetFooter>
                 <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={triggerCommandPalette}
+                  variant="ghost" 
+                  onClick={() => setMenuOpen(false)}
                 >
-                  <Command className="h-4 w-4" />
+                  닫기
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>명령어 팔레트 (단축키: Ctrl+K)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" asChild>
-                  <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
-                    <Icons.gitHub className="h-4 w-4" />
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>GitHub 저장소 방문</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <ThemeToggle />
-        </div>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center space-x-2 mr-2">
+              <Switch
+                id="auto-fetch"
+                checked={autoFetchEnabled}
+                onCheckedChange={toggleAutoFetch}
+              />
+              <Label htmlFor="auto-fetch" className="text-sm">
+                자동 조회
+              </Label>
+            </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={triggerCommandPalette}
+                  >
+                    <Command className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>명령어 팔레트 (단축키: Ctrl+K)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" asChild>
+                    <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
+                      <Icons.gitHub className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>GitHub 저장소 방문</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <ThemeToggle />
+          </div>
+        )}
       </header>
       
       {isAnyLoading && (
-        <div className="mb-6 w-full">
-          <div className="flex justify-between items-center mb-2 text-sm">
+        <div className="mb-4 sm:mb-6 w-full">
+          <div className="flex justify-between items-center mb-2 text-xs sm:text-sm">
             <span className="text-muted-foreground">
               {isTestLoading ? '사람인 스크래핑 중...' : 
                isRecommendedLoading ? '추천 채용 정보 가져오는 중...' : 
@@ -240,17 +323,17 @@ const Index = () => {
             </span>
             <span className="font-mono">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-2 animate-pulse" />
+          <Progress value={progress} className="h-1.5 sm:h-2 animate-pulse" />
         </div>
       )}
       
-      <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-xl gap-2">
-            <Info className="h-5 w-5 text-primary" />
+      <Card className="mb-4 sm:mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="flex items-center text-lg sm:text-xl gap-2">
+            <Info className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             API 작업
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
           </CardDescription>
         </CardHeader>
@@ -276,45 +359,48 @@ const Index = () => {
           onValueChange={setActiveTab}
           className="w-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="jobs" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span>채용 정보</span>
-              {filteredJobs && filteredJobs.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {filteredJobs.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>캘린더</span>
-            </TabsTrigger>
-            
-            <TabsTrigger value="bookmarks" className="flex items-center gap-2">
-              <BookmarkCheck className="h-4 w-4" />
-              <span>북마크</span>
-              {bookmarkCount > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {bookmarkCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            
-            <TabsTrigger value="console" className="flex items-center gap-2">
-              <Terminal className="h-4 w-4" />
-              <span>콘솔 출력</span>
-              {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          {/* Hide tabs on mobile devices since we have bottom navigation */}
+          {!isMobile && (
+            <TabsList className="grid mb-4 w-full grid-cols-4">
+              <TabsTrigger value="jobs" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                <span>채용 정보</span>
+                {filteredJobs && filteredJobs.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {filteredJobs.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              
+              <TabsTrigger value="calendar" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>캘린더</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+                <BookmarkCheck className="h-4 w-4" />
+                <span>북마크</span>
+                {bookmarkCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {bookmarkCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              
+              <TabsTrigger value="console" className="flex items-center gap-2">
+                <Terminal className="h-4 w-4" />
+                <span>콘솔 출력</span>
+                {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          )}
           
           <TabsContent value="jobs" className="mt-0">
-            <div className="pb-8">
+            <div className="pb-6 sm:pb-8 content-visibility-auto">
               <JobsTab 
                 jobs={recommendedJobs || []}
                 filteredJobs={filteredJobs || []}
@@ -326,7 +412,7 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="calendar" className="mt-0">
-            <div className="pb-8">
+            <div className="pb-6 sm:pb-8 content-visibility-auto">
               <CalendarTab 
                 jobs={recommendedJobs || []}
                 filteredJobs={filteredJobs || []}
@@ -335,13 +421,13 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="bookmarks" className="mt-0">
-            <div className="pb-8">
+            <div className="pb-6 sm:pb-8 content-visibility-auto">
               <BookmarkList />
             </div>
           </TabsContent>
           
           <TabsContent value="console" className="mt-0">
-            <div className="pb-8">
+            <div className="pb-6 sm:pb-8 content-visibility-auto">
               <ConsoleTab 
                 testResult={testResult}
                 recommendedJobs={recommendedJobs || []}
@@ -353,18 +439,30 @@ const Index = () => {
         </Tabs>
       </div>
       
-      <footer className="mt-12 py-4 border-t border-border/60 text-sm text-muted-foreground">
+      <footer className={cn(
+        "mt-8 sm:mt-12 py-3 sm:py-4 border-t border-border/60", 
+        "text-xs sm:text-sm text-muted-foreground"
+      )}>
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
           <div>
             © 2023 채용 정보 대시보드 - 모든 권리 보유
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <a href="#" className="hover:text-primary transition-colors">이용약관</a>
             <a href="#" className="hover:text-primary transition-colors">개인정보처리방침</a>
             <a href="#" className="hover:text-primary transition-colors">도움말</a>
           </div>
         </div>
       </footer>
+      
+      {isMobile && (
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          bookmarkCount={bookmarkCount}
+          consoleCount={[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
+        />
+      )}
       
       <Toaster />
     </div>

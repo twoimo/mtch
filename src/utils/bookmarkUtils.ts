@@ -1,45 +1,65 @@
+// Define more specific types instead of using any
 
-// Define the BookmarkedJob type
-export interface BookmarkedJob {
+// Base interface with common properties
+interface BaseJob {
   id: number;
   score: number;
-  reason: string;
-  strength: string;
-  weakness: string;
-  apply_yn: number;
+  reason?: string;
+  strength?: string;
+  weakness?: string;
+  apply_yn?: number;
   companyName: string;
   jobTitle: string;
-  jobLocation: string;
-  companyType: string;
+  jobLocation?: string;
+  companyType?: string;
   url: string;
-  salary?: string;
   deadline?: string;
+  matchScore?: number;
+  isApplied?: number;
+  isRecommended?: number;
+  jobType?: string;
+  jobSalary?: string;
+  employmentType?: string;
+  createdAt?: string;
+  isGptChecked?: number;
+  salary?: string;
   experience?: string;
   education?: string;
   position?: string;
   required_skills?: string[];
   preferred_skills?: string[];
-  employmentType?: string;
-  bookmarkedAt: Date;
 }
 
-const BOOKMARK_KEY = 'saramin-bookmarked-jobs';
+// Define the BookmarkedJob type
+export interface BookmarkedJob extends BaseJob {
+  bookmarkedAt: string;
+  // Allow additional properties that may be added during runtime
+  [key: string]: unknown;
+}
+
+// Job type for adding bookmarks
+export interface Job extends BaseJob {
+  // Allow additional properties that may be added during runtime
+  [key: string]: unknown;
+}
+
+// Add this constant at the top
+export const BOOKMARK_KEY = 'saramin-bookmarked-jobs';
 
 /**
  * 북마크 추가
  */
-export const addBookmark = (job: Omit<BookmarkedJob, 'bookmarkedAt'>) => {
-  const bookmarks = getBookmarkedJobs();
-  
-  // 중복 체크
-  if (bookmarks.some(bookmark => bookmark.id === job.id)) {
+export const addBookmark = (job: Job): boolean => {
+  // 이미 북마크된 경우 추가하지 않음
+  if (isBookmarked(job.id)) {
     return false;
   }
   
-  // 북마크 추가 (현재 시간을 북마크 시간으로 저장)
+  // 신규 북마크 추가
+  const bookmarks = getBookmarkedJobs();
   const newBookmark: BookmarkedJob = {
     ...job,
-    bookmarkedAt: new Date()
+    bookmarkedAt: new Date().toISOString()
   };
   
   bookmarks.push(newBookmark);
@@ -106,7 +126,7 @@ export const isBookmarked = (jobId: number): boolean => {
 /**
  * 북마크 토글 (추가/제거)
  */
-export const toggleBookmark = (job: any): boolean => {
+export const toggleBookmark = (job: Job): boolean => {
   if (isBookmarked(job.id)) {
     return removeBookmark(job.id);
   } else {

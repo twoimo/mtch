@@ -1,8 +1,21 @@
+/*
+ * Tailwind CSS directives
+ * VSCode CSS validation is disabled via settings.json
+ * The following code is valid when processed by the Tailwind compiler
+ */
 
+/* stylelint-disable at-rule-no-unknown */
+/* csslint ignore:start */
+/* postcss-ignore-start */
+/* CSS VALIDATION TURNED OFF FOR THIS FILE */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable */
+/* csslint ignore:end */
+/* postcss-ignore-end */
 
+/* Define theme variables using standard CSS */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -111,56 +124,69 @@
   }
 }
 
+/* Apply base styles using Tailwind directives */
 @layer base {
   * {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply border-border;
   }
 
   body {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
+/* Define component utilities using Tailwind directives */
 @layer components {
   .text-balance {
     text-wrap: balance;
   }
   
   .card-hover-effect {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
   
   .glass-effect {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-white/70 backdrop-blur-sm dark:bg-gray-900/80;
   }
   
   .focus-ring {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
   
   /* 새로운 컴포넌트 클래스 추가 */
   .filter-badge {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition-colors;
   }
   
   .active-filter-badge {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-primary/10 text-primary-foreground ring-primary/30 dark:bg-primary/20;
   }
   
   .chip {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors;
   }
   
   .chip-primary {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-primary/10 text-primary-foreground;
   }
   
   .chip-secondary {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-secondary text-secondary-foreground;
   }
   
   .hover-lift {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
   }
   
@@ -174,10 +200,12 @@
   }
   
   .scrollbar-thin::-webkit-scrollbar-track {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-transparent;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb {
+    /* CSS linter: ignore the following line - Tailwind directive */
     @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50;
   }
   
@@ -220,6 +248,120 @@
   .animate-scale-in {
     animation: scale-in 0.2s ease-out forwards;
     will-change: opacity, transform;
+  }
+  
+  /* Mobile optimization classes */
+  .touch-target {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply min-h-[44px] min-w-[44px]; /* Ensure minimum touch target size */
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  .mobile-container {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply px-3 py-2 sm:px-4 sm:py-4;
+  }
+  
+  .mobile-card {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply rounded-lg border shadow-sm transition-all duration-200;
+  }
+  
+  /* Improved scrolling for touch devices */
+  .momentum-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  /* Tap highlight adjustments for mobile */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Mobile-friendly grid layouts */
+  .mobile-grid {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4;
+  }
+  
+  /* Compact versions of components for mobile */
+  .mobile-compact {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply text-sm py-1.5 px-2 sm:text-base sm:py-2 sm:px-3;
+  }
+  
+  /* Bottom navigation for mobile */
+  .mobile-bottom-nav {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply fixed bottom-0 left-0 right-0 bg-background border-t border-border 
+      flex items-center justify-around py-2 z-50 safe-bottom;
+  }
+  
+  .mobile-bottom-nav-item {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply flex flex-col items-center justify-center px-2 py-1 touch-target no-tap-highlight;
+  }
+  
+  /* Faster animations for mobile (perception of speed) */
+  .mobile-animate {
+    transition-duration: 200ms;
+  }
+}
+
+/* Optimize animations for mobile devices */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Conditional media queries for mobile devices */
+@media (max-width: 767px) {
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Larger touch targets on mobile */
+  .btn, button, .interactive {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved focus states for touch */
+  input:focus, button:focus, a:focus, [tabindex]:focus {
+    /* CSS linter: ignore the following line - Tailwind directive */
+    @apply outline-none ring-2 ring-primary;
+  }
+}
+
+/* Optimize loading performance on mobile */
+@media (max-width: 767px) {
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+  
+  /* Reduce animations on low-power devices */
+  @media (prefers-reduced-motion), (update: slow) {
+    .reduce-animation {
+      animation: none !important;
+      transition: none !important;
+    }
   }
 }
 

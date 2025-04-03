@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Tooltip,
   TooltipContent,
@@ -48,7 +49,8 @@ interface CalendarTabProps {
   filteredJobs: Job[];
 }
 
-const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
+const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -106,29 +108,23 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
     return jobsByDate[dateKey] || [];
   }, [jobsByDate, selectedDate]);
   
-  // 특정 날짜의 채용 정보 수 가져오기
-  const getJobCountForDate = (date: Date): number => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    return (jobsByDate[dateKey] || []).length;
-  };
-  
   return (
     <div className="space-y-6">
       <Card className="border-t-4 border-t-primary shadow-sm">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <CardTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5 text-primary" />
               <span>채용 마감일 캘린더</span>
             </CardTitle>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="gap-2 h-8"
+                    className="gap-2 h-8 flex-grow sm:flex-grow-0"
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
                     <span>{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
@@ -172,8 +168,8 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
           </div>
         </CardHeader>
         
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1 text-center text-sm mb-1">
+        <CardContent className={isMobile ? "px-1 py-2" : ""}>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs sm:text-sm mb-1">
             {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
               <div 
                 key={day} 
@@ -187,7 +183,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
             {(() => {
               const monthStart = startOfMonth(currentDate);
               const monthEnd = endOfMonth(currentDate);
@@ -208,7 +204,10 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                 <>
                   {/* 이전 달 빈 칸 */}
                   {prevBlankCells.map((_, index) => (
-                    <div key={`prev-${index}`} className="h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div 
+                      key={`prev-${index}`} 
+                      className="h-8 sm:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" 
+                    />
                   ))}
                   
                   {/* 이번 달 날짜 */}
@@ -222,9 +221,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                       <div
                         key={dateKey}
                         className={cn(
-                          "h-[140px] p-1 border border-border/40 rounded-md transition-all duration-200",
+                          "h-8 sm:h-[140px] p-1 border border-border/40 rounded-md transition-all duration-200",
                           isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
-                          isSelected ? "ring-2 ring-primary ring-offset-2" : "",
+                          isSelected ? "ring-1 ring-primary sm:ring-2 ring-offset-0 sm:ring-offset-2" : "",
                           "flex flex-col cursor-pointer"
                         )}
                         onClick={() => setSelectedDate(day)}
@@ -232,7 +231,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                         <div className="flex justify-between items-start">
                           <span
                             className={cn(
-                              "inline-block h-6 w-6 rounded-full text-center leading-6 text-sm font-medium",
+                              "inline-flex items-center justify-center h-4 w-4 sm:h-6 sm:w-6 rounded-full text-center text-xs sm:text-sm font-medium",
                               isToday(day) ? "bg-primary text-primary-foreground" : "",
                               day.getDay() === 0 ? "text-red-500" : day.getDay() === 6 ? "text-blue-500" : ""
                             )}
@@ -247,8 +246,8 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                                   <Badge 
                                     variant="secondary" 
                                     className={cn(
-                                      "h-5 min-w-5 flex items-center justify-center rounded-full text-xs",
-                                      "bg-primary/20"
+                                      "h-3 sm:h-5 min-w-3 sm:min-w-5 flex items-center justify-center rounded-full text-[8px] sm:text-xs",
+                                      "bg-primary/20 px-0.5 sm:px-1"
                                     )}
                                   >
                                     {jobCount}
@@ -262,8 +261,8 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                           )}
                         </div>
                         
-                        {/* 채용 정보 미리보기 (최대 3개) */}
-                        <div className="mt-1 space-y-0.5 overflow-y-auto flex-grow">
+                        {/* 채용 정보 미리보기 (최대 3개) - 모바일에서는 숨김 */}
+                        <div className="mt-1 space-y-0.5 overflow-y-auto flex-grow hidden sm:block">
                           {jobsForDay.slice(0, 3).map(job => (
                             <div 
                               key={job.id} 
@@ -285,7 +284,10 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                   
                   {/* 다음 달 빈 칸 */}
                   {nextBlankCells.map((_, index) => (
-                    <div key={`next-${index}`} className="h-[140px] border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div 
+                      key={`next-${index}`} 
+                      className="h-8 sm:h-[140px] border border-border/40 bg-muted/20 rounded-md opacity-50" 
+                    />
                   ))}
                 </>
               );
