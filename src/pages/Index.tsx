@@ -2,10 +2,11 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command, Calendar } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
+import CalendarTab from '@/components/tabs/CalendarTab';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
@@ -26,7 +27,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [bookmarkCount, setBookmarkCount] = useState(0);
-  const { isOpen, open: openCommandPalette } = useCommandPalette();
+  const { isOpen, setIsOpen } = useCommandPalette();
   
   const {
     testResult,
@@ -69,6 +70,20 @@ const Index = () => {
     return savedSetting === null ? true : savedSetting === 'true';
   });
 
+  const toggleAutoFetch = () => {
+    setAutoFetchEnabled(prev => !prev);
+  };
+
+  const triggerCommandPalette = () => {
+    const event = new KeyboardEvent('keydown', {
+      key: 'k',
+      code: 'KeyK',
+      ctrlKey: true,
+      bubbles: true
+    });
+    document.dispatchEvent(event);
+  };
+
   useEffect(() => {
     const updateBookmarkCount = () => {
       const bookmarks = getBookmarkedJobs();
@@ -89,10 +104,6 @@ const Index = () => {
       window.removeEventListener('bookmarks-changed', handleStorageChange);
     };
   }, []);
-
-  const toggleAutoFetch = () => {
-    setAutoFetchEnabled(prev => !prev);
-  };
 
   useEffect(() => {
     let interval: number | undefined;
@@ -188,7 +199,7 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => openCommandPalette()}
+                  onClick={triggerCommandPalette}
                 >
                   <Command className="h-4 w-4" />
                 </Button>
@@ -265,7 +276,7 @@ const Index = () => {
           onValueChange={setActiveTab}
           className="w-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
@@ -274,6 +285,11 @@ const Index = () => {
                   {filteredJobs.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>캘린더</span>
             </TabsTrigger>
             
             <TabsTrigger value="bookmarks" className="flex items-center gap-2">
@@ -305,6 +321,15 @@ const Index = () => {
                 filters={safeFilters}
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="mt-0">
+            <div className="pb-8">
+              <CalendarTab 
+                jobs={recommendedJobs || []}
+                filteredJobs={filteredJobs || []}
               />
             </div>
           </TabsContent>

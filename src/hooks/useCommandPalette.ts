@@ -38,28 +38,23 @@ export function useCommandPalette() {
       }
     };
     
-    // 커스텀 이벤트 (다른 컴포넌트에서 명령어 팔레트 열기)
-    const handleOpenCommand = () => {
-      open();
-    };
+    // 문서 이벤트 리스너 (전역 이벤트)
+    document.addEventListener('keydown', handleKeyDown);
     
-    // 창 메시지 이벤트 (다른 컴포넌트에서 명령어 팔레트 토글)
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'TOGGLE_COMMAND_PALETTE') {
+    // 단축키 커스텀 이벤트를 위한 리스너 추가
+    const handleCustomKeyEvent = (event: Event) => {
+      if (event instanceof KeyboardEvent && (event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
         toggle();
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('open-command-palette', handleOpenCommand as EventListener);
-    window.addEventListener('message', handleMessage);
+    document.addEventListener('keydown', handleCustomKeyEvent);
     
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('open-command-palette', handleOpenCommand as EventListener);
-      window.removeEventListener('message', handleMessage);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleCustomKeyEvent);
     };
-  }, [open, close, toggle, isOpen]);
+  }, [toggle, close, isOpen]);
   
   return { isOpen, setIsOpen, open, close, toggle };
 }
