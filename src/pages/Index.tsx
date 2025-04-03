@@ -188,10 +188,7 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openCommandPalette();
-                  }}
+                  onClick={() => openCommandPalette()}
                 >
                   <Command className="h-4 w-4" />
                 </Button>

@@ -7,6 +7,7 @@ import { useApiActions } from '@/hooks/useApiActions';
 import { Bookmark, Command as CommandIcon, Search, BookmarkPlus } from 'lucide-react';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 import { clearAllCache } from '@/utils/storage';
+import { DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -75,6 +76,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
   
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">명령어 팔레트</DialogTitle>
+      <DialogDescription className="sr-only">명령어를 입력하거나 검색하세요</DialogDescription>
       <Command className="rounded-lg border shadow-md">
         <CommandInput placeholder="명령어를 입력하거나 검색하세요..." />
         <CommandList>
