@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -178,23 +179,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                       </Tooltip>
                     </TooltipProvider>
                     
-                    {bookmarked && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge 
-                              className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                            >
-                              <BookmarkCheck className="h-3 w-3 mr-1 inline" />
-                              북마크됨
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>이 채용공고는 북마크되었습니다</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+                    {/* 북마크 배지 제거 (나중에 맨 아래 버튼 옆에 표시할 예정) */}
                   </div>
                   
                   <div className="flex gap-2">
@@ -335,6 +320,25 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
               </div>
               
               <div className="flex items-center gap-2">
+                {/* 북마크 표시를 왼쪽에 배치 */}
+                {bookmarked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                        >
+                          <BookmarkCheck className="h-3 w-3 mr-1 inline" />
+                          북마크됨
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>이 채용공고는 북마크되었습니다</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
                 <button
                   onClick={(e) => {
                     e.preventDefault();

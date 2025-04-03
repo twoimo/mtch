@@ -51,12 +51,12 @@ export function useCommandPalette() {
     };
     
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('open-command-palette', handleOpenCommand);
+    window.addEventListener('open-command-palette', handleOpenCommand as EventListener);
     window.addEventListener('message', handleMessage);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('open-command-palette', handleOpenCommand);
+      window.removeEventListener('open-command-palette', handleOpenCommand as EventListener);
       window.removeEventListener('message', handleMessage);
     };
   }, [open, close, toggle, isOpen]);

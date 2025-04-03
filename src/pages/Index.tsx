@@ -18,14 +18,15 @@ import { Label } from '@/components/ui/label';
 import BookmarkList from '@/components/BookmarkList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const { isOpen, open: openCommandPalette } = useCommandPalette();
   
   const {
     testResult,
@@ -91,13 +92,6 @@ const Index = () => {
 
   const toggleAutoFetch = () => {
     setAutoFetchEnabled(prev => !prev);
-  };
-
-  const openCommandPalette = () => {
-    const event = new CustomEvent('open-command-palette');
-    window.dispatchEvent(event);
-    
-    window.postMessage({ type: 'TOGGLE_COMMAND_PALETTE' }, '*');
   };
 
   useEffect(() => {
@@ -191,7 +185,14 @@ const Index = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={openCommandPalette}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openCommandPalette();
+                  }}
+                >
                   <Command className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
