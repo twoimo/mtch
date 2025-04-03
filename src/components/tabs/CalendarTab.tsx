@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -223,7 +222,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                       <div
                         key={dateKey}
                         className={cn(
-                          "h-20 p-1 border border-border/40 rounded-md transition-all duration-200",
+                          "h-[140px] p-1 border border-border/40 rounded-md transition-all duration-200",
                           isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
                           isSelected ? "ring-2 ring-primary ring-offset-2" : "",
                           "flex flex-col cursor-pointer"
@@ -263,9 +262,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                           )}
                         </div>
                         
-                        {/* 채용 정보 미리보기 (최대 2개) */}
-                        <div className="mt-1 space-y-0.5 overflow-hidden">
-                          {jobsForDay.slice(0, 2).map(job => (
+                        {/* 채용 정보 미리보기 (최대 3개) */}
+                        <div className="mt-1 space-y-0.5 overflow-y-auto flex-grow">
+                          {jobsForDay.slice(0, 3).map(job => (
                             <div 
                               key={job.id} 
                               className="text-xs truncate rounded px-1 py-0.5 bg-accent/20"
@@ -274,9 +273,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                               {job.companyName}
                             </div>
                           ))}
-                          {jobCount > 2 && (
+                          {jobCount > 3 && (
                             <div className="text-xs text-muted-foreground px-1">
-                              +{jobCount - 2}개 더보기
+                              +{jobCount - 3}개 더보기
                             </div>
                           )}
                         </div>
@@ -286,7 +285,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                   
                   {/* 다음 달 빈 칸 */}
                   {nextBlankCells.map((_, index) => (
-                    <div key={`next-${index}`} className="h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div key={`next-${index}`} className="h-[140px] border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                 </>
               );
