@@ -6,6 +6,7 @@ import {
   AutoMatchingResponse, 
   ApplyResponse 
 } from '@/types/api';
+import recommendedJobsData from '@/components/recommended-jobs.json';
 
 /**
  * API Service for communicating with the main service
@@ -121,52 +122,11 @@ class ApiService {
   
   /**
    * Provides fallback data when API fails
-   * @returns Mock recommended jobs response
+   * @returns Recommended jobs from JSON file
    */
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
-    console.info('Using fallback data (not actual API data)');
-    return { 
-      success: true,
-      message: 'This is fallback data, not an actual API response.',
-      recommendedJobs: [
-        {
-          id: 826,
-          score: 98,
-          reason: "AI 개발자 직무와 기술 스택이 완벽히 일치. 중소기업에 관심 산업에 속함.",
-          strength: "딥러닝, 머신러닝, 컴퓨터 비전 경험이 풍부. 연구 경력도 우수.",
-          weakness: "경력 3년 이상 요구사항이 있지만, 석사 연구 경력 2년으로 부족.",
-          apply_yn: 1,
-          companyName: "이지케어텍(주)",
-          jobTitle: "[의료IT 1위 이지케어텍] AI 개발자 채용",
-          jobLocation: "서울 중구",
-          companyType: "코스닥, 중소기업, 주식회사, 병역특례 인증업체",
-          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=49964277",
-          deadline: "2025.04.06 18:00",
-          jobSalary: "면접 후 결정",
-          jobType: "경력(년수무관)",
-          employmentType: "정규직"
-        },
-        {
-          id: 36,
-          score: 95,
-          reason: "AI 연구원 직무로 기술 스택이 일치하며, 경력 요구사항도 부합, 대기업 및 관심 산업",
-          strength: "AI, 머신러닝, 딥러닝, 컴퓨터 비전 관련 기술 스택이 풍부하며, 연구 및 개발 경험이 있습니다.",
-          weakness: "해외 대학 석/박사 또는 Postdoc 재학/졸업(예정)자만 지원 가능",
-          apply_yn: 1,
-          companyName: "(주)엘지씨엔에스",
-          jobTitle: "2025년 상반기 Global 해외 석/박사 채용",
-          jobLocation: "서울 강서구, 서울전체",
-          companyType: "코스피, 대기업, 1000대기업, 외부감사법인, 수출입 기업",
-          url: "https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=list&rec_idx=50226248",
-          deadline: "2025.03.31 18:00",
-          jobSalary: "면접 후 결정",
-          jobType: "신입",
-          employmentType: "정규직",
-          isRecommended: 1,
-          matchScore: 95
-        }
-      ]
-    };
+    console.info('Using fallback data from recommended-jobs.json file');
+    return recommendedJobsData as RecommendedJobsResponse;
   }
 
   /**
