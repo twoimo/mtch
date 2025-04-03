@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 // 채용 정보 인터페이스
 interface Job {
@@ -49,28 +48,20 @@ interface CalendarTabProps {
   filteredJobs: Job[];
 }
 
-// 캘린더 구현을 위한 상수
-const DAYS_OF_WEEK = ['일', '월', '화', '수', '목', '금', '토'];
-
-const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs }) => {
-  const isMobile = useIsMobile();
+const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // 캘린더 월 변경 핸들러 - 메모이제이션
-  const handlePreviousMonth = useCallback(() => {
+  // 월 변경 핸들러
+  const handlePreviousMonth = () => {
     setCurrentDate(prevDate => subMonths(prevDate, 1));
-  }, []);
+  };
   
-  const handleNextMonth = useCallback(() => {
+  const handleNextMonth = () => {
     setCurrentDate(prevDate => addMonths(prevDate, 1));
-  }, []);
+  };
   
-  // 모바일 최적화를 위한 상수
-  const mobileDayHeight = isMobile ? 'h-[100px]' : 'h-[140px]';
-  const gridGap = isMobile ? 'gap-0.5' : 'gap-1';
-  
-  // 날짜별 채용 정보 그룹화 - 메모이제이션
+  // 날짜별 채용 정보 그룹화
   const jobsByDate = useMemo(() => {
     const result: Record<string, Job[]> = {};
     
@@ -108,164 +99,27 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
     return result;
   }, [filteredJobs, currentDate]);
   
-  // 선택한 날짜의 채용 정보 - 메모이제이션
+  // 선택한 날짜의 채용 정보
   const selectedDateJobs = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     return jobsByDate[dateKey] || [];
   }, [jobsByDate, selectedDate]);
   
-  // 캘린더 생성에 필요한 날짜 계산 - 메모이제이션
-  const calendarDays = useMemo(() => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    const startDay = monthStart.getDay(); // 첫 날의 요일 (0-6)
-    const endDay = monthEnd.getDay(); // 마지막 날의 요일 (0-6)
-    
-    const days = eachDayOfInterval({ 
-      start: monthStart, 
-      end: monthEnd 
-    });
-    
-    return {
-      days,
-      prevBlankCells: Array(startDay).fill(null),
-      nextBlankCells: Array(6 - endDay).fill(null)
-    };
-  }, [currentDate]);
-  
-  // 날짜 셀 렌더링 - 성능 개선을 위한 컴포넌트 분리
-  const DateCell = React.memo(({ day }: { day: Date }) => {
-    const dateKey = format(day, 'yyyy-MM-dd');
-    const jobsForDay = jobsByDate[dateKey] || [];
-    const jobCount = jobsForDay.length;
-    const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
-    
-    return (
-      <div
-        className={cn(
-          "p-1 border border-border/40 rounded-md transition-all duration-200",
-          isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
-          isSelected ? "ring-2 ring-primary ring-offset-2" : "",
-          "flex flex-col cursor-pointer",
-          mobileDayHeight,
-          isMobile && "p-0.5"
-        )}
-        onClick={() => setSelectedDate(day)}
-      >
-        <div className="flex justify-between items-start">
-          <span
-            className={cn(
-              "inline-block rounded-full text-center leading-6 text-sm font-medium",
-              isToday(day) ? "bg-primary text-primary-foreground h-6 w-6" : "",
-              day.getDay() === 0 ? "text-red-500" : day.getDay() === 6 ? "text-blue-500" : "",
-              isMobile && "text-xs h-5 w-5 leading-5"
-            )}
-          >
-            {format(day, 'd')}
-          </span>
-          
-          {jobCount > 0 && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    variant="secondary" 
-                    className={cn(
-                      "h-5 min-w-5 flex items-center justify-center rounded-full text-xs",
-                      "bg-primary/20",
-                      isMobile && "h-4 min-w-4 text-[10px]"
-                    )}
-                  >
-                    {jobCount}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{jobCount}개의 채용공고 마감</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-        
-        {/* 채용 정보 미리보기 (최대 3개) */}
-        <div className={cn("mt-1 space-y-0.5 overflow-y-auto flex-grow", isMobile && "space-y-0")}>
-          {jobsForDay.slice(0, isMobile ? 2 : 3).map(job => (
-            <div 
-              key={job.id} 
-              className={cn(
-                "text-xs truncate rounded px-1 py-0.5 bg-accent/20",
-                isMobile && "text-[10px] py-0.5"
-              )}
-              title={`${job.companyName} - ${job.jobTitle}`}
-            >
-              {job.companyName}
-            </div>
-          ))}
-          {jobCount > (isMobile ? 2 : 3) && (
-            <div className={cn("text-xs text-muted-foreground px-1", isMobile && "text-[10px]")}>
-              +{jobCount - (isMobile ? 2 : 3)}개 더보기
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  });
-  
-  // 선택된 날짜의 채용 정보 항목 - 성능 개선을 위한 컴포넌트 분리
-  const JobItem = React.memo(({ job }: { job: Job }) => {
-    return (
-      <div 
-        className={cn(
-          "p-3 border border-border rounded-md hover:bg-accent/10 transition-colors",
-          isMobile && "p-2"
-        )}
-      >
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className={cn("font-medium", isMobile && "text-sm")}>
-              <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                {job.jobTitle}
-              </a>
-            </h3>
-            <p className={cn("text-sm text-muted-foreground", isMobile && "text-xs")}>{job.companyName}</p>
-          </div>
-          <Badge variant={job.score >= 70 ? "default" : "secondary"} className={isMobile && "text-xs"}>
-            {job.score || job.matchScore || 0}점
-          </Badge>
-        </div>
-        
-        <div className={cn("mt-2 flex flex-wrap gap-2", isMobile && "mt-1 gap-1")}>
-          {job.employmentType && (
-            <Badge variant="outline" className={cn("text-xs", isMobile && "text-[10px]")}>
-              {job.employmentType}
-            </Badge>
-          )}
-          {job.jobType && (
-            <Badge variant="outline" className={cn("text-xs", isMobile && "text-[10px]")}>
-              {job.jobType}
-            </Badge>
-          )}
-          {job.jobLocation && (
-            <Badge variant="outline" className={cn("text-xs", isMobile && "text-[10px]")}>
-              {job.jobLocation}
-            </Badge>
-          )}
-        </div>
-      </div>
-    );
-  });
+  // 특정 날짜의 채용 정보 수 가져오기
+  const getJobCountForDate = (date: Date): number => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return (jobsByDate[dateKey] || []).length;
+  };
   
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <Card className="border-t-4 border-t-primary shadow-sm">
-        <CardHeader className={cn("pb-2", isMobile && "p-3")}>
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5 text-primary" />
-              <span className={cn("text-xl", isMobile && "text-lg")}>
-                채용 마감일 캘린더
-              </span>
+              <span>채용 마감일 캘린더</span>
             </CardTitle>
             
             <div className="flex items-center gap-2">
@@ -274,12 +128,10 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className={cn("gap-2 h-8", isMobile && "px-2 text-xs")}
+                    className="gap-2 h-8"
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    <span className={isMobile ? "text-xs" : ""}>
-                      {format(currentDate, isMobile ? 'yy년 MM월' : 'yyyy년 MM월', { locale: ko })}
-                    </span>
+                    <span>{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
@@ -293,6 +145,7 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
                       }
                     }}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -302,7 +155,7 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
                   variant="outline" 
                   size="icon" 
                   onClick={handlePreviousMonth}
-                  className={cn("h-8 w-8", isMobile && "h-7 w-7")}
+                  className="h-8 w-8"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -310,7 +163,7 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
                   variant="outline" 
                   size="icon" 
                   onClick={handleNextMonth}
-                  className={cn("h-8 w-8", isMobile && "h-7 w-7")}
+                  className="h-8 w-8"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -319,15 +172,14 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
           </div>
         </CardHeader>
         
-        <CardContent className={cn(isMobile && "p-2 pt-0")}>
-          <div className={cn("grid grid-cols-7", gridGap, "text-center text-sm mb-1")}>
-            {DAYS_OF_WEEK.map((day, i) => (
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1 text-center text-sm mb-1">
+            {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
               <div 
                 key={day} 
                 className={cn(
                   "font-medium py-1",
-                  i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "",
-                  isMobile && "text-xs py-0.5"
+                  i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""
                 )}
               >
                 {day}
@@ -335,26 +187,118 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
             ))}
           </div>
           
-          <div className={cn("grid grid-cols-7", gridGap)}>
-            {calendarDays.prevBlankCells.map((_, index) => (
-              <div key={`prev-${index}`} className={cn("border border-border/40 bg-muted/20 rounded-md opacity-50", mobileDayHeight)} />
-            ))}
-            
-            {calendarDays.days.map(day => (
-              <DateCell key={format(day, 'yyyy-MM-dd')} day={day} />
-            ))}
-            
-            {calendarDays.nextBlankCells.map((_, index) => (
-              <div key={`next-${index}`} className={cn("border border-border/40 bg-muted/20 rounded-md opacity-50", mobileDayHeight)} />
-            ))}
+          <div className="grid grid-cols-7 gap-1">
+            {(() => {
+              const monthStart = startOfMonth(currentDate);
+              const monthEnd = endOfMonth(currentDate);
+              const startDate = monthStart;
+              const endDate = monthEnd;
+              
+              const days = eachDayOfInterval({ start: startDate, end: endDate });
+              
+              // 첫 날의 요일을 기준으로 빈 칸 채우기
+              const startDay = monthStart.getDay();
+              const prevBlankCells = Array(startDay).fill(null);
+              
+              // 마지막 날 이후 빈 칸 채우기
+              const endDay = monthEnd.getDay();
+              const nextBlankCells = Array(6 - endDay).fill(null);
+              
+              return (
+                <>
+                  {/* 이전 달 빈 칸 */}
+                  {prevBlankCells.map((_, index) => (
+                    <div key={`prev-${index}`} className="h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                  ))}
+                  
+                  {/* 이번 달 날짜 */}
+                  {days.map(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const jobsForDay = jobsByDate[dateKey] || [];
+                    const jobCount = jobsForDay.length;
+                    const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
+                    
+                    return (
+                      <div
+                        key={dateKey}
+                        className={cn(
+                          "h-[140px] p-1 border border-border/40 rounded-md transition-all duration-200",
+                          isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
+                          isSelected ? "ring-2 ring-primary ring-offset-2" : "",
+                          "flex flex-col cursor-pointer"
+                        )}
+                        onClick={() => setSelectedDate(day)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span
+                            className={cn(
+                              "inline-block h-6 w-6 rounded-full text-center leading-6 text-sm font-medium",
+                              isToday(day) ? "bg-primary text-primary-foreground" : "",
+                              day.getDay() === 0 ? "text-red-500" : day.getDay() === 6 ? "text-blue-500" : ""
+                            )}
+                          >
+                            {format(day, 'd')}
+                          </span>
+                          
+                          {jobCount > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={cn(
+                                      "h-5 min-w-5 flex items-center justify-center rounded-full text-xs",
+                                      "bg-primary/20"
+                                    )}
+                                  >
+                                    {jobCount}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{jobCount}개의 채용공고 마감</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                        
+                        {/* 채용 정보 미리보기 (최대 3개) */}
+                        <div className="mt-1 space-y-0.5 overflow-y-auto flex-grow">
+                          {jobsForDay.slice(0, 3).map(job => (
+                            <div 
+                              key={job.id} 
+                              className="text-xs truncate rounded px-1 py-0.5 bg-accent/20"
+                              title={`${job.companyName} - ${job.jobTitle}`}
+                            >
+                              {job.companyName}
+                            </div>
+                          ))}
+                          {jobCount > 3 && (
+                            <div className="text-xs text-muted-foreground px-1">
+                              +{jobCount - 3}개 더보기
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* 다음 달 빈 칸 */}
+                  {nextBlankCells.map((_, index) => (
+                    <div key={`next-${index}`} className="h-[140px] border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                  ))}
+                </>
+              );
+            })()}
           </div>
         </CardContent>
       </Card>
       
+      {/* 선택한 날짜의 채용 정보 목록 */}
       {selectedDate && (
-        <Card className={cn(isMobile && "animate-fade-scale-mobile")}>
-          <CardHeader className={cn("pb-2", isMobile && "p-3")}>
-            <CardTitle className={cn("text-lg flex items-center gap-2", isMobile && "text-base")}>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-4 w-4 text-primary" />
               {format(selectedDate, 'yyyy년 MM월 dd일', { locale: ko })} 마감 채용 공고
               <Badge variant="outline" className="ml-2">
@@ -363,16 +307,45 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
             </CardTitle>
           </CardHeader>
           
-          <CardContent className={cn(isMobile && "p-3 pt-0")}>
+          <CardContent>
             {selectedDateJobs.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
                 <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
                 <p>이 날짜에 마감되는 채용 공고가 없습니다.</p>
               </div>
             ) : (
-              <div className={cn("space-y-2", isMobile && "space-y-1.5")}>
+              <div className="space-y-2">
                 {selectedDateJobs.map(job => (
-                  <JobItem key={job.id} job={job} />
+                  <div 
+                    key={job.id} 
+                    className="p-3 border border-border rounded-md hover:bg-accent/10 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">
+                          <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                            {job.jobTitle}
+                          </a>
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{job.companyName}</p>
+                      </div>
+                      <Badge variant={job.score >= 70 ? "default" : "secondary"}>
+                        {job.score || job.matchScore || 0}점
+                      </Badge>
+                    </div>
+                    
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {job.employmentType && (
+                        <Badge variant="outline" className="text-xs">{job.employmentType}</Badge>
+                      )}
+                      {job.jobType && (
+                        <Badge variant="outline" className="text-xs">{job.jobType}</Badge>
+                      )}
+                      {job.jobLocation && (
+                        <Badge variant="outline" className="text-xs">{job.jobLocation}</Badge>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -381,7 +354,6 @@ const CalendarTab: React.FC<CalendarTabProps> = React.memo(({ jobs, filteredJobs
       )}
     </div>
   );
-});
+};
 
-CalendarTab.displayName = "CalendarTab";
 export default CalendarTab;

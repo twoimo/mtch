@@ -6,7 +6,6 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useIsMobile } from "@/hooks/use-mobile"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -57,19 +56,8 @@ const Carousel = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile();
-    
-    // Default options for better mobile experience
-    const defaultOptions: CarouselOptions = {
-      align: isMobile ? "start" : "center",
-      loop: true,
-      skipSnaps: false,
-      dragFree: isMobile,
-    };
-    
     const [carouselRef, api] = useEmblaCarousel(
       {
-        ...defaultOptions,
         ...opts,
         axis: orientation === "horizontal" ? "x" : "y",
       },
@@ -147,11 +135,7 @@ const Carousel = React.forwardRef<
         <div
           ref={ref}
           onKeyDownCapture={handleKeyDown}
-          className={cn(
-            "relative", 
-            isMobile && "touch-manipulation", // Improve touch responsiveness
-            className
-          )}
+          className={cn("relative", className)}
           role="region"
           aria-roledescription="carousel"
           {...props}
@@ -213,7 +197,6 @@ const CarouselPrevious = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
-  const isMobile = useIsMobile();
 
   return (
     <Button
@@ -221,10 +204,9 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full",
-        isMobile && "opacity-70 h-9 w-9", // Larger, slightly transparent buttons on mobile
+        "absolute  h-8 w-8 rounded-full",
         orientation === "horizontal"
-          ? "left-3 top-1/2 -translate-y-1/2" // Moved in from edge on mobile
+          ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -244,7 +226,6 @@ const CarouselNext = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
-  const isMobile = useIsMobile();
 
   return (
     <Button
@@ -253,9 +234,8 @@ const CarouselNext = React.forwardRef<
       size={size}
       className={cn(
         "absolute h-8 w-8 rounded-full",
-        isMobile && "opacity-70 h-9 w-9", // Larger, slightly transparent buttons on mobile
         orientation === "horizontal"
-          ? "right-3 top-1/2 -translate-y-1/2" // Moved in from edge on mobile
+          ? "-right-12 top-1/2 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}

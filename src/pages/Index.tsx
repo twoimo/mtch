@@ -20,10 +20,6 @@ import BookmarkList from '@/components/BookmarkList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
-import MobileNavBar from '@/components/MobileNavBar';
-import MobileSearchSheet from '@/components/MobileSearchSheet';
 
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
@@ -32,7 +28,6 @@ const Index = () => {
   const location = useLocation();
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const { isOpen, setIsOpen } = useCommandPalette();
-  const isMobile = useIsMobile();
   
   const {
     testResult,
@@ -172,88 +167,67 @@ const Index = () => {
     }
   }, [autoFetchEnabled, recommendedJobs.length, isRecommendedLoading, handleGetRecommendedJobs]);
 
-  // State for mobile UI components
-  const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // Handle mobile search button click
-  const handleSearchClick = () => {
-    setIsSearchSheetOpen(true);
-  };
-  
-  // Handle mobile menu button click
-  const handleMenuClick = () => {
-    // Toggle command palette or other menu
-    setIsOpen(true);
-  };
-  
-  // Apply search
-  const handleApplySearch = () => {
-    // Reset to first page, scroll to top, etc.
-    window.scrollTo(0, 0);
-  };
-  
-  // Mobile bottom padding to prevent content from being hidden behind nav bar
-  const mobileBottomPadding = isMobile ? "pb-20" : "";
-  
   return (
-    <div className={cn("container mx-auto py-6", isMobile && "px-3 py-4")}>
-      <div className={cn(
-        "flex items-center justify-between mb-6", 
-        isMobile && "flex-col items-start gap-3 mb-4"
-      )}>
-        <div>
-          <h1 className={cn(
-            "text-3xl font-bold tracking-tight",
-            isMobile && "text-2xl"
-          )}>
-            사람인 채용 연동 시스템
-          </h1>
-          <p className={cn(
-            "text-muted-foreground mt-1",
-            isMobile && "text-sm"
-          )}>
-            API를 통해 사람인 채용 정보를 조회하고 관리합니다
+    <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
+      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <LayoutDashboard className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
+            <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
+          </div>
+          <p className="text-muted-foreground mt-1">
+            사람인 채용 정보 자동화 시스템
           </p>
         </div>
         
-        <div className={cn(
-          "flex items-center space-x-4",
-          isMobile && "w-full justify-between"
-        )}>
-          <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center space-x-2 mr-2">
             <Switch
               id="auto-fetch"
               checked={autoFetchEnabled}
               onCheckedChange={toggleAutoFetch}
             />
-            <Label htmlFor="auto-fetch" className={isMobile ? "text-sm" : ""}>자동 데이터 가져오기</Label>
+            <Label htmlFor="auto-fetch" className="text-sm">
+              자동 조회
+            </Label>
           </div>
           
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  variant="outline"
-                  size={isMobile ? "sm" : "default"}
-                  onClick={() => navigate('/bookmarks')}
-                  className={cn(
-                    "gap-2", 
-                    isMobile && "text-xs"
-                  )}
+                  variant="outline" 
+                  size="icon" 
+                  onClick={triggerCommandPalette}
                 >
-                  <Bookmark className={cn("h-4 w-4", isMobile && "h-3.5 w-3.5")} />
-                  북마크된 항목
-                  <Badge variant="secondary" className={isMobile ? "text-[10px]" : "text-xs"}>
-                    {bookmarkCount}
-                  </Badge>
+                  <Command className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>북마크한 채용 공고를 확인합니다</TooltipContent>
+              <TooltipContent side="bottom">
+                <p>명령어 팔레트 (단축키: Ctrl+K)</p>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" asChild>
+                  <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
+                    <Icons.gitHub className="h-4 w-4" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>GitHub 저장소 방문</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <ThemeToggle />
         </div>
-      </div>
+      </header>
       
       {isAnyLoading && (
         <div className="mb-6 w-full">
@@ -270,100 +244,114 @@ const Index = () => {
         </div>
       )}
       
-      <div className={cn("space-y-6", mobileBottomPadding)}>
-        <div>
-          <Card className={cn(
-            "border-l-4 border-l-blue-500",
-            isMobile ? "p-3" : "p-4"
-          )}>
-            <CardHeader className={cn("pb-2", isMobile && "p-2")}>
-              <CardTitle className={cn(
-                "text-lg flex items-center gap-2",
-                isMobile && "text-base"
-              )}>
-                <Info className="h-5 w-5 text-blue-500" />
-                API 작업
-              </CardTitle>
-              <CardDescription className={isMobile && "text-xs"}>
-                사람인 API를 호출하여 채용 정보를 관리할 수 있습니다
-              </CardDescription>
-            </CardHeader>
-            <CardContent className={isMobile ? "py-2 px-2" : "py-2"}>
-              <ApiButtonGroup
-                onTestApi={handleTestApi}
-                onGetRecommendedJobs={handleGetRecommendedJobs}
-                onRunAutoJobMatching={handleRunAutoJobMatching}
-                onApplySaraminJobs={handleApplySaraminJobs}
-                isTestLoading={isTestLoading}
-                isRecommendedLoading={isRecommendedLoading}
-                isAutoMatchingLoading={isAutoMatchingLoading}
-                isApplyLoading={isApplyLoading}
-              />
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Tabs defaultValue="jobs" className="w-full">
-          <TabsList className={cn("w-full", isMobile && "sticky top-0 z-10 bg-background/80 backdrop-blur-sm")}>
-            <TabsTrigger value="jobs" className={cn("flex-1", isMobile && "py-2.5")}>
-              <Briefcase className="mr-2 h-4 w-4" />
-              채용 목록
+      <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-xl gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            API 작업
+          </CardTitle>
+          <CardDescription>
+            아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ApiButtonGroup 
+            onTestApi={handleTestApi}
+            onGetRecommendedJobs={handleGetRecommendedJobs}
+            onRunAutoJobMatching={handleRunAutoJobMatching}
+            onApplySaraminJobs={handleApplySaraminJobs}
+            
+            isTestLoading={isTestLoading}
+            isRecommendedLoading={isRecommendedLoading}
+            isAutoMatchingLoading={isAutoMatchingLoading}
+            isApplyLoading={isApplyLoading}
+          />
+        </CardContent>
+      </Card>
+      
+      <div className="h-full">
+        <Tabs 
+          defaultValue="jobs" 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="w-full flex flex-col"
+        >
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="jobs" className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4" />
+              <span>채용 정보</span>
+              {filteredJobs && filteredJobs.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {filteredJobs.length}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="calendar" className={cn("flex-1", isMobile && "py-2.5")}>
-              <Calendar className="mr-2 h-4 w-4" />
-              캘린더
+            
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>캘린더</span>
             </TabsTrigger>
-            <TabsTrigger value="console" className={cn("flex-1", isMobile && "py-2.5")}>
-              <Terminal className="mr-2 h-4 w-4" />
-              콘솔 결과
+            
+            <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+              <BookmarkCheck className="h-4 w-4" />
+              <span>북마크</span>
+              {bookmarkCount > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {bookmarkCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            
+            <TabsTrigger value="console" className="flex items-center gap-2">
+              <Terminal className="h-4 w-4" />
+              <span>콘솔 출력</span>
+              {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
           
-          <div className={cn("mt-4", isMobile && "mt-2")}>
-            <TabsContent value="jobs" className="m-0">
-              <JobsTab
-                jobs={recommendedJobs}
-                filteredJobs={filteredJobs}
+          <TabsContent value="jobs" className="mt-0">
+            <div className="pb-8">
+              <JobsTab 
+                jobs={recommendedJobs || []}
+                filteredJobs={filteredJobs || []}
                 filters={safeFilters}
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
               />
-            </TabsContent>
-            
-            <TabsContent value="calendar" className="m-0">
-              <CalendarTab jobs={recommendedJobs} filteredJobs={filteredJobs} />
-            </TabsContent>
-            
-            <TabsContent value="console" className="m-0">
-              <ConsoleTab
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="mt-0">
+            <div className="pb-8">
+              <CalendarTab 
+                jobs={recommendedJobs || []}
+                filteredJobs={filteredJobs || []}
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="bookmarks" className="mt-0">
+            <div className="pb-8">
+              <BookmarkList />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="console" className="mt-0">
+            <div className="pb-8">
+              <ConsoleTab 
                 testResult={testResult}
-                recommendedJobs={recommendedJobs}
+                recommendedJobs={recommendedJobs || []}
                 autoMatchingResult={autoMatchingResult}
                 applyResult={applyResult}
               />
-            </TabsContent>
-          </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
-      
-      {/* Mobile-specific UI components */}
-      {isMobile && (
-        <>
-          <MobileNavBar 
-            onSearchClick={handleSearchClick}
-            onMenuClick={handleMenuClick}
-          />
-          
-          <MobileSearchSheet
-            isOpen={isSearchSheetOpen}
-            onOpenChange={setIsSearchSheetOpen}
-            filters={safeFilters}
-            onUpdateFilters={updateFilters}
-            onResetFilters={resetFilters}
-            onSearch={handleApplySearch}
-          />
-        </>
-      )}
       
       <footer className="mt-12 py-4 border-t border-border/60 text-sm text-muted-foreground">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2">

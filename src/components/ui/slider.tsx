@@ -2,7 +2,6 @@ import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 
 import { cn } from "@/lib/utils"
-import { useIsMobile } from "@/hooks/use-mobile"
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
@@ -13,7 +12,6 @@ const Slider = React.forwardRef<
 >(({ className, showTooltip = false, formatTooltip, ...props }, ref) => {
   const [value, setValue] = React.useState(props.defaultValue || [0]);
   const [tooltipVisible, setTooltipVisible] = React.useState(false);
-  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     if (props.value) {
@@ -25,12 +23,6 @@ const Slider = React.forwardRef<
     setValue(newValue);
     if (props.onValueChange) {
       props.onValueChange(newValue);
-    }
-    
-    // Show tooltip briefly when value changes, especially useful for mobile
-    if (isMobile) {
-      setTooltipVisible(true);
-      setTimeout(() => setTooltipVisible(false), 1500);
     }
   };
 
@@ -46,37 +38,28 @@ const Slider = React.forwardRef<
       ref={ref}
       className={cn(
         "relative flex w-full touch-none select-none items-center",
-        isMobile ? "py-4" : "", // Extra padding for touch devices
         className
       )}
       onValueChange={handleValueChange}
       onMouseEnter={() => setTooltipVisible(true)}
-      onMouseLeave={() => isMobile ? null : setTooltipVisible(false)}
+      onMouseLeave={() => setTooltipVisible(false)}
       onFocus={() => setTooltipVisible(true)}
-      onBlur={() => isMobile ? null : setTooltipVisible(false)}
+      onBlur={() => setTooltipVisible(false)}
       {...props}
     >
-      <SliderPrimitive.Track className={cn(
-        "relative h-2 w-full grow overflow-hidden rounded-full bg-secondary",
-        isMobile && "h-3" // Thicker track for mobile
-      )}>
+      <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
         <SliderPrimitive.Range className="absolute h-full bg-primary transition-all" />
       </SliderPrimitive.Track>
       
       {value.map((val, i) => (
         <SliderPrimitive.Thumb 
           key={i}
-          className={cn(
-            "block border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:bg-primary/10",
-            isMobile ? "h-7 w-7 rounded-full" : "h-5 w-5 rounded-full", // Larger thumb for mobile
-          )}
+          className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 hover:bg-primary/10"
         >
           {showTooltip && tooltipVisible && (
-            <div className={cn(
-              "absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-primary text-primary-foreground text-xs rounded",
-              "animate-in fade-in duration-100"
-            )}>
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground opacity-0 transition-opacity animate-fade-in">
               {showTooltipValue(val)}
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary" />
             </div>
           )}
         </SliderPrimitive.Thumb>

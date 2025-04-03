@@ -1,5 +1,5 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 /**
  * 명령어 팔레트 열기/닫기를 관리하는 커스텀 훅
@@ -7,7 +7,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
  */
 export function useCommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
   
   // 명령어 팔레트 열기
   const open = useCallback(() => {
@@ -28,8 +27,7 @@ export function useCommandPalette() {
   useEffect(() => {
     // 키보드 단축키 (Ctrl+K 또는 Command+K)
     const handleKeyDown = (e: KeyboardEvent) => {
-      // On mobile, don't use Ctrl+K as it may conflict with keyboard shortcuts
-      if (!isMobile && (e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         toggle();
       }
@@ -43,36 +41,20 @@ export function useCommandPalette() {
     // 문서 이벤트 리스너 (전역 이벤트)
     document.addEventListener('keydown', handleKeyDown);
     
-    // Mobile double-tap detection for showing command palette
-    let lastTap = 0;
-    const handleDoubleTap = (event: TouchEvent) => {
-      const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTap;
-      if (tapLength < 500 && tapLength > 0) {
-        // Double tap detected
-        if (
-          !isOpen && 
-          event.target instanceof Element && 
-          !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(event.target.tagName)
-        ) {
-          toggle();
-        }
+    // 단축키 커스텀 이벤트를 위한 리스너 추가
+    const handleCustomKeyEvent = (event: Event) => {
+      if (event instanceof KeyboardEvent && (event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        toggle();
       }
-      lastTap = currentTime;
     };
-
-    // Only add double-tap for mobile
-    if (isMobile) {
-      document.addEventListener('touchend', handleDoubleTap);
-    }
+    document.addEventListener('keydown', handleCustomKeyEvent);
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      if (isMobile) {
-        document.removeEventListener('touchend', handleDoubleTap);
-      }
+      document.removeEventListener('keydown', handleCustomKeyEvent);
     };
-  }, [toggle, close, isOpen, isMobile]);
+  }, [toggle, close, isOpen]);
   
   return { isOpen, setIsOpen, open, close, toggle };
 }

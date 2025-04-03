@@ -22,7 +22,7 @@ const TabsList = React.forwardRef<
         className={cn(
           "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
           stretch && "w-full",
-          isMobile && "w-full overflow-x-auto snap-x scrollbar-none pb-2",
+          isMobile && "w-full overflow-x-auto snap-x scrollbar-none",
           className
         )}
         {...props}
@@ -54,7 +54,7 @@ const TabsTrigger = React.forwardRef<
         "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300",
         fullWidth && "flex-1",
-        isMobile && "snap-center min-w-[100px] flex-shrink-0 py-3", // Larger hit area for mobile
+        isMobile && "snap-center min-w-[100px] flex-shrink-0",
         className
       )}
       {...props}
