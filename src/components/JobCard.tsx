@@ -12,7 +12,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { isJobBookmarked, toggleBookmark } from '@/utils/bookmarkUtils';
+import { isBookmarked, toggleBookmark } from '@/utils/bookmarkUtils';
 
 interface JobCardProps {
   job: {
@@ -38,18 +38,14 @@ interface JobCardProps {
   };
 }
 
-// 채용 정보를 표시하는 카드 컴포넌트
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
-  // 북마크 상태 관리
   const [bookmarked, setBookmarked] = useState(false);
   const { toast } = useToast();
   
-  // 컴포넌트 마운트 시 북마크 상태 확인
   useEffect(() => {
-    setBookmarked(isJobBookmarked(job.id));
+    setBookmarked(isBookmarked(job.id));
   }, [job.id]);
   
-  // 매칭 점수에 따른 색상 및 텍스트 결정
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
     if (score >= 80) return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700';
@@ -96,7 +92,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         description: '채용 정보가 클립보드에 복사되었습니다',
         variant: 'success',
       });
-    } catch (_) { // 미사용 error 변수를 _로 대체
+    } catch (_) {
       toast({
         title: '복사 실패',
         description: '복사 중 오류가 발생했습니다',
@@ -117,7 +113,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           description: '채용 정보가 공유되었습니다',
           variant: 'success',
         });
-      }).catch((_) => { // 미사용 error 변수를 _로 대체
+      }).catch((_) => {
         toast({
           title: '공유 실패',
           description: '공유 중 오류가 발생했습니다',
@@ -129,7 +125,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     }
   };
 
-  // 북마크 토글 함수 수정
   const handleToggleBookmark = () => {
     const result = toggleBookmark(job);
     setBookmarked(!bookmarked);
@@ -149,23 +144,23 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             className={cn(
               "mb-4 transition-all duration-300 overflow-hidden border-t-4",
               "hover:shadow-lg focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300",
-              "shadow-md h-full flex flex-col", // 높이 100% 추가, flex-col로 변경
-              job.isApplied ? "border-l-4 border-l-blue-500" : "", // 지원한 채용공고 표시
-              bookmarked ? "border-r-4 border-r-purple-500" : "" // 북마크된 채용공고 표시
+              "shadow-md h-full flex flex-col",
+              job.isApplied ? "border-l-4 border-l-blue-500" : "",
+              bookmarked ? "border-r-4 border-r-purple-500" : ""
             )}
             style={{ borderTopColor: getBorderColor(job.score || job.matchScore || 0) }}
           >
             <CardHeader className="pb-2 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0 pr-4"> {/* Added min-width-0 and padding-right */}
+                <div className="flex-1 min-w-0 pr-4">
                   <CardTitle className="text-lg font-bold line-clamp-2 hover:line-clamp-none transition-all duration-300">
                     {job.jobTitle}
                   </CardTitle>
-                  <CardDescription className="text-base font-medium mt-1 truncate"> {/* Added truncate */}
+                  <CardDescription className="text-base font-medium mt-1 truncate">
                     {job.companyName}
                   </CardDescription>
                 </div>
-                <div className="flex flex-col items-end flex-shrink-0"> {/* Added flex-shrink-0 to prevent shrinking */}
+                <div className="flex flex-col items-end flex-shrink-0">
                   <div className="flex items-center gap-2 mb-2">
                     <TooltipProvider>
                       <Tooltip>
@@ -183,7 +178,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                       </Tooltip>
                     </TooltipProvider>
                     
-                    {/* 북마크 뱃지 추가 */}
                     {bookmarked && (
                       <TooltipProvider>
                         <Tooltip>
@@ -223,7 +217,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                       </Tooltip>
                     </TooltipProvider>
                     
-                    {/* 지원 여부 표시 (새로 추가) */}
                     {job.isApplied !== undefined && (
                       <TooltipProvider>
                         <Tooltip>
@@ -261,7 +254,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <span className="line-clamp-2 dark:text-gray-300">{job.companyType}</span>
                 </div>
                 
-                {/* 직무 유형, 급여, 고용형태를 개별적으로 표시 */}
                 {job.jobType && (
                   <div className="flex items-start">
                     <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
@@ -313,7 +305,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   </div>
                 )}
                 
-                {/* 항상 펼침 상태로 표시 */}
                 <div className="mt-1 grid gap-2 transition-all duration-300 ease-in-out">
                   {job.strength && (
                     <div className="flex items-start bg-green-50 p-2 rounded-md dark:bg-green-900/20">
@@ -344,7 +335,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
               </div>
               
               <div className="flex items-center gap-2">
-                {/* 북마크 버튼 추가 */}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -364,7 +354,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   }
                 </button>
                 
-                {/* 등록/업데이트 일자 표시 */}
                 {job.createdAt && (
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(job.createdAt).toLocaleDateString()}

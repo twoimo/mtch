@@ -102,3 +102,22 @@ export const isBookmarked = (jobId: number): boolean => {
   const bookmarks = getBookmarkedJobs();
   return bookmarks.some(job => job.id === jobId);
 };
+
+/**
+ * 북마크 토글 (추가/제거)
+ */
+export const toggleBookmark = (job: any): boolean => {
+  if (isBookmarked(job.id)) {
+    return removeBookmark(job.id);
+  } else {
+    return addBookmark(job);
+  }
+};
+
+/**
+ * 모든 북마크 삭제
+ */
+export const clearAllBookmarks = (): void => {
+  localStorage.removeItem(BOOKMARK_KEY);
+  window.dispatchEvent(new CustomEvent('bookmarks-changed'));
+};
