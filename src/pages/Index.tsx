@@ -1,9 +1,8 @@
-
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command, Calendar } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -21,13 +20,6 @@ import BookmarkList from '@/components/BookmarkList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
-import { 
-  Collapsible, 
-  CollapsibleContent, 
-  CollapsibleTrigger 
-} from '@/components/ui/collapsible';
 
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
@@ -35,9 +27,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [bookmarkCount, setBookmarkCount] = useState(0);
-  const { isOpen, setIsOpen, open: openCommandPalette } = useCommandPalette();
-  const isMobile = useIsMobile();
-  const [apiSectionCollapsed, setApiSectionCollapsed] = useState(isMobile);
+  const { isOpen, setIsOpen } = useCommandPalette();
   
   const {
     testResult,
@@ -85,7 +75,6 @@ const Index = () => {
   };
 
   const triggerCommandPalette = () => {
-    // Create and dispatch a keyboard event to trigger the command palette
     const event = new KeyboardEvent('keydown', {
       key: 'k',
       code: 'KeyK',
@@ -178,11 +167,6 @@ const Index = () => {
     }
   }, [autoFetchEnabled, recommendedJobs.length, isRecommendedLoading, handleGetRecommendedJobs]);
 
-  // Set API section collapsed state based on mobile status
-  useEffect(() => {
-    setApiSectionCollapsed(isMobile);
-  }, [isMobile]);
-
   return (
     <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
       <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -260,50 +244,30 @@ const Index = () => {
         </div>
       )}
       
-      <Collapsible 
-        open={!apiSectionCollapsed} 
-        onOpenChange={setApiSectionCollapsed}
-        className="mb-6"
-      >
-        <Card className="border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center text-xl gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                API 작업
-              </CardTitle>
-              
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  {apiSectionCollapsed ? 
-                    <ChevronDown className="h-4 w-4" /> : 
-                    <ChevronUp className="h-4 w-4" />
-                  }
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CardDescription>
-              아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
-            </CardDescription>
-          </CardHeader>
-          
-          <CollapsibleContent>
-            <CardContent>
-              <ApiButtonGroup 
-                onTestApi={handleTestApi}
-                onGetRecommendedJobs={handleGetRecommendedJobs}
-                onRunAutoJobMatching={handleRunAutoJobMatching}
-                onApplySaraminJobs={handleApplySaraminJobs}
-                
-                isTestLoading={isTestLoading}
-                isRecommendedLoading={isRecommendedLoading}
-                isAutoMatchingLoading={isAutoMatchingLoading}
-                isApplyLoading={isApplyLoading}
-              />
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-xl gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            API 작업
+          </CardTitle>
+          <CardDescription>
+            아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ApiButtonGroup 
+            onTestApi={handleTestApi}
+            onGetRecommendedJobs={handleGetRecommendedJobs}
+            onRunAutoJobMatching={handleRunAutoJobMatching}
+            onApplySaraminJobs={handleApplySaraminJobs}
+            
+            isTestLoading={isTestLoading}
+            isRecommendedLoading={isRecommendedLoading}
+            isAutoMatchingLoading={isAutoMatchingLoading}
+            isApplyLoading={isApplyLoading}
+          />
+        </CardContent>
+      </Card>
       
       <div className="h-full">
         <Tabs 
@@ -312,10 +276,7 @@ const Index = () => {
           onValueChange={setActiveTab}
           className="w-full flex flex-col"
         >
-          <TabsList className={cn(
-            "grid w-full mb-4",
-            isMobile ? "grid-cols-2 gap-2" : "grid-cols-4"
-          )}>
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
@@ -331,54 +292,26 @@ const Index = () => {
               <span>캘린더</span>
             </TabsTrigger>
             
-            {isMobile ? (
-              <TabsTrigger value="bookmarks" className="flex items-center gap-2 col-span-2">
-                <BookmarkCheck className="h-4 w-4" />
-                <span>북마크</span>
-                {bookmarkCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-primary/20">
-                    {bookmarkCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            ) : (
-              <>
-                <TabsTrigger value="bookmarks" className="flex items-center gap-2">
-                  <BookmarkCheck className="h-4 w-4" />
-                  <span>북마크</span>
-                  {bookmarkCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 bg-primary/20">
-                      {bookmarkCount}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="console" className="flex items-center gap-2">
-                  <Terminal className="h-4 w-4" />
-                  <span>콘솔 출력</span>
-                  {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
-                    <Badge variant="secondary" className="ml-1 bg-primary/20">
-                      {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </>
-            )}
+            <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+              <BookmarkCheck className="h-4 w-4" />
+              <span>북마크</span>
+              {bookmarkCount > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {bookmarkCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            
+            <TabsTrigger value="console" className="flex items-center gap-2">
+              <Terminal className="h-4 w-4" />
+              <span>콘솔 출력</span>
+              {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
-          
-          {isMobile && (
-            <TabsList className="grid w-full grid-cols-1 mb-4">
-              <TabsTrigger value="console" className="flex items-center gap-2">
-                <Terminal className="h-4 w-4" />
-                <span>콘솔 출력</span>
-                {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
-                  <Badge variant="secondary" className="ml-1 bg-primary/20">
-                    {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-          )}
           
           <TabsContent value="jobs" className="mt-0">
             <div className="pb-8">

@@ -19,7 +19,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 // 채용 정보 인터페이스
 interface Job {
@@ -53,7 +52,6 @@ interface CalendarTabProps {
 const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const isMobile = useIsMobile();
   
   // 월 변경 핸들러
   const handlePreviousMonth = () => {
@@ -119,7 +117,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
     <div className="space-y-6">
       <Card className="border-t-4 border-t-primary shadow-sm">
         <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5 text-primary" />
               <span>채용 마감일 캘린더</span>
@@ -131,7 +129,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="gap-2 h-8 w-full sm:w-auto"
+                    className="gap-2 h-8"
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
                     <span>{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
@@ -211,7 +209,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                 <>
                   {/* 이전 달 빈 칸 */}
                   {prevBlankCells.map((_, index) => (
-                    <div key={`prev-${index}`} className="h-16 md:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div key={`prev-${index}`} className="h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                   
                   {/* 이번 달 날짜 */}
@@ -225,7 +223,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                       <div
                         key={dateKey}
                         className={cn(
-                          "h-16 md:h-20 p-1 border border-border/40 rounded-md transition-all duration-200",
+                          "h-20 p-1 border border-border/40 rounded-md transition-all duration-200",
                           isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
                           isSelected ? "ring-2 ring-primary ring-offset-2" : "",
                           "flex flex-col cursor-pointer"
@@ -235,7 +233,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                         <div className="flex justify-between items-start">
                           <span
                             className={cn(
-                              "inline-block h-5 w-5 md:h-6 md:w-6 rounded-full text-center leading-5 md:leading-6 text-xs md:text-sm font-medium",
+                              "inline-block h-6 w-6 rounded-full text-center leading-6 text-sm font-medium",
                               isToday(day) ? "bg-primary text-primary-foreground" : "",
                               day.getDay() === 0 ? "text-red-500" : day.getDay() === 6 ? "text-blue-500" : ""
                             )}
@@ -250,7 +248,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                                   <Badge 
                                     variant="secondary" 
                                     className={cn(
-                                      "h-4 md:h-5 min-w-4 md:min-w-5 flex items-center justify-center rounded-full text-xs",
+                                      "h-5 min-w-5 flex items-center justify-center rounded-full text-xs",
                                       "bg-primary/20"
                                     )}
                                   >
@@ -265,9 +263,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                           )}
                         </div>
                         
-                        {/* 채용 정보 미리보기 (최대 5개) */}
+                        {/* 채용 정보 미리보기 (최대 2개) */}
                         <div className="mt-1 space-y-0.5 overflow-hidden">
-                          {jobsForDay.slice(0, 5).map(job => (
+                          {jobsForDay.slice(0, 2).map(job => (
                             <div 
                               key={job.id} 
                               className="text-xs truncate rounded px-1 py-0.5 bg-accent/20"
@@ -276,9 +274,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                               {job.companyName}
                             </div>
                           ))}
-                          {jobCount > 5 && (
+                          {jobCount > 2 && (
                             <div className="text-xs text-muted-foreground px-1">
-                              +{jobCount - 5}개 더보기
+                              +{jobCount - 2}개 더보기
                             </div>
                           )}
                         </div>
@@ -288,7 +286,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                   
                   {/* 다음 달 빈 칸 */}
                   {nextBlankCells.map((_, index) => (
-                    <div key={`next-${index}`} className="h-16 md:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div key={`next-${index}`} className="h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                 </>
               );
@@ -323,16 +321,16 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                     key={job.id} 
                     className="p-3 border border-border rounded-md hover:bg-accent/10 transition-colors"
                   >
-                    <div className="flex justify-between items-start flex-wrap gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">
                           <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
                             {job.jobTitle}
                           </a>
                         </h3>
-                        <p className="text-sm text-muted-foreground truncate">{job.companyName}</p>
+                        <p className="text-sm text-muted-foreground">{job.companyName}</p>
                       </div>
-                      <Badge variant={job.score >= 70 ? "default" : "secondary"} className="shrink-0">
+                      <Badge variant={job.score >= 70 ? "default" : "secondary"}>
                         {job.score || job.matchScore || 0}점
                       </Badge>
                     </div>
