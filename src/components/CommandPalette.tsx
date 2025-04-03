@@ -16,7 +16,7 @@ interface CommandPaletteProps {
 const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [bookmarks, setBookmarks] = useState<ReturnType<typeof getBookmarkedJobs>>([]);
+  const [bookmarks, setBookmarks] = useState(getBookmarkedJobs());
   
   // API 액션 함수들 가져오기
   const {

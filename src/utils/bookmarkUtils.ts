@@ -1,109 +1,104 @@
 
-import { CACHE_KEYS, loadFromStorage, saveToStorage } from './storage';
-
-// 북마크를 위한 스토리지 키
-export const BOOKMARK_STORAGE_KEY = 'job-bookmarks';
-
-// 채용 정보 북마크 인터페이스
+// Define the BookmarkedJob type
 export interface BookmarkedJob {
   id: number;
   score: number;
-  reason?: string;
-  strength?: string;
-  weakness?: string;
+  reason: string;
+  strength: string;
+  weakness: string;
   apply_yn: number;
   companyName: string;
   jobTitle: string;
   jobLocation: string;
   companyType: string;
   url: string;
-  bookmarkedAt: string; // 북마크 저장 시간
+  salary?: string;
   deadline?: string;
-  isApplied?: number;
-  isGptChecked?: number;
-  matchScore?: number;
-  createdAt?: string;
-  jobSalary?: string;
-  jobType?: string;
+  experience?: string;
+  education?: string;
+  position?: string;
+  required_skills?: string[];
+  preferred_skills?: string[];
   employmentType?: string;
+  bookmarkedAt: Date;
 }
 
-/**
- * 모든 북마크된 채용 정보를 가져옵니다.
- */
-export function getBookmarkedJobs(): BookmarkedJob[] {
-  const bookmarks = localStorage.getItem(BOOKMARK_STORAGE_KEY);
-  if (!bookmarks) return [];
-  
-  try {
-    return JSON.parse(bookmarks);
-  } catch (error) {
-    console.error('북마크 parsing 오류:', error);
-    return [];
-  }
-}
+const BOOKMARK_KEY = 'saramin-bookmarked-jobs';
 
 /**
- * 채용 정보가 북마크되어 있는지 확인합니다.
+ * 북마크 추가
  */
-export function isJobBookmarked(jobId: number): boolean {
-  const bookmarks = getBookmarkedJobs();
-  return bookmarks.some(job => job.id === jobId);
-}
-
-/**
- * 채용 정보를 북마크에 추가합니다.
- */
-export function addBookmark(job: BookmarkedJob): boolean {
+export const addBookmark = (job: Omit<BookmarkedJob, 'bookmarkedAt'>) => {
   const bookmarks = getBookmarkedJobs();
   
-  // 이미 북마크되어 있는지 확인
-  if (bookmarks.some(item => item.id === job.id)) {
-    return false; // 이미 북마크됨
+  // 중복 체크
+  if (bookmarks.some(bookmark => bookmark.id === job.id)) {
+    return false;
   }
   
-  // 북마크 시간 추가
-  const jobWithTimestamp = {
+  // 북마크 추가 (현재 시간을 북마크 시간으로 저장)
+  const newBookmark: BookmarkedJob = {
     ...job,
-    bookmarkedAt: new Date().toISOString()
+    bookmarkedAt: new Date()
   };
   
-  // 북마크 목록에 추가
-  const updatedBookmarks = [...bookmarks, jobWithTimestamp];
-  localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(updatedBookmarks));
+  bookmarks.push(newBookmark);
+  saveBookmarks(bookmarks);
+  
+  // 북마크 변경 이벤트 발생
+  window.dispatchEvent(new CustomEvent('bookmarks-changed'));
   
   return true;
-}
+};
 
 /**
- * 북마크에서 채용 정보를 제거합니다.
+ * 북마크 제거
  */
-export function removeBookmark(jobId: number): boolean {
+export const removeBookmark = (jobId: number) => {
   const bookmarks = getBookmarkedJobs();
-  const updatedBookmarks = bookmarks.filter(job => job.id !== jobId);
+  const filteredBookmarks = bookmarks.filter(job => job.id !== jobId);
   
-  if (updatedBookmarks.length === bookmarks.length) {
-    return false; // 변경 없음
+  if (filteredBookmarks.length !== bookmarks.length) {
+    saveBookmarks(filteredBookmarks);
+    
+    // 북마크 변경 이벤트 발생
+    window.dispatchEvent(new CustomEvent('bookmarks-changed'));
+    
+    return true;
   }
   
-  localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(updatedBookmarks));
-  return true;
-}
+  return false;
+};
 
 /**
- * 북마크 상태를 토글합니다. 이미 북마크되어 있으면 제거하고, 아니면 추가합니다.
+ * 북마크 저장
  */
-export function toggleBookmark(job: BookmarkedJob): boolean {
-  if (isJobBookmarked(job.id)) {
-    return removeBookmark(job.id);
-  } else {
-    return addBookmark(job);
+export const saveBookmarks = (bookmarks: BookmarkedJob[]) => {
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmarks));
+};
+
+/**
+ * 북마크 목록 가져오기
+ */
+export const getBookmarkedJobs = (): BookmarkedJob[] => {
+  const bookmarksJson = localStorage.getItem(BOOKMARK_KEY);
+  
+  if (!bookmarksJson) {
+    return [];
   }
-}
+  
+  try {
+    return JSON.parse(bookmarksJson);
+  } catch (e) {
+    console.error('북마크 데이터 파싱 오류:', e);
+    return [];
+  }
+};
 
 /**
- * 모든 북마크를 삭제합니다.
+ * 북마크 여부 확인
  */
-export function clearAllBookmarks(): void {
-  localStorage.removeItem(BOOKMARK_STORAGE_KEY);
-}
+export const isBookmarked = (jobId: number): boolean => {
+  const bookmarks = getBookmarkedJobs();
+  return bookmarks.some(job => job.id === jobId);
+};
