@@ -12,6 +12,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { isJobBookmarked, toggleBookmark } from '@/utils/bookmarkUtils';
 
 interface JobCardProps {
   job: {
@@ -39,9 +40,14 @@ interface JobCardProps {
 
 // 채용 정보를 표시하는 카드 컴포넌트
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
-  // 북마크 상태만 유지하고 unused 변수 제거
+  // 북마크 상태 관리
   const [bookmarked, setBookmarked] = useState(false);
   const { toast } = useToast();
+  
+  // 컴포넌트 마운트 시 북마크 상태 확인
+  useEffect(() => {
+    setBookmarked(isJobBookmarked(job.id));
+  }, [job.id]);
   
   // 매칭 점수에 따른 색상 및 텍스트 결정
   const getScoreColor = (score: number) => {
@@ -123,19 +129,17 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     }
   };
 
-  const toggleBookmark = () => {
+  // 북마크 토글 함수 수정
+  const handleToggleBookmark = () => {
+    const result = toggleBookmark(job);
     setBookmarked(!bookmarked);
+    
     toast({
       title: bookmarked ? '북마크 제거' : '북마크 추가',
       description: bookmarked ? '북마크에서 제거되었습니다' : '북마크에 추가되었습니다',
       variant: 'default',
     });
   };
-
-  // 컴포넌트 마운트 시 효과 - expanded 관련 코드 제거
-  useEffect(() => {
-    // 필요한 초기화 작업이 있으면 여기에 작성
-  }, []);
 
   return (
     <ContextMenu>
@@ -146,7 +150,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
               "mb-4 transition-all duration-300 overflow-hidden border-t-4",
               "hover:shadow-lg focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300",
               "shadow-md h-full flex flex-col", // 높이 100% 추가, flex-col로 변경
-              job.isApplied ? "border-l-4 border-l-blue-500" : "" // 지원한 채용공고 표시
+              job.isApplied ? "border-l-4 border-l-blue-500" : "", // 지원한 채용공고 표시
+              bookmarked ? "border-r-4 border-r-purple-500" : "" // 북마크된 채용공고 표시
             )}
             style={{ borderTopColor: getBorderColor(job.score || job.matchScore || 0) }}
           >
@@ -161,21 +166,42 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   </CardDescription>
                 </div>
                 <div className="flex flex-col items-end flex-shrink-0"> {/* Added flex-shrink-0 to prevent shrinking */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge 
-                          className={`font-medium mb-2 ${getScoreColor(job.score || job.matchScore || 0)}`}
-                        >
-                          <Star className="h-3 w-3 mr-1 inline" fill="currentColor" />
-                          {getScoreText(job.score || job.matchScore || 0)} ({job.score || job.matchScore || 0}점)
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>이 채용공고와 귀하의 이력서 매칭 점수입니다</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-2 mb-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            className={`font-medium ${getScoreColor(job.score || job.matchScore || 0)}`}
+                          >
+                            <Star className="h-3 w-3 mr-1 inline" fill="currentColor" />
+                            {getScoreText(job.score || job.matchScore || 0)} ({job.score || job.matchScore || 0}점)
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>이 채용공고와 귀하의 이력서 매칭 점수입니다</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    {/* 북마크 뱃지 추가 */}
+                    {bookmarked && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                            >
+                              <BookmarkCheck className="h-3 w-3 mr-1 inline" />
+                              북마크됨
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>이 채용공고는 북마크되었습니다</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                   
                   <div className="flex gap-2">
                     <TooltipProvider>
@@ -223,6 +249,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                 </div>
               </div>
             </CardHeader>
+            
             <CardContent className="pt-4 pb-2 flex-grow overflow-auto">
               <div className="grid gap-3 text-sm">
                 <div className="flex items-start">
@@ -248,7 +275,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <div className="flex items-start">
                     <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
                     <span className="dark:text-gray-300">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">급여:</span> {job.jobSalary}
+                      <span className="font-medium text-gray-700 dark:text-gray-300">��여:</span> {job.jobSalary}
                     </span>
                   </div>
                 )}
@@ -316,12 +343,34 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                 </a>
               </div>
               
-              {/* 등록/업데이트 일자 표시 (새로 추가) */}
-              {job.createdAt && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {new Date(job.createdAt).toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {/* 북마크 버튼 추가 */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleToggleBookmark();
+                  }}
+                  className={`p-1.5 rounded-full transition-colors ${
+                    bookmarked 
+                      ? 'text-purple-600 hover:text-purple-700 bg-purple-100 hover:bg-purple-200 dark:text-purple-300 dark:hover:text-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-800/40' 
+                      : 'text-gray-500 hover:text-purple-600 hover:bg-purple-100 dark:text-gray-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/30'
+                  }`}
+                  aria-label={bookmarked ? "북마크 제거" : "북마크 추가"}
+                >
+                  {bookmarked ? 
+                    <BookmarkCheck className="h-4 w-4" /> : 
+                    <Bookmark className="h-4 w-4" />
+                  }
+                </button>
+                
+                {/* 등록/업데이트 일자 표시 */}
+                {job.createdAt && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(job.createdAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
             </CardFooter>
           </Card>
         </div>
@@ -341,7 +390,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           공유하기
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={toggleBookmark}>
+        <ContextMenuItem onClick={handleToggleBookmark}>
           {bookmarked ? (
             <>
               <BookmarkCheck className="mr-2 h-4 w-4" />

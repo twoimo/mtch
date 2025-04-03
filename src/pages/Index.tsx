@@ -2,7 +2,7 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -15,38 +15,40 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import BookmarkList from '@/components/BookmarkList';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 
-// 로컬 스토리지 키
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
+  
   const {
-    // 상태
     testResult,
-    recommendedJobs = [], // Default to empty array
-    filteredJobs = [], // Default to empty array
+    recommendedJobs = [],
+    filteredJobs = [],
     filters,
     autoMatchingResult,
     applyResult,
     
-    // 로딩 상태
     isTestLoading,
     isRecommendedLoading,
     isAutoMatchingLoading,
     isApplyLoading,
     
-    // 액션 메서드
     handleTestApi,
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
     handleApplySaraminJobs,
     
-    // 필터 관련 메서드
     updateFilters,
     resetFilters
   } = useApiActions();
 
-  // More robust approach to ensure filters is always defined with arrays initialized
   const safeFilters = {
     keyword: filters?.keyword || '',
     minScore: filters?.minScore || 0,
@@ -61,14 +63,43 @@ const Index = () => {
   const [progress, setProgress] = useState<number>(0);
   const isAnyLoading = isTestLoading || isRecommendedLoading || isAutoMatchingLoading || isApplyLoading;
   
-  // 자동 데이터 불러오기 설정 상태
   const [autoFetchEnabled, setAutoFetchEnabled] = useState<boolean>(() => {
     const savedSetting = localStorage.getItem(AUTO_FETCH_STORAGE_KEY);
-    // 기본값은 true (활성화)
     return savedSetting === null ? true : savedSetting === 'true';
   });
 
-  // 로딩 중 프로그레스 바 애니메이션
+  useEffect(() => {
+    const updateBookmarkCount = () => {
+      const bookmarks = getBookmarkedJobs();
+      setBookmarkCount(bookmarks.length);
+    };
+    
+    updateBookmarkCount();
+    
+    const handleStorageChange = () => {
+      updateBookmarkCount();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('bookmarks-changed', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('bookmarks-changed', handleStorageChange);
+    };
+  }, []);
+
+  const toggleAutoFetch = () => {
+    setAutoFetchEnabled(prev => !prev);
+  };
+
+  const openCommandPalette = () => {
+    const event = new CustomEvent('open-command-palette');
+    window.dispatchEvent(event);
+    
+    window.postMessage({ type: 'TOGGLE_COMMAND_PALETTE' }, '*');
+  };
+
   useEffect(() => {
     let interval: number | undefined;
     
@@ -83,7 +114,6 @@ const Index = () => {
       }, 400);
     } else {
       setProgress(100);
-      // 프로그레스 바가 100%에 도달하면 잠시 후 리셋
       const timer = setTimeout(() => {
         setProgress(0);
       }, 1000);
@@ -95,12 +125,10 @@ const Index = () => {
     };
   }, [isAnyLoading]);
   
-  // 자동 데이터 불러오기 설정 변경 시 로컬 스토리지에 저장
   useEffect(() => {
     localStorage.setItem(AUTO_FETCH_STORAGE_KEY, autoFetchEnabled.toString());
   }, [autoFetchEnabled]);
 
-  // 웹사이트 접속 시 스크래핑 스케줄링 API 호출
   useEffect(() => {
     const startScrapingScheduler = async () => {
       try {
@@ -121,15 +149,11 @@ const Index = () => {
       }
     };
     
-    // 앱 시작 시 한 번만 실행
     startScrapingScheduler();
   }, []);
 
-  // 웹사이트 접속 시 자동으로 추천 채용 정보 불러오기
   useEffect(() => {
-    // 자동 데이터 불러오기가 활성화되어 있고 데이터가 없을 때만 실행
     if (autoFetchEnabled && recommendedJobs.length === 0 && !isRecommendedLoading) {
-      // 약간의 지연 후 실행하여 UI가 준비된 후 데이터를 불러옴
       const timer = setTimeout(() => {
         handleGetRecommendedJobs();
       }, 1000);
@@ -138,10 +162,6 @@ const Index = () => {
     }
   }, [autoFetchEnabled, recommendedJobs.length, isRecommendedLoading, handleGetRecommendedJobs]);
 
-  const toggleAutoFetch = () => {
-    setAutoFetchEnabled(prev => !prev);
-  };
-
   return (
     <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
       <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -149,7 +169,7 @@ const Index = () => {
           <div className="flex items-center gap-2">
             <LayoutDashboard className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
-            <Badge variant="outline" className="ml-2 bg-primary/10">v1.1.0</Badge>
+            <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
           </div>
           <p className="text-muted-foreground mt-1">
             사람인 채용 정보 자동화 시스템
@@ -171,6 +191,19 @@ const Index = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={openCommandPalette}>
+                  <Command className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>명령어 팔레트 (단축키: Ctrl+K)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button variant="outline" size="icon" asChild>
                   <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
                     <Icons.gitHub className="h-4 w-4" />
@@ -187,7 +220,6 @@ const Index = () => {
         </div>
       </header>
       
-      {/* 로딩 프로그레스 바 */}
       {isAnyLoading && (
         <div className="mb-6 w-full">
           <div className="flex justify-between items-center mb-2 text-sm">
@@ -203,7 +235,6 @@ const Index = () => {
         </div>
       )}
       
-      {/* API 작업 버튼 그룹 */}
       <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-xl gap-2">
@@ -236,7 +267,7 @@ const Index = () => {
           onValueChange={setActiveTab}
           className="w-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               <span>채용 정보</span>
@@ -246,6 +277,17 @@ const Index = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            
+            <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+              <BookmarkCheck className="h-4 w-4" />
+              <span>북마크</span>
+              {bookmarkCount > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20">
+                  {bookmarkCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            
             <TabsTrigger value="console" className="flex items-center gap-2">
               <Terminal className="h-4 w-4" />
               <span>콘솔 출력</span>
@@ -266,6 +308,12 @@ const Index = () => {
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
               />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="bookmarks" className="mt-0">
+            <div className="pb-8">
+              <BookmarkList />
             </div>
           </TabsContent>
           
