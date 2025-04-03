@@ -27,7 +27,14 @@ export function useCommandPalette() {
   useEffect(() => {
     // 키보드 단축키 (Ctrl+K 또는 Command+K)
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      // 입력 필드에서는 단축키가 작동하지 않도록 함
+      if (e.target instanceof HTMLInputElement || 
+          e.target instanceof HTMLTextAreaElement ||
+          (e.target instanceof HTMLElement && e.target.isContentEditable)) {
+        return;
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         toggle();
       }
@@ -38,21 +45,11 @@ export function useCommandPalette() {
       }
     };
     
-    // 문서 이벤트 리스너 (전역 이벤트)
+    // 단축키 및 버튼 클릭 이벤트를 통합 관리
     document.addEventListener('keydown', handleKeyDown);
-    
-    // 단축키 커스텀 이벤트를 위한 리스너 추가
-    const handleCustomKeyEvent = (event: Event) => {
-      if (event instanceof KeyboardEvent && (event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault();
-        toggle();
-      }
-    };
-    document.addEventListener('keydown', handleCustomKeyEvent);
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keydown', handleCustomKeyEvent);
     };
   }, [toggle, close, isOpen]);
   
