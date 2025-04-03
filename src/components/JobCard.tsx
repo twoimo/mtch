@@ -252,7 +252,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   <div className="flex items-start">
                     <Info className="h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0 dark:text-gray-400" />
                     <span className="dark:text-gray-300">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">��여:</span> {job.jobSalary}
+                      <span className="font-medium text-gray-700 dark:text-gray-300">급여:</span> {job.jobSalary}
                     </span>
                   </div>
                 )}
