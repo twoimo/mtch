@@ -6,7 +6,8 @@ import {
   AutoMatchingResponse, 
   ApplyResponse 
 } from '@/types/api';
-import recommendedJobsData from '@/components/recommended-jobs.json';
+import recommendedJobsData from '../../recommended-jobs.json';
+import allJobsData from '../../all-jobs.json';
 
 /**
  * API Service for communicating with the main service
@@ -61,7 +62,7 @@ class ApiService {
       
       if (!response.ok) {
         console.warn(`API error: ${response.status}`);
-        return { success: false, jobs: [] };
+        return this.getFallbackAllJobs();
       }
       
       try {
@@ -71,16 +72,25 @@ class ApiService {
           return data as AllJobsResponse;
         } else {
           console.warn('Unexpected API response format:', data);
-          return { success: false, jobs: [] };
+          return this.getFallbackAllJobs();
         }
       } catch (parseError) {
         console.error('API response parsing error:', parseError);
-        return { success: false, jobs: [] };
+        return this.getFallbackAllJobs();
       }
     } catch (error) {
       console.error('Error retrieving all jobs:', error);
-      return { success: false, jobs: [] };
+      return this.getFallbackAllJobs();
     }
+  }
+
+  /**
+   * Provides fallback data when API fails
+   * @returns All jobs from JSON file
+   */
+  private getFallbackAllJobs(): AllJobsResponse {
+    console.info('Using fallback data from all-jobs.json file');
+    return allJobsData as AllJobsResponse;
   }
 
   /**

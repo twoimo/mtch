@@ -1,5 +1,6 @@
 // API 통신을 담당하는 서비스 클래스
-import recommendedJobsData from '@/components/recommended-jobs.json';
+import recommendedJobsData from '../../recommended-jobs.json';
+import allJobsData from '../../all-jobs.json';
 
 interface ApiResponse {
   success: boolean;
@@ -126,7 +127,7 @@ class MainServiceCommunicateService {
       
       if (!response.ok) {
         console.warn(`API 응답 오류: ${response.status}`);
-        return { success: false, jobs: [] };
+        return this.getFallbackAllJobs();
       }
       
       try {
@@ -136,16 +137,25 @@ class MainServiceCommunicateService {
           return data as AllJobsResponse;
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
-          return { success: false, jobs: [] };
+          return this.getFallbackAllJobs();
         }
       } catch (parseError) {
         console.error('API 응답 파싱 중 오류 발생:', parseError);
-        return { success: false, jobs: [] };
+        return this.getFallbackAllJobs();
       }
     } catch (error) {
       console.error('전체 채용 정보 가져오기 중 오류 발생:', error);
-      return { success: false, jobs: [] };
+      return this.getFallbackAllJobs();
     }
+  }
+
+  /**
+   * Provides fallback data when API fails
+   * @returns All jobs from JSON file
+   */
+  private getFallbackAllJobs(): AllJobsResponse {
+    console.info('all-jobs.json 파일의 데이터를 사용합니다.');
+    return allJobsData as AllJobsResponse;
   }
 
   // 추천 채용 정보 가져오기 - 실제 API 데이터 처리
