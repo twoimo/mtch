@@ -72,12 +72,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
     onUpdateFilters({ ...filters, jobType: newTypes });
   };
   
-  const handleSalaryRangeChange = (value: string) => {
-    onUpdateFilters({ ...filters, salaryRange: value });
-  };
-  
   const handleOnlyApplicableChange = (checked: boolean) => {
     onUpdateFilters({ ...filters, onlyApplicable: checked });
+  };
+  
+  const handleHideExpiredChange = (checked: boolean) => {
+    setHideExpired(checked);
+    onToggleHideExpired(checked);
   };
   
   const toggleFilters = () => {
@@ -94,7 +95,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
   
   const renderFiltersContent = () => (
-    <div className={`space-y-4 ${isMobile ? 'px-4 py-2' : ''}`}>
+    <div className={`space-y-4 ${isMobile ? 'px-4 py-4' : ''}`}>
       <div>
         <Label htmlFor="keyword" className="text-sm font-medium mb-1.5 block">
           키워드 검색
@@ -214,121 +215,93 @@ const JobsTab: React.FC<JobsTabProps> = ({
             </label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="venture" id="company-type-venture" />
-            <label htmlFor="company-type-venture" className="text-sm cursor-pointer">
-              벤처기업
+            <RadioGroupItem value="large" id="company-type-large" />
+            <label htmlFor="company-type-large" className="text-sm cursor-pointer">
+              대기업
             </label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sme" id="company-type-sme" />
-            <label htmlFor="company-type-sme" className="text-sm cursor-pointer">
+            <RadioGroupItem value="medium" id="company-type-medium" />
+            <label htmlFor="company-type-medium" className="text-sm cursor-pointer">
+              중견기업
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="small" id="company-type-small" />
+            <label htmlFor="company-type-small" className="text-sm cursor-pointer">
               중소기업
             </label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="major" id="company-type-major" />
-            <label htmlFor="company-type-major" className="text-sm cursor-pointer">
-              대기업
+            <RadioGroupItem value="public" id="company-type-public" />
+            <label htmlFor="company-type-public" className="text-sm cursor-pointer">
+              공공기관
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="other" id="company-type-other" />
+            <label htmlFor="company-type-other" className="text-sm cursor-pointer">
+              기타 기업
             </label>
           </div>
         </RadioGroup>
       </div>
       
       <div>
-        <Label className="text-sm font-medium mb-1.5 block">직무 유형</Label>
+        <Label className="text-sm font-medium mb-1.5 block">경력 유형</Label>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="job-type-1"
-              checked={filters.jobType.includes('개발')}
+              checked={filters.jobType.includes('신입')}
               onCheckedChange={(checked) => 
-                handleJobTypeChange('개발', checked as boolean)
+                handleJobTypeChange('신입', checked as boolean)
               }
             />
             <label htmlFor="job-type-1" className="text-sm cursor-pointer">
-              개발
+              신입
             </label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="job-type-2"
-              checked={filters.jobType.includes('기획')}
+              checked={filters.jobType.includes('경력')}
               onCheckedChange={(checked) => 
-                handleJobTypeChange('기획', checked as boolean)
+                handleJobTypeChange('경력', checked as boolean)
               }
             />
             <label htmlFor="job-type-2" className="text-sm cursor-pointer">
-              기획
+              경력
             </label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="job-type-3"
-              checked={filters.jobType.includes('마케팅')}
+              checked={filters.jobType.includes('경력무관')}
               onCheckedChange={(checked) => 
-                handleJobTypeChange('마케팅', checked as boolean)
+                handleJobTypeChange('경력무관', checked as boolean)
               }
             />
             <label htmlFor="job-type-3" className="text-sm cursor-pointer">
-              마케팅
+              경력무관
             </label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="job-type-4"
-              checked={filters.jobType.includes('디자인')}
+              checked={filters.jobType.includes('인턴/계약')}
               onCheckedChange={(checked) => 
-                handleJobTypeChange('디자인', checked as boolean)
+                handleJobTypeChange('인턴/계약', checked as boolean)
               }
             />
             <label htmlFor="job-type-4" className="text-sm cursor-pointer">
-              디자인
+              인턴/계약
             </label>
           </div>
         </div>
       </div>
       
-      <div>
-        <Label className="text-sm font-medium mb-1.5 block">급여 범위</Label>
-        <RadioGroup 
-          value={filters.salaryRange} 
-          onValueChange={handleSalaryRangeChange}
-          className="grid grid-cols-1 gap-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="salary-all" />
-            <label htmlFor="salary-all" className="text-sm cursor-pointer">
-              전체
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="2000+" id="salary-2000" />
-            <label htmlFor="salary-2000" className="text-sm cursor-pointer">
-              2,000만원 이상
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="3000+" id="salary-3000" />
-            <label htmlFor="salary-3000" className="text-sm cursor-pointer">
-              3,000만원 이상
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="4000+" id="salary-4000" />
-            <label htmlFor="salary-4000" className="text-sm cursor-pointer">
-              4,000만원 이상
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="5000+" id="salary-5000" />
-            <label htmlFor="salary-5000" className="text-sm cursor-pointer">
-              5,000만원 이상
-            </label>
-          </div>
-        </RadioGroup>
-      </div>
-      
-      <div>
+      <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Switch 
             id="only-applicable"
@@ -337,6 +310,17 @@ const JobsTab: React.FC<JobsTabProps> = ({
           />
           <Label htmlFor="only-applicable" className="text-sm cursor-pointer">
             지원 가능한 채용만 보기
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="hide-expired"
+            checked={hideExpired}
+            onCheckedChange={handleHideExpiredChange}
+          />
+          <Label htmlFor="hide-expired" className="text-sm cursor-pointer">
+            마감일 지난 공고 제외
           </Label>
         </div>
       </div>

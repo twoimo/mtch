@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, LayoutDashboard, BookmarkCheck, Calendar, Terminal } from 'lucide-react';
+import { Briefcase, LayoutDashboard, BookmarkCheck, Calendar, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface BottomNavigationProps {
@@ -56,13 +56,13 @@ const BottomNavigation = ({ activeTab, setActiveTab, bookmarkCount }: BottomNavi
         </button>
         
         <button
-          onClick={() => handleTabChange('console')}
+          onClick={() => handleTabChange('profile')}
           className={`flex flex-col items-center justify-center w-1/4 p-1 ${
-            activeTab === 'console' ? 'text-primary' : 'text-muted-foreground'
+            activeTab === 'profile' ? 'text-primary' : 'text-muted-foreground'
           }`}
         >
-          <Terminal className="h-5 w-5 mb-1" />
-          <span className="text-xs">콘솔</span>
+          <User className="h-5 w-5 mb-1" />
+          <span className="text-xs">마이페이지</span>
         </button>
       </div>
     </div>

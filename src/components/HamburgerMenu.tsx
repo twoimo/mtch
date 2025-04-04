@@ -24,12 +24,12 @@ const HamburgerMenu = ({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="mr-2">
+        <Button variant="ghost" size="icon">
           <Menu className="h-5 w-5" />
           <span className="sr-only">메뉴 열기</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px]">
+      <SheetContent side="right" className="w-[250px] sm:w-[300px]">
         <div className="flex flex-col h-full">
           <div className="py-4">
             <h2 className="text-lg font-semibold mb-2 px-2">설정</h2>

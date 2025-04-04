@@ -3,7 +3,7 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Info, Bookmark, Command } from 'lucide-react';
+import { LayoutDashboard, Info, Bookmark, Command, User } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -181,29 +181,17 @@ const Index = () => {
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
-      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center w-full sm:w-auto">
-          {isMobile && (
-            <HamburgerMenu 
-              autoFetchEnabled={autoFetchEnabled}
-              toggleAutoFetch={toggleAutoFetch}
-              triggerCommandPalette={triggerCommandPalette}
-            />
-          )}
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
-              <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
-            </div>
-            <p className="text-muted-foreground mt-1">
-              사람인 채용 정보 자동화 시스템
-            </p>
+      <header className="mb-6 flex justify-between items-center">
+        <div className="flex items-center">
+          <div className="flex items-center">
+            <LayoutDashboard className="h-6 w-6 text-primary mr-2" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
+            <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
           </div>
         </div>
         
-        {!isMobile && (
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2">
+          {!isMobile && (
             <div className="flex items-center space-x-2 mr-2">
               <Switch
                 id="auto-fetch"
@@ -214,43 +202,63 @@ const Index = () => {
                 자동 조회
               </Label>
             </div>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={triggerCommandPalette}
-                  >
-                    <Command className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>명령어 팔레트 (단축키: Ctrl+K)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
-                      <Icons.gitHub className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>GitHub 저장소 방문</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <ThemeToggle />
-          </div>
-        )}
+          )}
+          
+          {!isMobile && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={triggerCommandPalette}
+                    >
+                      <Command className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>명령어 팔레트 (단축키: Ctrl+K)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
+                        <Icons.gitHub className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>GitHub 저장소 방문</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <ThemeToggle />
+            </>
+          )}
+          
+          {isMobile && (
+            <HamburgerMenu 
+              autoFetchEnabled={autoFetchEnabled}
+              toggleAutoFetch={toggleAutoFetch}
+              triggerCommandPalette={triggerCommandPalette}
+            />
+          )}
+        </div>
       </header>
+      
+      {isMobile && (
+        <div className="mb-3">
+          <p className="text-muted-foreground text-sm">
+            사람인 채용 정보 자동화 시스템
+          </p>
+        </div>
+      )}
       
       {isAnyLoading && (
         <div className="mb-6 w-full">
@@ -325,13 +333,8 @@ const Index = () => {
                 )}
               </TabsTrigger>
               
-              <TabsTrigger value="console" className="flex items-center gap-2">
-                <span>콘솔 출력</span>
-                {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
-                  <Badge variant="secondary" className="ml-1 bg-primary/20">
-                    {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
-                  </Badge>
-                )}
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <span>마이페이지</span>
               </TabsTrigger>
             </TabsList>
             
@@ -359,6 +362,27 @@ const Index = () => {
             <TabsContent value="bookmarks" className="mt-0">
               <div className="pb-8">
                 <BookmarkList />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="profile" className="mt-0">
+              <div className="pb-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      마이페이지
+                    </CardTitle>
+                    <CardDescription>
+                      계정 정보 및 설정을 관리하세요
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-center text-muted-foreground py-8">
+                      마이페이지 기능은 준비 중입니다.
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
             
@@ -395,6 +419,25 @@ const Index = () => {
             
             {activeTab === "bookmarks" && (
               <BookmarkList />
+            )}
+            
+            {activeTab === "profile" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    마이페이지
+                  </CardTitle>
+                  <CardDescription>
+                    계정 정보 및 설정을 관리하세요
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-muted-foreground py-8">
+                    마이페이지 기능은 준비 중입니다.
+                  </p>
+                </CardContent>
+              </Card>
             )}
             
             {activeTab === "console" && (
