@@ -92,6 +92,15 @@ export interface AllJobsResponse extends ApiResponse {
   total?: number;
 }
 
+// Add the missing response types
+export interface AutoMatchingResponse extends ApiResponse {
+  matchedJobs?: number;
+}
+
+export interface ApplyResponse extends ApiResponse {
+  appliedJobs?: number;
+}
+
 // Helper function to normalize job data with proper defaults for all required fields
 export function normalizeJob(job: any): Job {
   if (!job) return {
