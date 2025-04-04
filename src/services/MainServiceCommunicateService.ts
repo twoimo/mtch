@@ -1,85 +1,16 @@
 // API 통신을 담당하는 서비스 클래스
 import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
-
-interface ApiResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
-
-// Added a specific property to make this interface distinct from its parent
-interface TestResponse extends ApiResponse {
-  testCompleted?: boolean;
-}
-
-interface RecommendedJobsResponse extends ApiResponse {
-  recommendedJobs: Job[];
-}
-
-interface AllJobsResponse extends ApiResponse {
-  jobs: Job[];
-}
-
-interface AutoMatchingResponse extends ApiResponse {
-  matchedJobs?: number;
-}
-
-interface ApplyResponse extends ApiResponse {
-  appliedJobs?: number;
-}
-
-// 업데이트된 Job 인터페이스 - 새로운 API 필드 추가
-interface Job {
-  id: number;
-  score: number;
-  reason: string;
-  strength: string;
-  weakness: string;
-  apply_yn: number;
-  companyName: string;
-  jobTitle: string;
-  jobLocation: string;
-  companyType: string;
-  url: string;
-  deadline?: string;
-  jobType?: string;
-  jobSalary?: string;
-  employmentType?: string;
-  jobDescription?: string;
-  descriptionType?: string;
-  scrapedAt?: string;
-  matchScore?: number;
-  isRecommended?: number;
-  matchReason?: string;
-  
-  // 새로 추가된 필드
-  company_name?: string;
-  job_title?: string;
-  job_description?: string;
-  job_url?: string;
-  job_location?: string;
-  employment_type?: string;
-  job_salary?: string;
-  job_type?: string;
-  company_type?: string;
-  scraped_at?: string;
-  match_score?: number;
-  match_reason?: string;
-  is_recommended?: number;
-  
-  // 실제 새로운 필드들
-  isApplied?: number;
-  is_applied?: number;
-  isGptChecked?: number;
-  is_gpt_checked?: number;
-  createdAt?: string;
-  created_at?: string;
-  updatedAt?: string;
-  updated_at?: string;
-  deletedAt?: string | null;
-  deleted_at?: string | null;
-}
+import { 
+  Job, 
+  ApiResponse, 
+  RecommendedJobsResponse, 
+  AllJobsResponse, 
+  AutoMatchingResponse, 
+  ApplyResponse,
+  normalizeApiResponse,
+  normalizeRecommendedJobsResponse
+} from '@/types/api';
 
 class MainServiceCommunicateService {
   // 프록시를 사용하기 위해 상대 경로로 변경
@@ -87,7 +18,7 @@ class MainServiceCommunicateService {
   // CORS 프록시 관련 설정 제거 (더 이상 필요 없음)
 
   // 사람인 웹사이트 스크래핑 시작
-  async test(): Promise<TestResponse> {
+  async test(): Promise<ApiResponse & { testCompleted?: boolean }> {
     try {
       const response = await fetch(`${this.baseUrl}/test`, {
         method: 'GET',
@@ -132,9 +63,10 @@ class MainServiceCommunicateService {
       
       try {
         const data = await response.json();
-        if (data && data.success && Array.isArray(data.jobs)) {
+        if (data && data.success) {
           console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
-          return data as AllJobsResponse;
+          // normalize API response to match our type definitions
+          return normalizeApiResponse(data);
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
           return this.getFallbackAllJobs();
@@ -175,9 +107,10 @@ class MainServiceCommunicateService {
       
       try {
         const data = await response.json();
-        if (data && data.success && Array.isArray(data.recommendedJobs)) {
+        if (data && data.success) {
           console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
-          return data as RecommendedJobsResponse;
+          // normalize API response to match our type definitions
+          return normalizeRecommendedJobsResponse(data);
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
           return this.getFallbackRecommendedJobs();

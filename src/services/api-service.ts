@@ -1,10 +1,13 @@
+
 import { 
   // Removed unused ApiResponse import
   AllJobsResponse, 
   RecommendedJobsResponse, 
   TestResponse, 
   AutoMatchingResponse, 
-  ApplyResponse 
+  ApplyResponse,
+  normalizeApiResponse,
+  normalizeRecommendedJobsResponse
 } from '@/types/api';
 import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
@@ -67,9 +70,10 @@ class ApiService {
       
       try {
         const data = await response.json();
-        if (data && data.success && Array.isArray(data.jobs)) {
+        if (data && data.success) {
           console.info('Successfully retrieved all jobs');
-          return data as AllJobsResponse;
+          // Use the normalizer to handle type mismatches
+          return normalizeApiResponse(data);
         } else {
           console.warn('Unexpected API response format:', data);
           return this.getFallbackAllJobs();
@@ -113,9 +117,10 @@ class ApiService {
       
       try {
         const data = await response.json();
-        if (data && data.success && Array.isArray(data.recommendedJobs)) {
+        if (data && data.success) {
           console.info('Successfully retrieved recommended jobs data');
-          return data as RecommendedJobsResponse;
+          // Use the normalizer to handle type mismatches
+          return normalizeRecommendedJobsResponse(data);
         } else {
           console.warn('Unexpected API response format:', data);
           return this.getFallbackRecommendedJobs();
