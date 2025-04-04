@@ -86,6 +86,9 @@ export interface RecommendedJobsResponse extends ApiResponse {
 
 export interface AllJobsResponse extends ApiResponse {
   jobs: Job[];
+  page?: number;
+  limit?: number;
+  total?: number;
 }
 
 export interface AutoMatchingResponse extends ApiResponse {
