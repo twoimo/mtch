@@ -1,4 +1,5 @@
 
+
 // API response types
 export interface TestResultData {
   success: boolean;
@@ -99,13 +100,28 @@ export interface ApplyResponse extends ApiResponse {
   appliedJobs?: number;
 }
 
-// Helper function to normalize job data
-export function normalizeJob(job: Partial<Job>): Job {
+// Helper function to normalize job data with proper defaults for all required fields
+export function normalizeJob(job: any): Job {
+  if (!job) return {
+    id: 0,
+    score: 0,
+    reason: '',
+    strength: '',
+    weakness: '',
+    apply_yn: 0,
+    companyName: '',
+    jobTitle: '',
+    jobLocation: '',
+    companyType: '',
+    url: ''
+  };
+
   // Make sure required fields exist with default values
-  const normalizedJob: Job = {
+  return {
+    // Required fields with defaults
     id: job.id || 0,
-    score: job.score || job.match_score || 0,
-    reason: job.reason || job.match_reason || '',
+    score: job.score || job.match_score || job.matchScore || 0,
+    reason: job.reason || job.match_reason || job.matchReason || '',
     strength: job.strength || '',
     weakness: job.weakness || '',
     apply_yn: job.apply_yn || job.isApplied || job.is_applied || 0,
@@ -115,43 +131,67 @@ export function normalizeJob(job: Partial<Job>): Job {
     companyType: job.companyType || job.company_type || '',
     url: job.url || job.job_url || '',
     
-    // Copy all other fields
+    // Copy all other fields to maintain data integrity
     ...job
   };
-  
-  return normalizedJob;
 }
 
 // Helper function to normalize API response data
 export function normalizeApiResponse(data: any): AllJobsResponse {
-  if (!data || !data.success) {
+  if (!data) {
     return { success: false, jobs: [] };
+  }
+
+  // Create standard response shape
+  const normalizedResponse: AllJobsResponse = {
+    success: data.success || false,
+    jobs: [],
+    page: data.page || 1,
+    limit: data.limit || 10,
+    total: data.total || 0
+  };
+
+  // Add error message if present
+  if (data.message) {
+    normalizedResponse.message = data.message;
+  }
+  if (data.error) {
+    normalizedResponse.error = data.error;
   }
 
   // If the response has a 'jobs' array, normalize each job
   if (Array.isArray(data.jobs)) {
-    return {
-      ...data,
-      jobs: data.jobs.map(normalizeJob)
-    };
+    normalizedResponse.jobs = data.jobs.map(job => normalizeJob(job));
   }
   
-  return { success: data.success, jobs: [] };
+  return normalizedResponse;
 }
 
 // Helper function to normalize recommended jobs response
 export function normalizeRecommendedJobsResponse(data: any): RecommendedJobsResponse {
-  if (!data || !data.success) {
+  if (!data) {
     return { success: false, recommendedJobs: [] };
+  }
+
+  // Create standard response shape
+  const normalizedResponse: RecommendedJobsResponse = {
+    success: data.success || false,
+    recommendedJobs: []
+  };
+
+  // Add error message if present
+  if (data.message) {
+    normalizedResponse.message = data.message;
+  }
+  if (data.error) {
+    normalizedResponse.error = data.error;
   }
 
   // If the response has a 'recommendedJobs' array, normalize each job
   if (Array.isArray(data.recommendedJobs)) {
-    return {
-      ...data,
-      recommendedJobs: data.recommendedJobs.map(normalizeJob)
-    };
+    normalizedResponse.recommendedJobs = data.recommendedJobs.map(job => normalizeJob(job));
   }
   
-  return { success: data.success, recommendedJobs: [] };
+  return normalizedResponse;
 }
+

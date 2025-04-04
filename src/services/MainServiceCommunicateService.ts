@@ -66,8 +66,9 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data && data.success) {
           console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
-          // Use the normalizer to properly transform the API response
-          return normalizeApiResponse(data);
+          // 타입 변환을 위해 normalizeApiResponse 함수를 사용합니다
+          const normalizedData = normalizeApiResponse(data);
+          return normalizedData;
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
           return this.getFallbackAllJobs();
@@ -88,7 +89,8 @@ class MainServiceCommunicateService {
    */
   private getFallbackAllJobs(): AllJobsResponse {
     console.info('all-jobs.json 파일의 데이터를 사용합니다.');
-    return allJobsData as AllJobsResponse;
+    // JSON 파일 데이터를 정규화하여 반환
+    return normalizeApiResponse(allJobsData);
   }
 
   // 추천 채용 정보 가져오기 - 실제 API 데이터 처리
@@ -110,8 +112,9 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data && data.success) {
           console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
-          // Use the normalizer to properly transform the API response
-          return normalizeRecommendedJobsResponse(data);
+          // 타입 변환을 위해 normalizeRecommendedJobsResponse 함수를 사용합니다
+          const normalizedData = normalizeRecommendedJobsResponse(data);
+          return normalizedData;
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
           return this.getFallbackRecommendedJobs();
@@ -129,7 +132,8 @@ class MainServiceCommunicateService {
   // 백업 데이터 제공 메서드 - JSON 파일에서 가져오기
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
     console.info('recommended-jobs.json 파일의 데이터를 사용합니다.');
-    return recommendedJobsData as RecommendedJobsResponse;
+    // JSON 파일 데이터를 정규화하여 반환
+    return normalizeRecommendedJobsResponse(recommendedJobsData);
   }
 
   // 자동 채용 매칭 실행
