@@ -1,3 +1,4 @@
+
 import { 
   AllJobsResponse, 
   RecommendedJobsResponse, 
@@ -68,7 +69,7 @@ class ApiService {
       
       try {
         const data = await response.json();
-        if (data && data.success) {
+        if (data) {
           console.info('Successfully retrieved all jobs');
           // Use the normalizer to properly transform the API response
           return normalizeApiResponse(data);
@@ -92,7 +93,8 @@ class ApiService {
    */
   private getFallbackAllJobs(): AllJobsResponse {
     console.info('Using fallback data from all-jobs.json file');
-    return allJobsData as AllJobsResponse;
+    // Normalize the fallback data to ensure it matches the expected format
+    return normalizeApiResponse(allJobsData);
   }
 
   /**
@@ -115,7 +117,7 @@ class ApiService {
       
       try {
         const data = await response.json();
-        if (data && data.success) {
+        if (data) {
           console.info('Successfully retrieved recommended jobs data');
           // Use the normalizer to properly transform the API response
           return normalizeRecommendedJobsResponse(data);
@@ -139,7 +141,8 @@ class ApiService {
    */
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
     console.info('Using fallback data from recommended-jobs.json file');
-    return recommendedJobsData as RecommendedJobsResponse;
+    // Normalize the fallback data to ensure it matches the expected format
+    return normalizeRecommendedJobsResponse(recommendedJobsData);
   }
 
   /**

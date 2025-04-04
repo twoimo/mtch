@@ -64,7 +64,7 @@ class MainServiceCommunicateService {
       
       try {
         const data = await response.json();
-        if (data && data.success) {
+        if (data) {
           console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
           // 타입 변환을 위해 normalizeApiResponse 함수를 사용합니다
           const normalizedData = normalizeApiResponse(data);
@@ -110,7 +110,7 @@ class MainServiceCommunicateService {
       
       try {
         const data = await response.json();
-        if (data && data.success) {
+        if (data) {
           console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
           // 타입 변환을 위해 normalizeRecommendedJobsResponse 함수를 사용합니다
           const normalizedData = normalizeRecommendedJobsResponse(data);

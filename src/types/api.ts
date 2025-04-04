@@ -1,5 +1,4 @@
 
-
 // API response types
 export interface TestResultData {
   success: boolean;
@@ -116,22 +115,51 @@ export function normalizeJob(job: any): Job {
     url: ''
   };
 
-  // Make sure required fields exist with default values
+  // Extract values from either camelCase or snake_case properties with defaults
+  const id = job.id || 0;
+  
+  // For score, check all possible field names with numeric default
+  const score = job.score || job.match_score || job.matchScore || 0;
+  
+  // For reason, check all possible field names with empty string default
+  const reason = job.reason || job.match_reason || job.matchReason || '';
+  
+  // For strength and weakness (no snake case equivalents)
+  const strength = job.strength || '';
+  const weakness = job.weakness || '';
+  
+  // For apply_yn, check all possible field names
+  const apply_yn = job.apply_yn || job.isApplied || job.is_applied || 0;
+  
+  // For company name, job title, and location
+  const companyName = job.companyName || job.company_name || '';
+  const jobTitle = job.jobTitle || job.job_title || '';
+  const jobLocation = job.jobLocation || job.job_location || '';
+  
+  // For company type
+  const companyType = job.companyType || job.company_type || '';
+  
+  // For url
+  const url = job.url || job.job_url || '';
+
+  // Create the normalized job object with required fields
+  const normalizedJob: Job = {
+    id,
+    score,
+    reason,
+    strength,
+    weakness,
+    apply_yn,
+    companyName,
+    jobTitle,
+    jobLocation,
+    companyType,
+    url
+  };
+
+  // Add all other properties from the original job
   return {
-    // Required fields with defaults
-    id: job.id || 0,
-    score: job.score || job.match_score || job.matchScore || 0,
-    reason: job.reason || job.match_reason || job.matchReason || '',
-    strength: job.strength || '',
-    weakness: job.weakness || '',
-    apply_yn: job.apply_yn || job.isApplied || job.is_applied || 0,
-    companyName: job.companyName || job.company_name || '',
-    jobTitle: job.jobTitle || job.job_title || '',
-    jobLocation: job.jobLocation || job.job_location || '',
-    companyType: job.companyType || job.company_type || '',
-    url: job.url || job.job_url || '',
-    
-    // Copy all other fields to maintain data integrity
+    ...normalizedJob,
     ...job
   };
 }
@@ -162,6 +190,9 @@ export function normalizeApiResponse(data: any): AllJobsResponse {
   // If the response has a 'jobs' array, normalize each job
   if (Array.isArray(data.jobs)) {
     normalizedResponse.jobs = data.jobs.map(job => normalizeJob(job));
+  } else if (Array.isArray(data)) {
+    // Handle case where data itself is an array of jobs
+    normalizedResponse.jobs = data.map(job => normalizeJob(job));
   }
   
   return normalizedResponse;
@@ -190,8 +221,10 @@ export function normalizeRecommendedJobsResponse(data: any): RecommendedJobsResp
   // If the response has a 'recommendedJobs' array, normalize each job
   if (Array.isArray(data.recommendedJobs)) {
     normalizedResponse.recommendedJobs = data.recommendedJobs.map(job => normalizeJob(job));
+  } else if (Array.isArray(data)) {
+    // Handle case where data itself is an array of jobs
+    normalizedResponse.recommendedJobs = data.map(job => normalizeJob(job));
   }
   
   return normalizedResponse;
 }
-
