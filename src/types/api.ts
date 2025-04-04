@@ -108,7 +108,7 @@ export function normalizeJob(job: Partial<Job>): Job {
     reason: job.reason || job.match_reason || '',
     strength: job.strength || '',
     weakness: job.weakness || '',
-    apply_yn: job.apply_yn || 0,
+    apply_yn: job.apply_yn || job.isApplied || job.is_applied || 0,
     companyName: job.companyName || job.company_name || '',
     jobTitle: job.jobTitle || job.job_title || '',
     jobLocation: job.jobLocation || job.job_location || '',

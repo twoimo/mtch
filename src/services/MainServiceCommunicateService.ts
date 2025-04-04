@@ -1,3 +1,4 @@
+
 // API 통신을 담당하는 서비스 클래스
 import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
@@ -65,7 +66,7 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data && data.success) {
           console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
-          // normalize API response to match our type definitions
+          // Use the normalizer to properly transform the API response
           return normalizeApiResponse(data);
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);
@@ -109,7 +110,7 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data && data.success) {
           console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
-          // normalize API response to match our type definitions
+          // Use the normalizer to properly transform the API response
           return normalizeRecommendedJobsResponse(data);
         } else {
           console.warn('API 응답 형식이 예상과 다릅니다:', data);

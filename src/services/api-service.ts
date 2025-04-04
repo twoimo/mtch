@@ -1,6 +1,4 @@
-
 import { 
-  // Removed unused ApiResponse import
   AllJobsResponse, 
   RecommendedJobsResponse, 
   TestResponse, 
@@ -72,7 +70,7 @@ class ApiService {
         const data = await response.json();
         if (data && data.success) {
           console.info('Successfully retrieved all jobs');
-          // Use the normalizer to handle type mismatches
+          // Use the normalizer to properly transform the API response
           return normalizeApiResponse(data);
         } else {
           console.warn('Unexpected API response format:', data);
@@ -119,7 +117,7 @@ class ApiService {
         const data = await response.json();
         if (data && data.success) {
           console.info('Successfully retrieved recommended jobs data');
-          // Use the normalizer to handle type mismatches
+          // Use the normalizer to properly transform the API response
           return normalizeRecommendedJobsResponse(data);
         } else {
           console.warn('Unexpected API response format:', data);
