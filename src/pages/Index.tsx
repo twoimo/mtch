@@ -1,8 +1,9 @@
+
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, LayoutDashboard, Terminal, Info, Bookmark, BookmarkCheck, Command, Calendar } from 'lucide-react';
+import { LayoutDashboard, Info, Bookmark, Command } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -20,12 +21,16 @@ import BookmarkList from '@/components/BookmarkList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getBookmarkedJobs } from '@/utils/bookmarkUtils';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { useIsMobile } from '@/hooks/use-mobile';
+import HamburgerMenu from '@/components/HamburgerMenu';
+import BottomNavigation from '@/components/BottomNavigation';
 
 const AUTO_FETCH_STORAGE_KEY = 'auto-fetch-jobs-enabled';
 
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const { isOpen, setIsOpen } = useCommandPalette();
   
@@ -61,7 +66,14 @@ const Index = () => {
     onlyApplicable: filters?.onlyApplicable || false
   };
 
-  const [activeTab, setActiveTab] = useState<string>("jobs");
+  // Initialize active tab from URL state if available
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (location.state && location.state.tab) {
+      return location.state.tab;
+    }
+    return "jobs";
+  });
+  
   const [progress, setProgress] = useState<number>(0);
   const isAnyLoading = isTestLoading || isRecommendedLoading || isAutoMatchingLoading || isApplyLoading;
   
@@ -170,63 +182,74 @@ const Index = () => {
   return (
     <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 min-h-screen flex flex-col">
       <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
-            <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
+        <div className="flex items-center w-full sm:w-auto">
+          {isMobile && (
+            <HamburgerMenu 
+              autoFetchEnabled={autoFetchEnabled}
+              toggleAutoFetch={toggleAutoFetch}
+              triggerCommandPalette={triggerCommandPalette}
+            />
+          )}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <LayoutDashboard className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
+              <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
+            </div>
+            <p className="text-muted-foreground mt-1">
+              사람인 채용 정보 자동화 시스템
+            </p>
           </div>
-          <p className="text-muted-foreground mt-1">
-            사람인 채용 정보 자동화 시스템
-          </p>
         </div>
         
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex items-center space-x-2 mr-2">
-            <Switch
-              id="auto-fetch"
-              checked={autoFetchEnabled}
-              onCheckedChange={toggleAutoFetch}
-            />
-            <Label htmlFor="auto-fetch" className="text-sm">
-              자동 조회
-            </Label>
+        {!isMobile && (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center space-x-2 mr-2">
+              <Switch
+                id="auto-fetch"
+                checked={autoFetchEnabled}
+                onCheckedChange={toggleAutoFetch}
+              />
+              <Label htmlFor="auto-fetch" className="text-sm">
+                자동 조회
+              </Label>
+            </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={triggerCommandPalette}
+                  >
+                    <Command className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>명령어 팔레트 (단축키: Ctrl+K)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" asChild>
+                    <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
+                      <Icons.gitHub className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>GitHub 저장소 방문</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <ThemeToggle />
           </div>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={triggerCommandPalette}
-                >
-                  <Command className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>명령어 팔레트 (단축키: Ctrl+K)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" asChild>
-                  <a href="https://github.com/twoimo" target="_blank" rel="noopener noreferrer">
-                    <Icons.gitHub className="h-4 w-4" />
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>GitHub 저장소 방문</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <ThemeToggle />
-        </div>
+        )}
       </header>
       
       {isAnyLoading && (
@@ -245,14 +268,16 @@ const Index = () => {
       )}
       
       <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-3">
+        <CardHeader className={`${isMobile ? 'py-3' : 'pb-3'}`}>
           <CardTitle className="flex items-center text-xl gap-2">
             <Info className="h-5 w-5 text-primary" />
             API 작업
           </CardTitle>
-          <CardDescription>
-            아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
-          </CardDescription>
+          {!isMobile && (
+            <CardDescription>
+              아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <ApiButtonGroup 
@@ -270,51 +295,88 @@ const Index = () => {
       </Card>
       
       <div className="h-full">
-        <Tabs 
-          defaultValue="jobs" 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="w-full flex flex-col"
-        >
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="jobs" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span>채용 정보</span>
-              {filteredJobs && filteredJobs.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {filteredJobs.length}
-                </Badge>
-              )}
-            </TabsTrigger>
+        {!isMobile ? (
+          <Tabs 
+            defaultValue="jobs" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full flex flex-col"
+          >
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="jobs" className="flex items-center gap-2">
+                <span>채용 정보</span>
+                {filteredJobs && filteredJobs.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {filteredJobs.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              
+              <TabsTrigger value="calendar" className="flex items-center gap-2">
+                <span>캘린더</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+                <span>북마크</span>
+                {bookmarkCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {bookmarkCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              
+              <TabsTrigger value="console" className="flex items-center gap-2">
+                <span>콘솔 출력</span>
+                {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20">
+                    {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
             
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>캘린더</span>
-            </TabsTrigger>
+            <TabsContent value="jobs" className="mt-0">
+              <div className="pb-8">
+                <JobsTab 
+                  jobs={recommendedJobs || []}
+                  filteredJobs={filteredJobs || []}
+                  filters={safeFilters}
+                  onUpdateFilters={updateFilters}
+                  onResetFilters={resetFilters}
+                />
+              </div>
+            </TabsContent>
             
-            <TabsTrigger value="bookmarks" className="flex items-center gap-2">
-              <BookmarkCheck className="h-4 w-4" />
-              <span>북마크</span>
-              {bookmarkCount > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {bookmarkCount}
-                </Badge>
-              )}
-            </TabsTrigger>
+            <TabsContent value="calendar" className="mt-0">
+              <div className="pb-8">
+                <CalendarTab 
+                  jobs={recommendedJobs || []}
+                  filteredJobs={filteredJobs || []}
+                />
+              </div>
+            </TabsContent>
             
-            <TabsTrigger value="console" className="flex items-center gap-2">
-              <Terminal className="h-4 w-4" />
-              <span>콘솔 출력</span>
-              {(testResult || (recommendedJobs && recommendedJobs.length > 0) || autoMatchingResult || applyResult) && (
-                <Badge variant="secondary" className="ml-1 bg-primary/20">
-                  {[(testResult), (recommendedJobs && recommendedJobs.length > 0), autoMatchingResult, applyResult].filter(Boolean).length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="jobs" className="mt-0">
-            <div className="pb-8">
+            <TabsContent value="bookmarks" className="mt-0">
+              <div className="pb-8">
+                <BookmarkList />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="console" className="mt-0">
+              <div className="pb-8">
+                <ConsoleTab 
+                  testResult={testResult}
+                  recommendedJobs={recommendedJobs || []}
+                  autoMatchingResult={autoMatchingResult}
+                  applyResult={applyResult}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          // Mobile content without tab list, directly show the active content
+          <div className="pb-16">
+            {activeTab === "jobs" && (
               <JobsTab 
                 jobs={recommendedJobs || []}
                 filteredJobs={filteredJobs || []}
@@ -322,49 +384,53 @@ const Index = () => {
                 onUpdateFilters={updateFilters}
                 onResetFilters={resetFilters}
               />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="calendar" className="mt-0">
-            <div className="pb-8">
+            )}
+            
+            {activeTab === "calendar" && (
               <CalendarTab 
                 jobs={recommendedJobs || []}
                 filteredJobs={filteredJobs || []}
               />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="bookmarks" className="mt-0">
-            <div className="pb-8">
+            )}
+            
+            {activeTab === "bookmarks" && (
               <BookmarkList />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="console" className="mt-0">
-            <div className="pb-8">
+            )}
+            
+            {activeTab === "console" && (
               <ConsoleTab 
                 testResult={testResult}
                 recommendedJobs={recommendedJobs || []}
                 autoMatchingResult={autoMatchingResult}
                 applyResult={applyResult}
               />
-            </div>
-          </TabsContent>
-        </Tabs>
+            )}
+          </div>
+        )}
       </div>
       
-      <footer className="mt-12 py-4 border-t border-border/60 text-sm text-muted-foreground">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div>
-            © 2023 채용 정보 대시보드 - 모든 권리 보유
+      {!isMobile && (
+        <footer className="mt-12 py-4 border-t border-border/60 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>
+              © 2023 채용 정보 대시보드 - 모든 권리 보유
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-primary transition-colors">이용약관</a>
+              <a href="#" className="hover:text-primary transition-colors">개인정보처리방침</a>
+              <a href="#" className="hover:text-primary transition-colors">도움말</a>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-primary transition-colors">이용약관</a>
-            <a href="#" className="hover:text-primary transition-colors">개인정보처리방침</a>
-            <a href="#" className="hover:text-primary transition-colors">도움말</a>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
+      
+      {isMobile && (
+        <BottomNavigation 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          bookmarkCount={bookmarkCount}
+        />
+      )}
       
       <Toaster />
     </div>

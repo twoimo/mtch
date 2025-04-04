@@ -43,7 +43,7 @@ export interface Job {
   company_type?: string;
   scraped_at?: string;
   match_score?: number;
-  match_reason?: string;
+  match_reason?: number | string; // Changed to accept both number and string
   is_recommended?: number;
   
   // Additional fields
@@ -57,6 +57,7 @@ export interface Job {
   updated_at?: string;
   deletedAt?: string | null;
   deleted_at?: string | null;
+  job_type?: string; // Added this field which was missing
 }
 
 export interface JobFilters {
@@ -91,14 +92,6 @@ export interface AllJobsResponse extends ApiResponse {
   total?: number;
 }
 
-export interface AutoMatchingResponse extends ApiResponse {
-  matchedJobs?: number;
-}
-
-export interface ApplyResponse extends ApiResponse {
-  appliedJobs?: number;
-}
-
 // Helper function to normalize job data with proper defaults for all required fields
 export function normalizeJob(job: any): Job {
   if (!job) return {
@@ -129,7 +122,9 @@ export function normalizeJob(job: any): Job {
   const weakness = job.weakness || '';
   
   // For apply_yn, check all possible field names
-  const apply_yn = job.apply_yn || job.isApplied || job.is_applied || 0;
+  const apply_yn = job.apply_yn !== undefined ? job.apply_yn : 
+                  job.isApplied !== undefined ? job.isApplied : 
+                  job.is_applied !== undefined ? job.is_applied : 0;
   
   // For company name, job title, and location
   const companyName = job.companyName || job.company_name || '';
@@ -158,9 +153,20 @@ export function normalizeJob(job: any): Job {
   };
 
   // Add all other properties from the original job
+  // First convert potential snake_case keys to camelCase
+  const extraProps: Record<string, any> = {};
+  for (const key in job) {
+    if (key.includes('_')) {
+      // Convert snake_case to camelCase
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      extraProps[camelKey] = job[key];
+    }
+    extraProps[key] = job[key];
+  }
+
   return {
     ...normalizedJob,
-    ...job
+    ...extraProps
   };
 }
 
@@ -193,6 +199,9 @@ export function normalizeApiResponse(data: any): AllJobsResponse {
   } else if (Array.isArray(data)) {
     // Handle case where data itself is an array of jobs
     normalizedResponse.jobs = data.map(job => normalizeJob(job));
+  } else if (data.data && Array.isArray(data.data.jobs)) {
+    // Handle case where jobs are nested in data property
+    normalizedResponse.jobs = data.data.jobs.map(job => normalizeJob(job));
   }
   
   return normalizedResponse;
@@ -221,9 +230,15 @@ export function normalizeRecommendedJobsResponse(data: any): RecommendedJobsResp
   // If the response has a 'recommendedJobs' array, normalize each job
   if (Array.isArray(data.recommendedJobs)) {
     normalizedResponse.recommendedJobs = data.recommendedJobs.map(job => normalizeJob(job));
+  } else if (Array.isArray(data.jobs)) {
+    // Handle case where data has a jobs array instead of recommendedJobs
+    normalizedResponse.recommendedJobs = data.jobs.map(job => normalizeJob(job));
   } else if (Array.isArray(data)) {
     // Handle case where data itself is an array of jobs
     normalizedResponse.recommendedJobs = data.map(job => normalizeJob(job));
+  } else if (data.data && Array.isArray(data.data.jobs)) {
+    // Handle case where jobs are nested in data property
+    normalizedResponse.recommendedJobs = data.data.jobs.map(job => normalizeJob(job));
   }
   
   return normalizedResponse;
