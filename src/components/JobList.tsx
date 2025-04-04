@@ -283,15 +283,6 @@ const JobList: React.FC<JobListProps> = ({
   const handleSortChange = (value: string) => {
     setSortOrder(value as 'score' | 'apply');
   };
-  
-  // Toggle handler for expired jobs
-  const toggleHideExpired = () => {
-    const newValue = !hideExpired;
-    setHideExpired(newValue);
-    if (onToggleHideExpired) {
-      onToggleHideExpired(newValue);
-    }
-  };
 
   // When loading, show skeleton UI - optimized rendering
   if (isLoading) {
@@ -342,44 +333,20 @@ const JobList: React.FC<JobListProps> = ({
           )}
         </div>
         
-        <div className="flex flex-wrap gap-2 items-center">
-          {/* Expired jobs toggle */}
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <div 
-                onClick={toggleHideExpired}
-                className={`flex items-center px-3 py-1.5 rounded-full cursor-pointer text-sm transition-colors duration-200 ${
-                  hideExpired 
-                    ? 'bg-primary/10 text-primary border border-primary/20' 
-                    : 'bg-muted text-muted-foreground border border-muted-foreground/20'
-                }`}
-              >
-                <span className="mr-1.5">마감일 지난 공고 제외</span>
-                <div className={`w-3.5 h-3.5 rounded-full ${hideExpired ? 'bg-primary' : 'bg-muted-foreground/40'}`} />
-              </div>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-60 p-2.5 text-xs">
-              {hideExpired && expiredJobsCount > 0
-                ? `${expiredJobsCount}개의 마감된 채용공고가 숨겨져 있습니다.`
-                : '모든 채용공고를 표시합니다.'}
-            </HoverCardContent>
-          </HoverCard>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center">
-              <ArrowDownUp className={`h-4 w-4 mr-1 text-gray-500 ${isMobile ? 'hidden' : 'block'}`} />
-              <span className={`text-sm text-gray-600 ${isMobile ? 'hidden' : 'block'}`}>정렬:</span>
-            </div>
-            <Select value={sortOrder} onValueChange={handleSortChange}>
-              <SelectTrigger className={`h-8 ${isMobile ? 'w-[100px]' : 'w-[150px]'}`}>
-                <SelectValue placeholder="정렬 기준" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score">매칭 점수순</SelectItem>
-                <SelectItem value="apply">지원 가능 우선</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            <ArrowDownUp className={`h-4 w-4 mr-1 text-gray-500 ${isMobile ? 'hidden' : 'block'}`} />
+            <span className={`text-sm text-gray-600 ${isMobile ? 'hidden' : 'block'}`}>정렬:</span>
           </div>
+          <Select value={sortOrder} onValueChange={handleSortChange}>
+            <SelectTrigger className={`h-8 ${isMobile ? 'w-[100px]' : 'w-[150px]'}`}>
+              <SelectValue placeholder="정렬 기준" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="score">매칭 점수순</SelectItem>
+              <SelectItem value="apply">지원 가능 우선</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

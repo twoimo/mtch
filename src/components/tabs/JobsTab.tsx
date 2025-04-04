@@ -78,7 +78,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
   
   const handleHideExpiredChange = (checked: boolean) => {
     setHideExpired(checked);
-    onToggleHideExpired(checked);
+    handleToggleHideExpired(checked);
   };
   
   const toggleFilters = () => {
@@ -417,7 +417,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             jobs={filteredJobs} 
             isLoading={false} 
             hideExpired={hideExpired}
-            onToggleHideExpired={handleToggleHideExpired}
+            onToggleHideExpired={handleHideExpiredChange}
           />
         )}
       </div>

@@ -3,7 +3,7 @@ import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Info, Bookmark, Command, User } from 'lucide-react';
+import { LayoutDashboard, Info, Bookmark, Command, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import JobsTab from '@/components/tabs/JobsTab';
 import ConsoleTab from '@/components/tabs/ConsoleTab';
@@ -33,6 +33,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const { isOpen, setIsOpen } = useCommandPalette();
+  const [apiCardExpanded, setApiCardExpanded] = useState(!isMobile);
   
   const {
     testResult,
@@ -84,6 +85,10 @@ const Index = () => {
 
   const toggleAutoFetch = () => {
     setAutoFetchEnabled(prev => !prev);
+  };
+
+  const toggleApiCard = () => {
+    setApiCardExpanded(prev => !prev);
   };
 
   const triggerCommandPalette = () => {
@@ -185,7 +190,7 @@ const Index = () => {
         <div className="flex items-center">
           <div className="flex items-center">
             <LayoutDashboard className="h-6 w-6 text-primary mr-2" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">채용 정보 대시보드</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground whitespace-nowrap">채용 정보 대시보드</h1>
             <Badge variant="outline" className="ml-2 bg-primary/10">v1.2.0</Badge>
           </div>
         </div>
@@ -252,14 +257,6 @@ const Index = () => {
         </div>
       </header>
       
-      {isMobile && (
-        <div className="mb-3">
-          <p className="text-muted-foreground text-sm">
-            사람인 채용 정보 자동화 시스템
-          </p>
-        </div>
-      )}
-      
       {isAnyLoading && (
         <div className="mb-6 w-full">
           <div className="flex justify-between items-center mb-2 text-sm">
@@ -277,29 +274,49 @@ const Index = () => {
       
       <Card className="mb-6 border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className={`${isMobile ? 'py-3' : 'pb-3'}`}>
-          <CardTitle className="flex items-center text-xl gap-2">
-            <Info className="h-5 w-5 text-primary" />
-            API 작업
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-xl gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              API 작업
+            </CardTitle>
+            
+            {isMobile && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={toggleApiCard}
+                className="h-8 w-8 p-0"
+              >
+                {apiCardExpanded ? 
+                  <ChevronUp className="h-5 w-5" /> : 
+                  <ChevronDown className="h-5 w-5" />
+                }
+              </Button>
+            )}
+          </div>
+
           {!isMobile && (
             <CardDescription>
               아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
             </CardDescription>
           )}
         </CardHeader>
-        <CardContent>
-          <ApiButtonGroup 
-            onTestApi={handleTestApi}
-            onGetRecommendedJobs={handleGetRecommendedJobs}
-            onRunAutoJobMatching={handleRunAutoJobMatching}
-            onApplySaraminJobs={handleApplySaraminJobs}
-            
-            isTestLoading={isTestLoading}
-            isRecommendedLoading={isRecommendedLoading}
-            isAutoMatchingLoading={isAutoMatchingLoading}
-            isApplyLoading={isApplyLoading}
-          />
-        </CardContent>
+        
+        {(apiCardExpanded || !isMobile) && (
+          <CardContent>
+            <ApiButtonGroup 
+              onTestApi={handleTestApi}
+              onGetRecommendedJobs={handleGetRecommendedJobs}
+              onRunAutoJobMatching={handleRunAutoJobMatching}
+              onApplySaraminJobs={handleApplySaraminJobs}
+              
+              isTestLoading={isTestLoading}
+              isRecommendedLoading={isRecommendedLoading}
+              isAutoMatchingLoading={isAutoMatchingLoading}
+              isApplyLoading={isApplyLoading}
+            />
+          </CardContent>
+        )}
       </Card>
       
       <div className="h-full">

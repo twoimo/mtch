@@ -24,7 +24,7 @@ const HamburgerMenu = ({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="ml-auto">
           <Menu className="h-5 w-5" />
           <span className="sr-only">메뉴 열기</span>
         </Button>
