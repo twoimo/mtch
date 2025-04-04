@@ -11,6 +11,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 
 interface Job {
   id: number;
@@ -24,6 +26,7 @@ interface Job {
   jobLocation: string;
   companyType: string;
   url: string;
+  deadline?: string;
 }
 
 interface JobListProps {
@@ -31,27 +34,37 @@ interface JobListProps {
   isLoading?: boolean;
 }
 
-// 스크롤 위치를 로컬 스토리지에 저장/복원하기 위한 키
+// Key for storing scroll position in localStorage
 const SCROLL_POSITION_KEY = 'job-list-scroll-position';
+const HIDE_EXPIRED_KEY = 'hide-expired-jobs';
 
-// 채용 정보 목록을 표시하는 컴포넌트
+// Component to display job listings
 const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
+  const isMobile = useIsMobile();
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [page, setPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [sortOrder, setSortOrder] = useState<'score' | 'apply'>(() => {
-    // 로컬 스토리지에서 정렬 설정 복원
+    // Restore sort setting from localStorage
     const savedSort = localStorage.getItem('job-list-sort-order');
     return (savedSort as 'score' | 'apply') || 'score';
   });
+  
+  // State for hiding expired job postings - default is true (hide expired)
+  const [hideExpired, setHideExpired] = useState<boolean>(() => {
+    const savedState = localStorage.getItem(HIDE_EXPIRED_KEY);
+    return savedState === null ? true : savedState === 'true';
+  });
+  
   const loaderRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const itemsPerPage = 15; // 성능을 위해 항목 수 증가
+  const itemsPerPage = 15; // Increased number of items for performance
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
   const lastScrollTop = useRef(0);
 
-  // 디바운스 함수
+  // Debounce function
   const debounce = <F extends (...args: any[]) => any>(
     func: F,
     wait: number
@@ -64,91 +77,127 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     };
   };
 
-  // 정렬 함수 - useMemo 사용하여 계산 최적화
+  // Filter out expired jobs if hideExpired is true
+  useEffect(() => {
+    // Save hideExpired preference to localStorage
+    localStorage.setItem(HIDE_EXPIRED_KEY, hideExpired.toString());
+    
+    if (!jobs || jobs.length === 0) return;
+    
+    // Filter jobs based on hideExpired setting
+    let jobsToDisplay = [...jobs];
+    if (hideExpired) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      jobsToDisplay = jobs.filter(job => {
+        if (!job.deadline) return true;
+        
+        // Handle deadline format (YYYY.MM.DD or YYYY-MM-DD HH:MM)
+        let deadlineDate;
+        if (job.deadline.includes('.')) {
+          const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
+          deadlineDate = new Date(year, month - 1, day);
+        } else {
+          deadlineDate = new Date(job.deadline);
+        }
+        
+        return deadlineDate >= today;
+      });
+    }
+    
+    setFilteredJobs(jobsToDisplay);
+  }, [jobs, hideExpired]);
+
+  // Sort function - use memo to optimize calculation
   const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply') => {
     if (order === 'score') {
       return [...jobsToSort].sort((a, b) => b.score - a.score);
     } else {
       return [...jobsToSort].sort((a, b) => {
         if (a.apply_yn !== b.apply_yn) {
-          return b.apply_yn - a.apply_yn; // 지원 가능한 것을 먼저
+          return b.apply_yn - a.apply_yn; // Show applicable jobs first
         }
-        return b.score - a.score; // 동점이면 점수로 정렬
+        return b.score - a.score; // If same applicability, sort by score
       });
     }
   }, []);
 
-  // 전체 정렬된 작업 목록 계산 - useMemo로 최적화
-  const sortedAllJobs = useMemo(() => sortJobs(jobs, sortOrder), [jobs, sortOrder, sortJobs]);
+  // Calculate all sorted jobs - optimized with useMemo
+  const sortedAllJobs = useMemo(() => sortJobs(filteredJobs, sortOrder), 
+    [filteredJobs, sortOrder, sortJobs]);
 
-  // jobs prop이 변경될 때 실행
+  // When the jobs prop changes
   useEffect(() => {
     if (isInitialLoad && jobs.length > 0) {
-      // 마지막 스크롤 위치 복원
+      // Restore last scroll position
       const savedScrollPosition = localStorage.getItem(SCROLL_POSITION_KEY);
       if (savedScrollPosition) {
         const position = parseInt(savedScrollPosition, 10);
-        const sortedJobs = sortJobs(jobs, sortOrder);
         
-        // 충분한 항목을 로드하여 이전 스크롤 위치를 복원
+        // Load enough items to restore previous scroll position
         const itemsToLoad = Math.ceil(position / 100) * itemsPerPage;
         const pageToLoad = Math.ceil(itemsToLoad / itemsPerPage);
         
         setPage(pageToLoad);
-        setDisplayedJobs(sortedJobs.slice(0, pageToLoad * itemsPerPage));
-        
-        // 비동기적으로 스크롤 위치 복원
         setTimeout(() => {
           window.scrollTo(0, position);
         }, 100);
       } else {
-        // 초기 로드
-        setDisplayedJobs(sortedAllJobs.slice(0, itemsPerPage));
+        // Initial load
+        setPage(1);
       }
       
       setIsInitialLoad(false);
     } else if (jobs.length > 0) {
-      // 새 데이터가 로드된 경우 처음부터 표시
-      setDisplayedJobs(sortedAllJobs.slice(0, itemsPerPage));
+      // New data loaded, display from start
       setPage(1);
       window.scrollTo(0, 0);
     } else {
       setDisplayedJobs([]);
     }
     
-    // 언마운트 시 스크롤 위치 저장
+    // Save scroll position on unmount
     return () => {
       if (jobs.length > 0) {
         localStorage.setItem(SCROLL_POSITION_KEY, window.scrollY.toString());
       }
     };
-  }, [jobs, sortedAllJobs, sortOrder, isInitialLoad, sortJobs]);
+  }, [jobs, isInitialLoad, itemsPerPage]);
 
-  // 정렬 순서가 변경될 때 실행
+  // Update displayed jobs when sortedAllJobs changes or when page changes
   useEffect(() => {
-    if (jobs.length > 0) {
-      const sorted = sortJobs(jobs, sortOrder);
+    if (sortedAllJobs.length > 0) {
+      setDisplayedJobs(sortedAllJobs.slice(0, page * itemsPerPage));
+    } else {
+      setDisplayedJobs([]);
+    }
+  }, [sortedAllJobs, page, itemsPerPage]);
+
+  // Sort order change handler
+  useEffect(() => {
+    if (filteredJobs.length > 0) {
+      const sorted = sortJobs(filteredJobs, sortOrder);
       setDisplayedJobs(sorted.slice(0, page * itemsPerPage));
       
-      // 정렬 설정 저장
+      // Save sort setting
       localStorage.setItem('job-list-sort-order', sortOrder);
     }
-  }, [sortOrder, page, jobs, sortJobs]);
+  }, [sortOrder, page, filteredJobs, sortJobs]);
 
-  // 추가 데이터 로드 함수 - useCallback으로 메모이제이션
+  // Load more jobs function - memoized with useCallback
   const loadMoreJobs = useCallback(() => {
-    if (jobs.length === 0 || isLoading) return;
+    if (filteredJobs.length === 0 || isLoading) return;
     
     const nextPage = page + 1;
     const endIndex = nextPage * itemsPerPage;
     
     if (endIndex <= sortedAllJobs.length) {
-      setDisplayedJobs(sortedAllJobs.slice(0, endIndex));
       setPage(nextPage);
     }
-  }, [jobs.length, isLoading, page, itemsPerPage, sortedAllJobs]);
+  }, [filteredJobs.length, isLoading, page, itemsPerPage, sortedAllJobs.length]);
 
-  // 무한 스크롤 관찰자 설정
+  // Infinite scroll observer setup
   useEffect(() => {
     if (!loaderRef.current || isLoading) return;
     
@@ -171,12 +220,12 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     };
   }, [loadMoreJobs, isLoading, scrollDirection]);
 
-  // 스크롤 위치 및 방향 감지
+  // Scroll position and direction detection
   useEffect(() => {
     const handleScroll = debounce(() => {
       const scrollTop = window.scrollY;
       
-      // 스크롤 방향 감지
+      // Detect scroll direction
       if (scrollTop > lastScrollTop.current) {
         setScrollDirection('down');
       } else {
@@ -185,10 +234,10 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       
       lastScrollTop.current = scrollTop;
       
-      // 스크롤 위치에 따라 상단으로 이동 버튼 표시/숨김
+      // Show/hide scroll to top button based on scroll position
       setShowScrollTop(scrollTop > 300);
       
-      // 스크롤 위치 저장
+      // Save scroll position
       localStorage.setItem(SCROLL_POSITION_KEY, scrollTop.toString());
     }, 50);
 
@@ -196,17 +245,22 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 페이지 상단으로 스크롤
+  // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 정렬 순서 변경
+  // Sort order change handler
   const handleSortChange = (value: string) => {
     setSortOrder(value as 'score' | 'apply');
   };
+  
+  // Toggle handler for expired jobs
+  const toggleHideExpired = () => {
+    setHideExpired(prev => !prev);
+  };
 
-  // 로딩 중인 경우 스켈레톤 UI 표시 - 최적화된 렌더링
+  // When loading, show skeleton UI - optimized rendering
   if (isLoading) {
     return (
       <div className="grid gap-4 grid-cols-1">
@@ -242,24 +296,54 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
 
   return (
     <div className="relative" ref={listRef}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
         <div className="text-lg font-semibold">
           총 <span className="text-blue-600">{jobs.length}</span>개의 추천 채용정보
+          {hideExpired && (
+            <span className="text-sm text-muted-foreground ml-2">
+              (유효한 공고 {filteredJobs.length}개)
+            </span>
+          )}
         </div>
-        <div className="flex items-center">
-          <div className="flex items-center mr-2">
-            <ArrowDownUp className="h-4 w-4 mr-1 text-gray-500" />
-            <span className="text-sm text-gray-600">정렬:</span>
+        
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Expired jobs toggle */}
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <div 
+                onClick={toggleHideExpired}
+                className={`flex items-center px-3 py-1.5 rounded-full cursor-pointer text-sm transition-colors duration-200 ${
+                  hideExpired 
+                    ? 'bg-primary/10 text-primary border border-primary/20' 
+                    : 'bg-muted text-muted-foreground border border-muted-foreground/20'
+                }`}
+              >
+                <span className="mr-1.5">마감일 지난 공고 제외</span>
+                <div className={`w-3.5 h-3.5 rounded-full ${hideExpired ? 'bg-primary' : 'bg-muted-foreground/40'}`} />
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-60 p-2.5 text-xs">
+              {hideExpired
+                ? `${jobs.length - filteredJobs.length}개의 마감된 채용공고가 숨겨져 있습니다.`
+                : '모든 채용공고를 표시합니다.'}
+            </HoverCardContent>
+          </HoverCard>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              <ArrowDownUp className={`h-4 w-4 mr-1 text-gray-500 ${isMobile ? 'hidden' : 'block'}`} />
+              <span className={`text-sm text-gray-600 ${isMobile ? 'hidden' : 'block'}`}>정렬:</span>
+            </div>
+            <Select value={sortOrder} onValueChange={handleSortChange}>
+              <SelectTrigger className={`h-8 ${isMobile ? 'w-[100px]' : 'w-[150px]'}`}>
+                <SelectValue placeholder="정렬 기준" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="score">매칭 점수순</SelectItem>
+                <SelectItem value="apply">지원 가능 우선</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={sortOrder} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-[150px] h-8">
-              <SelectValue placeholder="정렬 기준" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score">매칭 점수순</SelectItem>
-              <SelectItem value="apply">지원 가능 우선</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -273,7 +357,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
             style={{ 
               animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
               animationFillMode: 'forwards',
-              willChange: 'opacity, transform' // 성능 최적화
+              willChange: 'opacity, transform' // Performance optimization
             }}
           >
             <JobCard job={job} />
@@ -281,8 +365,8 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         ))}
       </div>
       
-      {/* 더 로드하기 위한 관찰자 요소 - 최적화된 표시 로직 */}
-      {displayedJobs.length < jobs.length && (
+      {/* Observer element for loading more - Optimized display logic */}
+      {displayedJobs.length < filteredJobs.length && (
         <div 
           ref={loaderRef} 
           className="w-full h-20 flex items-center justify-center my-4"
@@ -291,23 +375,25 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         </div>
       )}
       
-      {/* 페이지 상단으로 이동 버튼 - 최적화된 렌더링 */}
+      {/* Scroll to top button - Optimized rendering */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-3 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 z-50"
+          className="fixed bottom-20 right-4 p-2.5 sm:p-3 bg-primary text-white rounded-full shadow-lg transition-all duration-300 z-50 hover:bg-primary/90"
           aria-label="페이지 상단으로 이동"
         >
-          <ArrowUp className="h-5 w-5" />
+          <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       )}
       
-      {/* 로드된 항목 수 표시 */}
+      {/* Display count information */}
       <div className="text-center text-sm text-gray-500 mt-4">
-        {displayedJobs.length}개 표시 중 (총 {jobs.length}개)
+        {displayedJobs.length}개 표시 중 
+        {hideExpired && jobs.length !== filteredJobs.length && 
+          ` (마감된 ${jobs.length - filteredJobs.length}개 제외, 총 ${filteredJobs.length}개)`}
       </div>
     </div>
   );
 };
 
-export default React.memo(JobList); // 메모이제이션으로 불필요한 리렌더링 방지
+export default React.memo(JobList); // Memoize to prevent unnecessary re-renders
