@@ -32,6 +32,8 @@ interface Job {
 interface JobListProps {
   jobs: Job[];
   isLoading?: boolean;
+  hideExpired?: boolean;
+  onToggleHideExpired?: (hide: boolean) => void;
 }
 
 // Key for storing scroll position in localStorage
@@ -39,7 +41,12 @@ const SCROLL_POSITION_KEY = 'job-list-scroll-position';
 const HIDE_EXPIRED_KEY = 'hide-expired-jobs';
 
 // Component to display job listings
-const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
+const JobList: React.FC<JobListProps> = ({ 
+  jobs, 
+  isLoading = false, 
+  hideExpired: propHideExpired,
+  onToggleHideExpired 
+}) => {
   const isMobile = useIsMobile();
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
@@ -52,10 +59,19 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   });
   
   // State for hiding expired job postings - default is true (hide expired)
+  // Use the prop value if provided, otherwise use localStorage
   const [hideExpired, setHideExpired] = useState<boolean>(() => {
+    if (propHideExpired !== undefined) return propHideExpired;
     const savedState = localStorage.getItem(HIDE_EXPIRED_KEY);
     return savedState === null ? true : savedState === 'true';
   });
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    if (propHideExpired !== undefined) {
+      setHideExpired(propHideExpired);
+    }
+  }, [propHideExpired]);
   
   const loaderRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -63,6 +79,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
   const lastScrollTop = useRef(0);
+  const [lastLoadedCount, setLastLoadedCount] = useState(itemsPerPage);
 
   // Debounce function
   const debounce = <F extends (...args: any[]) => any>(
@@ -77,37 +94,43 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     };
   };
 
+  // Function to check if a job is expired
+  const isJobExpired = useCallback((job: Job): boolean => {
+    if (!job.deadline) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let deadlineDate;
+    if (job.deadline.includes('.')) {
+      const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
+      deadlineDate = new Date(year, month - 1, day);
+    } else {
+      deadlineDate = new Date(job.deadline);
+    }
+    
+    return deadlineDate < today;
+  }, []);
+
   // Filter out expired jobs if hideExpired is true
   useEffect(() => {
     // Save hideExpired preference to localStorage
     localStorage.setItem(HIDE_EXPIRED_KEY, hideExpired.toString());
+    
+    if (onToggleHideExpired) {
+      onToggleHideExpired(hideExpired);
+    }
     
     if (!jobs || jobs.length === 0) return;
     
     // Filter jobs based on hideExpired setting
     let jobsToDisplay = [...jobs];
     if (hideExpired) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      jobsToDisplay = jobs.filter(job => {
-        if (!job.deadline) return true;
-        
-        // Handle deadline format (YYYY.MM.DD or YYYY-MM-DD HH:MM)
-        let deadlineDate;
-        if (job.deadline.includes('.')) {
-          const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
-          deadlineDate = new Date(year, month - 1, day);
-        } else {
-          deadlineDate = new Date(job.deadline);
-        }
-        
-        return deadlineDate >= today;
-      });
+      jobsToDisplay = jobs.filter(job => !isJobExpired(job));
     }
     
     setFilteredJobs(jobsToDisplay);
-  }, [jobs, hideExpired]);
+  }, [jobs, hideExpired, onToggleHideExpired, isJobExpired]);
 
   // Sort function - use memo to optimize calculation
   const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply') => {
@@ -150,9 +173,10 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       
       setIsInitialLoad(false);
     } else if (jobs.length > 0) {
-      // New data loaded, display from start
-      setPage(1);
-      window.scrollTo(0, 0);
+      // New data loaded, maintain current page
+      // This helps prevent resetting to page 1 when toggling filters
+      const currentLoadedCount = page * itemsPerPage;
+      setLastLoadedCount(currentLoadedCount);
     } else {
       setDisplayedJobs([]);
     }
@@ -163,27 +187,32 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
         localStorage.setItem(SCROLL_POSITION_KEY, window.scrollY.toString());
       }
     };
-  }, [jobs, isInitialLoad, itemsPerPage]);
+  }, [jobs, isInitialLoad, itemsPerPage, page]);
 
   // Update displayed jobs when sortedAllJobs changes or when page changes
   useEffect(() => {
     if (sortedAllJobs.length > 0) {
-      setDisplayedJobs(sortedAllJobs.slice(0, page * itemsPerPage));
+      const jobsToDisplay = sortedAllJobs.slice(0, Math.max(page * itemsPerPage, lastLoadedCount));
+      setDisplayedJobs(jobsToDisplay);
+      
+      // Store the displayed count for maintaining state during filter changes
+      setLastLoadedCount(jobsToDisplay.length);
     } else {
       setDisplayedJobs([]);
     }
-  }, [sortedAllJobs, page, itemsPerPage]);
+  }, [sortedAllJobs, page, itemsPerPage, lastLoadedCount]);
 
   // Sort order change handler
   useEffect(() => {
     if (filteredJobs.length > 0) {
       const sorted = sortJobs(filteredJobs, sortOrder);
-      setDisplayedJobs(sorted.slice(0, page * itemsPerPage));
+      const jobsToDisplay = sorted.slice(0, Math.max(page * itemsPerPage, lastLoadedCount));
+      setDisplayedJobs(jobsToDisplay);
       
       // Save sort setting
       localStorage.setItem('job-list-sort-order', sortOrder);
     }
-  }, [sortOrder, page, filteredJobs, sortJobs]);
+  }, [sortOrder, page, filteredJobs, sortJobs, itemsPerPage, lastLoadedCount]);
 
   // Load more jobs function - memoized with useCallback
   const loadMoreJobs = useCallback(() => {
@@ -257,7 +286,11 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
   
   // Toggle handler for expired jobs
   const toggleHideExpired = () => {
-    setHideExpired(prev => !prev);
+    const newValue = !hideExpired;
+    setHideExpired(newValue);
+    if (onToggleHideExpired) {
+      onToggleHideExpired(newValue);
+    }
   };
 
   // When loading, show skeleton UI - optimized rendering
@@ -294,12 +327,15 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
     );
   }
 
+  // Calculate the number of expired jobs for the UI
+  const expiredJobsCount = jobs.filter(isJobExpired).length;
+
   return (
     <div className="relative" ref={listRef}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
         <div className="text-lg font-semibold">
           총 <span className="text-blue-600">{jobs.length}</span>개의 추천 채용정보
-          {hideExpired && (
+          {hideExpired && expiredJobsCount > 0 && (
             <span className="text-sm text-muted-foreground ml-2">
               (유효한 공고 {filteredJobs.length}개)
             </span>
@@ -323,8 +359,8 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
               </div>
             </HoverCardTrigger>
             <HoverCardContent className="w-60 p-2.5 text-xs">
-              {hideExpired
-                ? `${jobs.length - filteredJobs.length}개의 마감된 채용공고가 숨겨져 있습니다.`
+              {hideExpired && expiredJobsCount > 0
+                ? `${expiredJobsCount}개의 마감된 채용공고가 숨겨져 있습니다.`
                 : '모든 채용공고를 표시합니다.'}
             </HoverCardContent>
           </HoverCard>
@@ -389,8 +425,8 @@ const JobList: React.FC<JobListProps> = ({ jobs, isLoading = false }) => {
       {/* Display count information */}
       <div className="text-center text-sm text-gray-500 mt-4">
         {displayedJobs.length}개 표시 중 
-        {hideExpired && jobs.length !== filteredJobs.length && 
-          ` (마감된 ${jobs.length - filteredJobs.length}개 제외, 총 ${filteredJobs.length}개)`}
+        {hideExpired && expiredJobsCount > 0 && 
+          ` (마감된 ${expiredJobsCount}개 제외, 총 ${filteredJobs.length}개)`}
       </div>
     </div>
   );

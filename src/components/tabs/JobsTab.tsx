@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import JobCard from '@/components/JobCard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -149,6 +150,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
     return savedState === null ? true : savedState === 'true';
   });
 
+  // 마지막으로 로드된 항목 수를 저장
+  const [lastLoadedCount, setLastLoadedCount] = useState(ITEMS_PER_PAGE);
+
   const [gridLayout, setGridLayout] = useState<'single' | 'double'>(() => {
     const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
     return (savedLayout === 'single') ? 'single' : 'double';
@@ -186,10 +190,31 @@ const JobsTab: React.FC<JobsTabProps> = ({
     localStorage.setItem(FILTER_EXPANDED_KEY, isFilterExpanded.toString());
   }, [isFilterExpanded]);
 
-  // 만료 공고 숨김 상태 로컬 스토리지에 저장
+  // 만료 공고 숨김 상태가 변경될 때 필터에 반영
   useEffect(() => {
     localStorage.setItem(HIDE_EXPIRED_KEY, hideExpired.toString());
-  }, [hideExpired]);
+    
+    // Update the hideExpired property in filters
+    onUpdateFilters({ hideExpired });
+  }, [hideExpired, onUpdateFilters]);
+
+  // 마감일 지난 공고인지 확인하는 함수
+  const isJobExpired = useCallback((job: Job): boolean => {
+    if (!job.deadline) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let deadlineDate;
+    if (job.deadline.includes('.')) {
+      const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
+      deadlineDate = new Date(year, month - 1, day);
+    } else {
+      deadlineDate = new Date(job.deadline);
+    }
+    
+    return deadlineDate < today;
+  }, []);
 
   // 필터링된 채용 정보에 따라 표시할 채용 정보 업데이트
   useEffect(() => {
@@ -199,32 +224,17 @@ const JobsTab: React.FC<JobsTabProps> = ({
       return;
     }
 
-    // 마감일 지난 채용 공고 필터링
-    let jobsToDisplay = filteredJobs;
-    if (hideExpired) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      jobsToDisplay = filteredJobs.filter(job => {
-        if (!job.deadline) return true;
-        
-        // 마감일 형식 처리 (YYYY.MM.DD 또는 YYYY-MM-DD HH:MM)
-        let deadlineDate;
-        if (job.deadline.includes('.')) {
-          const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
-          deadlineDate = new Date(year, month - 1, day);
-        } else {
-          deadlineDate = new Date(job.deadline);
-        }
-        
-        return deadlineDate >= today;
-      });
-    }
-
-    const sortedJobs = sortJobs(jobsToDisplay, sortOrder, sortDirection);
-    setDisplayedJobs(sortedJobs.slice(0, ITEMS_PER_PAGE));
-    setCurrentPage(1);
-  }, [filteredJobs, sortOrder, sortDirection, hideExpired]);
+    // 정렬된 채용 정보
+    const sortedJobs = sortJobs(filteredJobs, sortOrder, sortDirection);
+    
+    // 현재 페이지에 따라 표시할 채용 정보 업데이트
+    // lastLoadedCount를 사용하여 토글 시 이전에 로드된 개수 유지
+    const jobsToDisplay = sortedJobs.slice(0, Math.max(currentPage * ITEMS_PER_PAGE, lastLoadedCount));
+    setDisplayedJobs(jobsToDisplay);
+    
+    // 현재 로드된 개수 저장
+    setLastLoadedCount(jobsToDisplay.length);
+  }, [filteredJobs, sortOrder, sortDirection, currentPage, lastLoadedCount]);
 
   // 키보드 단축키 처리
   useEffect(() => {
@@ -287,7 +297,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
       const endIndex = nextPage * ITEMS_PER_PAGE;
 
       const sortedJobs = sortJobs(filteredJobs, sortOrder, sortDirection);
-      setDisplayedJobs(sortedJobs.slice(startIndex, endIndex));
+      
+      // 표시된 작업 수 업데이트하고 lastLoadedCount 업데이트
+      const newDisplayJobs = sortedJobs.slice(startIndex, endIndex);
+      setDisplayedJobs(newDisplayJobs);
+      setLastLoadedCount(newDisplayJobs.length);
+      
       setCurrentPage(nextPage);
       setLoading(false);
     }, 300);
@@ -382,6 +397,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
       </div>
     );
   }
+
+  // 만료된 채용 정보 개수 계산
+  const expiredJobsCount = jobs.filter(isJobExpired).length;
 
   return (
     <div className="w-full space-y-5">
@@ -613,6 +631,11 @@ const JobsTab: React.FC<JobsTabProps> = ({
                     <Label htmlFor="hide-expired" className="flex items-center gap-1.5 text-sm font-medium">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       마감일 지난 공고 제외
+                      {expiredJobsCount > 0 && (
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({expiredJobsCount}개)
+                        </span>
+                      )}
                     </Label>
                     <Switch 
                       id="hide-expired" 
@@ -714,8 +737,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
         <p className="text-sm text-muted-foreground">
           총 <span className="font-medium text-foreground">{filteredJobs.length}</span>개 중 
           <span className="font-medium text-foreground"> {displayedJobs.length}</span>개 표시 중
-          {hideExpired && filteredJobs.length > 0 && (
-            <span className="text-xs ml-1">(마감일 지난 공고 제외)</span>
+          {hideExpired && expiredJobsCount > 0 && (
+            <span className="text-xs ml-1">(마감일 지난 {expiredJobsCount}개 공고 제외)</span>
           )}
         </p>
         

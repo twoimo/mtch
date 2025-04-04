@@ -67,6 +67,7 @@ export interface JobFilters {
   jobType: string[];
   salaryRange: string;
   onlyApplicable: boolean;
+  hideExpired?: boolean; // Added hideExpired property
 }
 
 export interface ApiResponse {

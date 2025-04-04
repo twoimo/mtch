@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
@@ -110,6 +111,24 @@ export const useApiActions = () => {
     }
   ], []);
 
+  // Helper function to check if a job is expired
+  const isJobExpired = useCallback((job: Job): boolean => {
+    if (!job.deadline) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let deadlineDate;
+    if (job.deadline.includes('.')) {
+      const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
+      deadlineDate = new Date(year, month - 1, day);
+    } else {
+      deadlineDate = new Date(job.deadline);
+    }
+    
+    return deadlineDate < today;
+  }, []);
+
   // More robust helper function to check if an employment type matches
   const matchesEmploymentType = useCallback((job: Job, filterType: string): boolean => {
     // If no employment type data in job, return false
@@ -134,6 +153,11 @@ export const useApiActions = () => {
     if (!recommendedJobs || recommendedJobs.length === 0) return [];
     
     return recommendedJobs.filter(job => {
+      // Hide expired jobs filter (applied at the main level)
+      if (filters.hideExpired && isJobExpired(job)) {
+        return false;
+      }
+      
       // Keyword filtering
       if (filters.keyword) {
         const keyword = filters.keyword.toLowerCase();
@@ -212,7 +236,7 @@ export const useApiActions = () => {
       
       return true;
     });
-  }, [recommendedJobs, filters, COMPANY_CATEGORIES, matchesEmploymentType]);
+  }, [recommendedJobs, filters, COMPANY_CATEGORIES, matchesEmploymentType, isJobExpired]);
 
   // More robust filter update function
   const updateFilters = useCallback((newFilters: Partial<JobFilters>) => {
@@ -239,6 +263,11 @@ export const useApiActions = () => {
       
       if ('onlyApplicable' in newFilters) {
         updatedFilters.onlyApplicable = !!newFilters.onlyApplicable;
+      }
+      
+      // Handle the hideExpired filter
+      if ('hideExpired' in newFilters) {
+        updatedFilters.hideExpired = !!newFilters.hideExpired;
       }
       
       // Special handling for array types
