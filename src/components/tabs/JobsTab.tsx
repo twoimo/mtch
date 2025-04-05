@@ -133,9 +133,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
   
   const renderFiltersContent = () => (
-    <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'py-4 px-1'} scrollbar-none`}>
-      <div>
-        <Label htmlFor="keyword" className="text-sm font-medium mb-2 block">
+    <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'px-1'} scrollbar-none`}>
+      <div className="py-4">
+        <Label htmlFor="keyword" className="text-sm font-medium mb-2 block ">
           키워드 검색
         </Label>
         <div className="relative">
@@ -144,7 +144,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             placeholder="회사명, 포지션 등 검색"
             value={filters.keyword}
             onChange={handleKeywordChange}
-            className={`pr-8 ${filters.keyword ? 'border-primary/70' : ''}`}
+            className={`pr-8 ${filters.keyword ? 'border-primary/70' : ''} `}
           />
           {filters.keyword && (
             <button
@@ -157,7 +157,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
-      <div className="pt-1">
+      <div className="pt-1 py-4">
         <div className="flex justify-between items-center mb-2">
           <Label htmlFor="score" className="text-sm font-medium">
             최소 매칭 점수: <span className="text-primary">{filters.minScore}점</span>
@@ -174,7 +174,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         />
       </div>
       
-      <div className="pt-1">
+      <div className="pt-1 py-4">
         <Label className="text-sm font-medium mb-2 block">고용 형태</Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2">
@@ -240,7 +240,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
-      <div className="pt-1">
+      <div className="pt-1 py-4">
         <Label className="text-sm font-medium mb-2 block">회사 유형</Label>
         <RadioGroup 
           value={filters.companyType} 
@@ -286,7 +286,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </RadioGroup>
       </div>
       
-      <div className="pt-1">
+      <div className="pt-1 py-4">
         <Label className="text-sm font-medium mb-2 block">경력 유형</Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2">

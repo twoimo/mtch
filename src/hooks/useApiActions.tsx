@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '../components/ui/use-toast';
 
 // Define proper interface types for our data structures
 interface Job {
