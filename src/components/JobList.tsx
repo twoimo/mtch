@@ -359,11 +359,6 @@ const JobList: React.FC<JobListProps> = ({
         <div className="flex items-center text-lg font-semibold">
           {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
         </div>
-        {hideExpired && expiredJobsCount > 0 && (
-          <div className="text-xs text-muted-foreground">
-            (유효한 공고 {filteredJobs.length}개, 마감된 {expiredJobsCount}개 제외)
-          </div>
-        )}
       </div>
       
       <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
