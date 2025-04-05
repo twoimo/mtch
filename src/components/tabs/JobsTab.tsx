@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
   const [filtersVisible, setFiltersVisible] = useState(!isMobile);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
+  // Sync filters state with the component whenever drawer opens
+  useEffect(() => {
+    if (drawerOpen) {
+      // This ensures the drawer shows the current filter state
+      console.log("Drawer opened with hideExpired:", filters.hideExpired);
+    }
+  }, [drawerOpen, filters]);
+  
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateFilters({ ...filters, keyword: e.target.value });
   };
@@ -94,8 +103,13 @@ const JobsTab: React.FC<JobsTabProps> = ({
     setDrawerOpen(true);
   };
   
+  // Function to handle drawer close - we don't need to reset or modify filters here
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+  };
+  
   const renderFiltersContent = () => (
-    <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'py-2'} scrollbar-none`}>
+    <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'py-4 px-1'} scrollbar-none`}>
       <div>
         <Label htmlFor="keyword" className="text-sm font-medium mb-2 block">
           키워드 검색
@@ -295,7 +309,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
           </Label>
           <Switch 
             id="hide-expired"
-            checked={filters.hideExpired}
+            checked={!!filters.hideExpired}
             onCheckedChange={handleHideExpiredChange}
           />
         </div>

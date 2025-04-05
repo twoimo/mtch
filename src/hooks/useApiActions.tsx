@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -382,8 +381,9 @@ export const useApiActions = () => {
     }
   }, []);
 
-  // 필터 함수
+  // 필터 함수 - hideExpired 상태 변경 시 항상 localStorage에 저장하도록 보장
   const toggleHideExpired = useCallback((value: boolean) => {
+    console.log(`Toggling hideExpired to: ${value}`);
     setHideExpired(value);
     localStorage.setItem(CACHE_KEYS.HIDE_EXPIRED, value.toString());
   }, []);
