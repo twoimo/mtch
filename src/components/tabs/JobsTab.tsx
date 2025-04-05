@@ -48,13 +48,15 @@ const JobsTab: React.FC<JobsTabProps> = ({
   const [filtersVisible, setFiltersVisible] = useState(!isMobile);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
-  // Sync filters state with the component whenever drawer opens
+  // Initialize internal state based on filters prop
+  const [localHideExpired, setLocalHideExpired] = useState(
+    filters.hideExpired === undefined ? true : !!filters.hideExpired
+  );
+  
+  // Sync filters state with the component whenever drawer opens or filters change
   useEffect(() => {
-    if (drawerOpen) {
-      // This ensures the drawer shows the current filter state
-      console.log("Drawer opened with hideExpired:", filters.hideExpired);
-    }
-  }, [drawerOpen, filters]);
+    setLocalHideExpired(filters.hideExpired === undefined ? true : !!filters.hideExpired);
+  }, [drawerOpen, filters.hideExpired]);
   
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateFilters({ ...filters, keyword: e.target.value });
@@ -87,6 +89,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
   
   const handleHideExpiredChange = (checked: boolean) => {
+    // Update local state immediately for responsive UI
+    setLocalHideExpired(checked);
+    // Update parent state
     onUpdateFilters({ ...filters, hideExpired: checked });
   };
   
@@ -103,7 +108,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
     setDrawerOpen(true);
   };
   
-  // Function to handle drawer close - we don't need to reset or modify filters here
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
   };
@@ -309,7 +313,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
           </Label>
           <Switch 
             id="hide-expired"
-            checked={!!filters.hideExpired}
+            checked={localHideExpired}
             onCheckedChange={handleHideExpiredChange}
           />
         </div>
@@ -353,8 +357,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
           <JobList 
             jobs={filteredJobs} 
             isLoading={false} 
-            hideExpired={filters.hideExpired}
-            onToggleHideExpired={undefined}
+            hideExpired={localHideExpired}
+            onToggleHideExpired={handleHideExpiredChange}
             onOpenFilters={isMobile ? handleOpenDrawer : undefined}
           />
         )}

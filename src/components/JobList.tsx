@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
 import { ArrowUp, ArrowDownUp, Filter } from 'lucide-react';
@@ -15,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Job {
   id: number;
@@ -48,7 +50,7 @@ const SORT_ORDER_KEY = 'job-list-sort-order';
 const JobList: React.FC<JobListProps> = ({ 
   jobs, 
   isLoading = false, 
-  hideExpired,
+  hideExpired = true, // Default to true
   onToggleHideExpired,
   title = '채용 정보',
   onOpenFilters
@@ -294,6 +296,13 @@ const JobList: React.FC<JobListProps> = ({
     setSortOrder(value as 'score' | 'apply' | 'deadline' | 'recent');
   };
 
+  // Toggle handler for expired jobs
+  const handleToggleHideExpired = (value: boolean) => {
+    if (onToggleHideExpired) {
+      onToggleHideExpired(value);
+    }
+  };
+
   // When loading, show skeleton UI - optimized rendering
   if (isLoading) {
     return (
@@ -333,7 +342,7 @@ const JobList: React.FC<JobListProps> = ({
 
   // 통합된 헤더 렌더링
   const renderIntegratedHeader = () => (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+    <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-between items-start sm:items-center mb-4">
       <div className="flex flex-col">
         <div className="flex items-center text-lg font-semibold">
           {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
@@ -345,7 +354,7 @@ const JobList: React.FC<JobListProps> = ({
         )}
       </div>
       
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
         {isMobile && onOpenFilters && (
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenFilters}>
             <Filter className="h-4 w-4" />
@@ -353,12 +362,12 @@ const JobList: React.FC<JobListProps> = ({
           </Button>
         )}
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Select value={sortOrder} onValueChange={handleSortChange}>
             <SelectTrigger className={`h-8 ${isMobile ? 'w-[120px]' : 'w-[150px]'}`}>
               <SelectValue placeholder="정렬 기준" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="min-w-[150px]">
               <SelectItem value="score">매칭 점수순</SelectItem>
               <SelectItem value="apply">지원 가능 우선</SelectItem>
               <SelectItem value="deadline">마감일순</SelectItem>
@@ -416,11 +425,33 @@ const JobList: React.FC<JobListProps> = ({
       )}
       
       {/* Display count information */}
-      <div className="text-center text-sm text-gray-500 mt-4">
+      <div className="text-center text-sm text-gray-500 mt-6 mb-2">
         {displayedJobs.length}개 표시 중 
         {hideExpired && expiredJobsCount > 0 && 
-          ` (마감된 ${expiredJobsCount}개 제외, 총 ${filteredJobs.length}개)`}
+          ` (마감된 ${expiredJobsCount}개 제외, 총 ${filteredJobs.length + expiredJobsCount}개)`}
       </div>
+      
+      {/* Add toggle group for hideExpired status on mobile */}
+      {isMobile && onToggleHideExpired && (
+        <div className="flex items-center justify-center pt-1 pb-3">
+          <ToggleGroup type="single" value={hideExpired ? "hide" : "show"} className="border rounded-lg">
+            <ToggleGroupItem 
+              value="hide" 
+              onClick={() => handleToggleHideExpired(true)}
+              className="px-3 py-1.5 text-xs"
+            >
+              마감공고 숨기기
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="show" 
+              onClick={() => handleToggleHideExpired(false)}
+              className="px-3 py-1.5 text-xs"
+            >
+              모든공고 보기
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
     </div>
   );
 };
