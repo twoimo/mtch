@@ -193,7 +193,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                               <CheckCircle2 className="h-3 w-3 mr-1 inline" /> : 
                               <XCircle className="h-3 w-3 mr-1 inline" />
                             }
-                            {job.apply_yn === 1 ? '지원 가능' : '지원 불가'}
+                            {job.apply_yn === 1 ? '추천' : '비추천'}
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent>
