@@ -49,7 +49,7 @@ const BottomNavigation = ({ activeTab, setActiveTab, bookmarkCount }: BottomNavi
           <BookmarkCheck className="h-5 w-5 mb-1" />
           <span className="text-xs">북마크</span>
           {bookmarkCount > 0 && (
-            <span className="absolute top-0 right-5 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute top-0 right-5 bg-primary text-primary-foreground text-xs rounded-full w-6 h-4 flex items-center justify-center">
               {bookmarkCount > 9 ? '9+' : bookmarkCount}
             </span>
           )}
