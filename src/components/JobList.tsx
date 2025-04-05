@@ -354,14 +354,12 @@ const JobList: React.FC<JobListProps> = ({
 
   // 통합된 헤더 렌더링
   const renderIntegratedHeader = () => (
-    <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-between items-start sm:items-center mb-4">
-      <div className="flex flex-col">
-        <div className="flex items-center text-lg font-semibold">
-          {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
-        </div>
+    <div className="flex flex-row justify-between items-center mb-4 flex-wrap gap-2">
+      <div className="flex items-center text-lg font-semibold flex-shrink-0">
+        {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
       </div>
       
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {isMobile && onOpenFilters && (
           <Button 
             variant="outline" 
@@ -374,19 +372,17 @@ const JobList: React.FC<JobListProps> = ({
           </Button>
         )}
         
-        <div className="flex items-center gap-2">
-          <Select value={sortOrder} onValueChange={handleSortChange}>
-            <SelectTrigger className={`h-8 ${isMobile ? 'w-[120px]' : 'w-[150px]'}`}>
-              <SelectValue placeholder="정렬 기준" />
-            </SelectTrigger>
-            <SelectContent className="min-w-[150px]">
-              <SelectItem value="score">매칭 점수순</SelectItem>
-              <SelectItem value="apply">지원 가능 우선</SelectItem>
-              <SelectItem value="deadline">마감일순</SelectItem>
-              <SelectItem value="recent">최신순</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={sortOrder} onValueChange={handleSortChange}>
+          <SelectTrigger className={`h-8 ${isMobile ? 'w-[110px]' : 'w-[150px]'}`}>
+            <SelectValue placeholder="정렬 기준" />
+          </SelectTrigger>
+          <SelectContent className="min-w-[150px]">
+            <SelectItem value="score">매칭 점수순</SelectItem>
+            <SelectItem value="apply">지원 가능 우선</SelectItem>
+            <SelectItem value="deadline">마감일순</SelectItem>
+            <SelectItem value="recent">최신순</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
