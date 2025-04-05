@@ -5,8 +5,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3  // Increase to a reasonable number
+const TOAST_REMOVE_DELAY = 5000  // Reduce to 5 seconds for better UX
 
 type ToasterToast = ToastProps & {
   id: string
@@ -74,6 +74,7 @@ const addToRemoveQueue = (toastId: string) => {
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Ensure we don't exceed the toast limit
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
@@ -142,29 +143,44 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
-  const update = (props: ToasterToast) =>
+  // Check if we already have a similar toast with the same title
+  // to prevent duplicate messages when making the same API call
+  const hasSimilarToast = memoryState.toasts.some(
+    (t) => t.title === props.title && t.description === props.description
+  );
+
+  if (!hasSimilarToast) {
+    const update = (props: ToasterToast) =>
+      dispatch({
+        type: "UPDATE_TOAST",
+        toast: { ...props, id },
+      })
+    const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
     dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
+      type: "ADD_TOAST",
+      toast: {
+        ...props,
+        id,
+        open: true,
+        onOpenChange: (open) => {
+          if (!open) dismiss()
+        },
       },
-    },
-  })
+    })
 
+    return {
+      id: id,
+      dismiss,
+      update,
+    }
+  }
+
+  // Return a dummy object if toast not created
   return {
-    id: id,
-    dismiss,
-    update,
+    id: "",
+    dismiss: () => {},
+    update: () => {},
   }
 }
 

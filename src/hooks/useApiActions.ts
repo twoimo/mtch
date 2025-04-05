@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
   Job, 
@@ -290,13 +289,22 @@ export const useApiActions = () => {
     setFilters(defaultFilters);
   }, []);
 
-  // Test API
+  // Add useEffect to load all jobs data on initial page load
+  useEffect(() => {
+    // Load all jobs when component mounts
+    handleTestApi();
+    // We only want to run this once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Test API - Calls getAllJobs
   const handleTestApi = useCallback(async () => {
     setIsTestLoading(true);
     try {
       const result = await apiService.getAllJobs();
       
       if (result.success && result.jobs) {
+        // Use all jobs as our primary data source
         const jobs = result.jobs;
         setRecommendedJobs(jobs);
         
@@ -460,6 +468,20 @@ export const useApiActions = () => {
       setIsApplyLoading(false);
     }
   }, [toast]);
+
+  // Add a ref to track if the initial API call has been made
+  const initialApiCallMade = useRef(false);
+
+  // Modify useEffect to use the ref to prevent multiple API calls
+  useEffect(() => {
+    // Only load all jobs once when component mounts and if not already loaded
+    if (!initialApiCallMade.current && recommendedJobs.length === 0) {
+      initialApiCallMade.current = true;
+      handleTestApi();
+    }
+    // We only want to run this once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     // States
