@@ -30,7 +30,7 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport className={isMobile ? "bottom-0 right-0 flex-col p-6" : ""} />
+      <ToastViewport className={isMobile ? "fixed bottom-0 right-0 flex flex-col p-6 gap-2 w-full max-w-[420px] m-0" : ""} />
     </ToastProvider>
   )
 }

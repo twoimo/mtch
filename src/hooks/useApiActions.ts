@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '@/services/api-service';
 import { 
@@ -42,7 +43,7 @@ export const defaultFilters: JobFilters = {
   jobType: [], // Always initialized as empty array
   salaryRange: 'all',
   onlyApplicable: false,
-  hideExpired: true, // 기본값으로 항상 켜져있음
+  hideExpired: false, // 기본값을 false로 변경
 };
 
 /**

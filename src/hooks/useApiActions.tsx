@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -45,7 +46,8 @@ const CACHE_KEYS = {
   RECOMMENDED_JOBS: 'recommended-jobs-cache',
   TEST_RESULT: 'test-result-cache',
   AUTO_MATCHING: 'auto-matching-cache',
-  APPLY_RESULT: 'apply-result-cache'
+  APPLY_RESULT: 'apply-result-cache',
+  HIDE_EXPIRED: 'hide-expired-jobs' // 마감일 지난 공고 제외 설정 키 추가
 };
 
 // 캐시 유효 시간 (밀리초 단위, 기본 30분)
@@ -68,10 +70,10 @@ export const useApiActions = () => {
   const [isAutoMatchingLoading, setIsAutoMatchingLoading] = useState(false);
   const [isApplyLoading, setIsApplyLoading] = useState(false);
   
-  // 필터 상태
+  // 필터 상태 - 기본값을 false로 변경
   const [hideExpired, setHideExpired] = useState<boolean>(() => {
-    const savedState = localStorage.getItem('hide-expired-jobs');
-    return savedState === null ? true : savedState === 'true';
+    const savedState = localStorage.getItem(CACHE_KEYS.HIDE_EXPIRED);
+    return savedState === null ? false : savedState === 'true';
   });
   
   const { toast } = useToast();
@@ -383,7 +385,7 @@ export const useApiActions = () => {
   // 필터 함수
   const toggleHideExpired = useCallback((value: boolean) => {
     setHideExpired(value);
-    localStorage.setItem('hide-expired-jobs', value.toString());
+    localStorage.setItem(CACHE_KEYS.HIDE_EXPIRED, value.toString());
   }, []);
 
   return {
