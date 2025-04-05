@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -22,7 +21,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// 채용 정보 인터페이스
 interface Job {
   id: number;
   score: number;
@@ -51,11 +49,9 @@ interface CalendarTabProps {
   filteredJobs: Job[];
 }
 
-// 고용 형태 문자열 간소화 함수 (추가)
 const simplifyEmploymentType = (type: string): string => {
   if (!type) return '';
   
-  // "정규직, 병역특례근무형태상세보기정규직 수습기간 3개월병역특례 전문연구요원..." 패턴 처리
   if (type.includes(',') || type.includes('상세보기')) {
     const firstType = type.split(',')[0].trim();
     return firstType || '정규직';
@@ -69,7 +65,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const isMobile = useIsMobile();
   
-  // 월 변경 핸들러
   const handlePreviousMonth = () => {
     setCurrentDate(prevDate => subMonths(prevDate, 1));
   };
@@ -78,26 +73,21 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
     setCurrentDate(prevDate => addMonths(prevDate, 1));
   };
   
-  // 날짜별 채용 정보 그룹화
   const jobsByDate = useMemo(() => {
     const result: Record<string, Job[]> = {};
     
-    // 현재 달의 모든 날짜 생성
     const firstDay = startOfMonth(currentDate);
     const lastDay = endOfMonth(currentDate);
     const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
     
-    // 각 날짜에 빈 배열 초기화
     daysInMonth.forEach(day => {
       result[format(day, 'yyyy-MM-dd')] = [];
     });
     
-    // 마감일 기준으로 채용 정보 그룹화
     filteredJobs.forEach(job => {
       if (job.deadline) {
         let deadlineDate: Date;
         
-        // 마감일 형식 처리 (YYYY.MM.DD 또는 YYYY-MM-DD)
         if (job.deadline.includes('.')) {
           const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
           deadlineDate = new Date(year, month - 1, day);
@@ -105,7 +95,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
           deadlineDate = parseISO(job.deadline);
         }
         
-        // 해당 날짜에 채용 정보 추가
         const dateKey = format(deadlineDate, 'yyyy-MM-dd');
         if (result[dateKey]) {
           result[dateKey].push(job);
@@ -116,14 +105,12 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
     return result;
   }, [filteredJobs, currentDate]);
   
-  // 선택한 날짜의 채용 정보
   const selectedDateJobs = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     return jobsByDate[dateKey] || [];
   }, [jobsByDate, selectedDate]);
   
-  // 특정 날짜의 채용 정보 수 가져오기
   const getJobCountForDate = (date: Date): number => {
     const dateKey = format(date, 'yyyy-MM-dd');
     return (jobsByDate[dateKey] || []).length;
@@ -213,22 +200,18 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
               
               const days = eachDayOfInterval({ start: startDate, end: endDate });
               
-              // 첫 날의 요일을 기준으로 빈 칸 채우기
               const startDay = monthStart.getDay();
               const prevBlankCells = Array(startDay).fill(null);
               
-              // 마지막 날 이후 빈 칸 채우기
               const endDay = monthEnd.getDay();
               const nextBlankCells = Array(6 - endDay).fill(null);
               
               return (
                 <>
-                  {/* 이전 달 빈 칸 */}
                   {prevBlankCells.map((_, index) => (
                     <div key={`prev-${index}`} className="h-14 sm:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                   
-                  {/* 이번 달 날짜 */}
                   {days.map(day => {
                     const dateKey = format(day, 'yyyy-MM-dd');
                     const jobsForDay = jobsByDate[dateKey] || [];
@@ -279,7 +262,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                           )}
                         </div>
                         
-                        {/* 채용 정보 미리보기 (모바일에서는 1개만) */}
                         <div className="mt-0.5 space-y-0.5 overflow-y-auto flex-grow text-[8px] sm:text-xs">
                           {jobsForDay.slice(0, isMobile ? 1 : 2).map(job => (
                             <div 
@@ -300,7 +282,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                     );
                   })}
                   
-                  {/* 다음 달 빈 칸 */}
                   {nextBlankCells.map((_, index) => (
                     <div key={`next-${index}`} className="h-14 sm:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
@@ -311,7 +292,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
         </CardContent>
       </Card>
       
-      {/* 선택한 날짜의 채용 정보 목록 */}
       {selectedDate && (
         <Card>
           <CardHeader className={isMobile ? "pb-2 px-3 pt-3" : "pb-2"}>
@@ -331,10 +311,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
                 <p className="text-sm">이 날짜에 마감되는 채용 공고가 없습니다.</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[350px] pr-3 -mr-3" scrollBarClassName="hidden">
+              <ScrollArea className="max-h-[350px] pr-3 -mr-3">
                 <div className="space-y-2">
                   {selectedDateJobs.map(job => {
-                    // 고용형태 간소화
                     const simplifiedType = simplifyEmploymentType(job.employmentType || '');
                     
                     return (
