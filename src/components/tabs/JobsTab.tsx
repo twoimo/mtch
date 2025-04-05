@@ -137,10 +137,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
     setDrawerOpen(true);
   };
   
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false);
-  };
-  
   const renderFiltersContent = () => (
     <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'px-1'} scrollbar-none`}>
       <div className="pt-1 pb-2">
@@ -420,7 +416,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
             hideExpired={localHideExpired}
             onToggleHideExpired={handleHideExpiredChange}
             onOpenFilters={isMobile ? handleOpenDrawer : undefined}
-            activeFilterCount={activeFilterCount}
           />
         )}
 
