@@ -14,7 +14,7 @@ import {
   CACHE_KEYS 
 } from '@/utils/storage';
 
-// Export JobFilters interface so it can be imported
+// 외부 가져오기를 위해 JobFilters 인터페이스 내보내기
 export interface JobFilters {
   keyword: string;
   minScore: number;
@@ -26,31 +26,31 @@ export interface JobFilters {
   hideExpired?: boolean; // 마감일 지난 공고 제외 필터 추가
 }
 
-// Simplified employment types for safer filtering
+// 안전한 필터링을 위한 단순화된 고용 유형
 const EMPLOYMENT_TYPES = {
   REGULAR: '정규직',
   CONTRACT: '계약직',
   INTERN: '인턴'
 };
 
-// Default filters with guaranteed initialized arrays
+// 항상 초기화된 배열로 기본 필터 설정
 export const defaultFilters: JobFilters = {
   keyword: '',
   minScore: 0,
-  employmentType: [], // Always initialized as empty array
+  employmentType: [], // 항상 빈 배열로 초기화
   companyType: 'all',
-  jobType: [], // Always initialized as empty array
+  jobType: [], // 항상 빈 배열로 초기화
   salaryRange: 'all',
   onlyApplicable: false,
   hideExpired: false, // 기본값을 false로 변경
 };
 
 /**
- * Custom hook for API operations with caching
- * @returns API related states and functions
+ * 캐싱 기능이 있는 API 작업을 위한 커스텀 훅
+ * @returns API 관련 상태 및 함수
  */
 export const useApiActions = () => {
-  // Initialize state from cache or default values
+  // 캐시 또는 기본값에서 상태 초기화
   const [testResult, setTestResult] = useState<TestResultData | null>(() => 
     loadFromStorage<TestResultData>(CACHE_KEYS.TEST_RESULT)
   );
@@ -70,7 +70,7 @@ export const useApiActions = () => {
     loadFromStorage<ApplyResponse>(CACHE_KEYS.APPLY_RESULT)
   );
   
-  // Loading states
+  // 로딩 상태
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
   const [isAutoMatchingLoading, setIsAutoMatchingLoading] = useState(false);
@@ -110,14 +110,14 @@ export const useApiActions = () => {
     }
   ], []);
 
-  // Helper function to check if a job is expired
+  // 채용공고 만료 여부 확인 헬퍼 함수
   const isJobExpired = useCallback((job: Job): boolean => {
     if (!job.deadline) return false;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let deadlineDate;
+    let deadlineDate: Date;
     if (job.deadline.includes('.')) {
       const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
       deadlineDate = new Date(year, month - 1, day);
@@ -128,9 +128,9 @@ export const useApiActions = () => {
     return deadlineDate < today;
   }, []);
 
-  // More robust helper function to check if an employment type matches
+  // 고용 유형이 일치하는지 확인하는 더 견고한 헬퍼 함수
   const matchesEmploymentType = useCallback((job: Job, filterType: string): boolean => {
-    // If no employment type data in job, return false
+    // 채용공고에 고용 유형 데이터가 없으면 false 반환
     if (!job.employmentType && !job.employment_type) return false;
     
     const empType = (job.employmentType || job.employment_type || '').toLowerCase();
@@ -147,17 +147,17 @@ export const useApiActions = () => {
     }
   }, []);
 
-  // More defensive filtering approach
+  // 더 방어적인 필터링 접근 방식
   const filteredJobs = useMemo(() => {
     if (!recommendedJobs || recommendedJobs.length === 0) return [];
     
     return recommendedJobs.filter(job => {
-      // Hide expired jobs filter (applied at the main level)
+      // 만료된 채용공고 숨기기 필터 (주요 수준에서 적용)
       if (filters.hideExpired && isJobExpired(job)) {
         return false;
       }
       
-      // Keyword filtering
+      // 키워드 필터링
       if (filters.keyword) {
         const keyword = filters.keyword.toLowerCase();
         const jobTitle = (job.jobTitle || job.job_title || '').toLowerCase();
@@ -171,7 +171,7 @@ export const useApiActions = () => {
         }
       }
       
-      // Minimum score filtering - more defensive approach
+      // 최소 점수 필터링 - 더 방어적인 접근 방식
       if (filters.minScore > 0) {
         const score = job.score || job.matchScore || job.match_score || 0;
         if (score < filters.minScore) {
@@ -179,20 +179,20 @@ export const useApiActions = () => {
         }
       }
       
-      // Employment type filtering - simplified approach to avoid iteration errors
+      // 고용 유형 필터링 - 반복 오류를 피하기 위한 단순화된 접근 방식
       if (filters.employmentType && Array.isArray(filters.employmentType) && filters.employmentType.length > 0) {
-        // Check if any selected employment type matches
+        // 선택된 고용 유형이 일치하는지 확인
         const matchesAny = filters.employmentType.some(type => matchesEmploymentType(job, type));
         if (!matchesAny) return false;
       }
       
-      // Company type filtering - more robust approach
+      // 회사 유형 필터링 - 더 견고한 접근 방식
       if (filters.companyType && filters.companyType !== 'all') {
         const companyType = (job.companyType || job.company_type || '').toLowerCase();
         
         if (!companyType) return false;
         
-        // Get category types more safely
+        // 카테고리 유형을 더 안전하게 가져오기
         const category = COMPANY_CATEGORIES.find(cat => cat.value === filters.companyType);
         const categoryTypes = category?.types || [];
         
@@ -202,7 +202,7 @@ export const useApiActions = () => {
           );
           if (!matchesCategory) return false;
         } else if (filters.companyType === 'other') {
-          // 'Other' category - doesn't match any defined categories
+          // '기타' 카테고리 - 정의된 카테고리와 일치하지 않음
           const allCategoryTypes = COMPANY_CATEGORIES.flatMap(cat => cat.types || []);
           const matchesAnyCategory = allCategoryTypes.some(type => 
             companyType.includes(type.toLowerCase())
@@ -211,14 +211,14 @@ export const useApiActions = () => {
         }
       }
       
-      // Job type filtering - simplified robust approach
+      // 직무 유형 필터링 - 단순화된 견고한 접근 방식
       if (filters.jobType && Array.isArray(filters.jobType) && filters.jobType.length > 0) {
-        // Get jobType safely
+        // 직무 유형을 안전하게 가져오기
         const jobTypeValue = job.jobType || '';
         
         if (!jobTypeValue) return false;
         
-        // Simple includes check instead of iterating
+        // 반복 대신 간단한 포함 확인
         const jobTypeLower = jobTypeValue.toLowerCase();
         const matchesJobType = filters.jobType.some(type => 
           jobTypeLower.includes(type.toLowerCase())
@@ -227,7 +227,7 @@ export const useApiActions = () => {
         if (!matchesJobType) return false;
       }
       
-      // Applicability filtering - more defensive
+      // 적용 가능성 필터링 - 더 방어적인 접근 방식
       if (filters.onlyApplicable) {
         const isApplicable = job.apply_yn === 1 || job.isApplied === 1 || job.is_applied === 1;
         if (!isApplicable) return false;
@@ -237,13 +237,13 @@ export const useApiActions = () => {
     });
   }, [recommendedJobs, filters, COMPANY_CATEGORIES, matchesEmploymentType, isJobExpired]);
 
-  // More robust filter update function
+  // 더 견고한 필터 업데이트 함수
   const updateFilters = useCallback((newFilters: Partial<JobFilters>) => {
     setFilters(prevFilters => {
-      // Create a new object to avoid reference issues
+      // 참조 문제를 피하기 위해 새 객체 생성
       const updatedFilters = { ...prevFilters };
       
-      // Handle each filter type individually for safety
+      // 각 필터 유형을 개별적으로 처리하여 안전성 확보
       if ('keyword' in newFilters) {
         updatedFilters.keyword = newFilters.keyword || '';
       }
@@ -264,12 +264,12 @@ export const useApiActions = () => {
         updatedFilters.onlyApplicable = !!newFilters.onlyApplicable;
       }
       
-      // Handle the hideExpired filter
+      // hideExpired 필터 처리
       if ('hideExpired' in newFilters) {
         updatedFilters.hideExpired = !!newFilters.hideExpired;
       }
       
-      // Special handling for array types
+      // 배열 유형에 대한 특별 처리
       if ('employmentType' in newFilters) {
         updatedFilters.employmentType = Array.isArray(newFilters.employmentType) ? 
           [...newFilters.employmentType] : [];
@@ -284,52 +284,52 @@ export const useApiActions = () => {
     });
   }, []);
 
-  // Reset filters
+  // 필터 초기화
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
   }, []);
 
-  // Add useEffect to load all jobs data on initial page load
+  // 초기 페이지 로드 시 모든 채용공고 데이터를 로드하는 useEffect 추가
   useEffect(() => {
-    // Load all jobs when component mounts
+    // 컴포넌트가 마운트될 때 모든 채용공고 로드
     handleTestApi();
-    // We only want to run this once on mount
+    // 이 작업은 마운트 시 한 번만 실행하고 싶습니다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Test API - Calls getAllJobs
+  // 테스트 API - getAllJobs 호출
   const handleTestApi = useCallback(async () => {
     setIsTestLoading(true);
     try {
       const result = await apiService.getAllJobs();
       
       if (result.success && result.jobs) {
-        // Use all jobs as our primary data source
+        // 모든 채용공고를 기본 데이터 소스로 사용
         const jobs = result.jobs;
         setRecommendedJobs(jobs);
         
         const testResultData: TestResultData = {
           success: true,
-          message: 'All jobs retrieved successfully.',
+          message: '모든 채용공고가 성공적으로 조회되었습니다.',
           data: { count: jobs.length },
           timestamp: new Date().toISOString()
         };
         
         setTestResult(testResultData);
         
-        // Cache data
+        // 데이터 캐시
         saveToStorage(CACHE_KEYS.RECOMMENDED_JOBS, { jobs });
         saveToStorage(CACHE_KEYS.TEST_RESULT, testResultData);
         
         toast({
-          title: 'All Jobs Retrieved',
-          description: `Retrieved ${jobs.length} jobs.`,
+          title: '모든 채용공고 조회 완료',
+          description: `${jobs.length}개의 채용공고를 조회했습니다.`,
           variant: 'default',
         });
       } else {
         const errorResult: TestResultData = {
           success: false,
-          message: 'Failed to retrieve jobs.',
+          message: '채용공고 조회에 실패했습니다.',
           timestamp: new Date().toISOString()
         };
         
@@ -337,16 +337,16 @@ export const useApiActions = () => {
         saveToStorage(CACHE_KEYS.TEST_RESULT, errorResult);
         
         toast({
-          title: 'No Data',
-          description: 'Failed to retrieve jobs.',
+          title: '데이터 없음',
+          description: '채용공고 조회에 실패했습니다.',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error retrieving all jobs:', error);
+      console.error('모든 채용공고 조회 중 오류 발생:', error);
       const errorResult: TestResultData = {
         success: false,
-        message: 'An error occurred while retrieving all jobs.',
+        message: '모든 채용공고 조회 중 오류가 발생했습니다.',
         timestamp: new Date().toISOString()
       };
       
@@ -354,8 +354,8 @@ export const useApiActions = () => {
       saveToStorage(CACHE_KEYS.TEST_RESULT, errorResult);
       
       toast({
-        title: 'Error',
-        description: 'An error occurred while retrieving all jobs.',
+        title: '오류',
+        description: '모든 채용공고 조회 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -363,47 +363,47 @@ export const useApiActions = () => {
     }
   }, [toast]);
 
-  // Get recommended jobs
+  // 추천 채용공고 가져오기
   const handleGetRecommendedJobs = useCallback(async () => {
-    if (isRecommendedLoading) return; // Prevent duplicate requests
+    if (isRecommendedLoading) return; // 중복 요청 방지
     
     setIsRecommendedLoading(true);
     try {
       const result = await apiService.getRecommendedJobs();
       
       if (result.success && result.recommendedJobs) {
-        console.log('Recommended jobs field check:', 
+        console.log('추천 채용공고 필드 확인:', 
           result.recommendedJobs.length > 0 ? 
-          `Job type: ${result.recommendedJobs[0].jobType}, Salary: ${result.recommendedJobs[0].jobSalary}, Employment type: ${result.recommendedJobs[0].employmentType}` : 
-          'No data');
+          `직무 유형: ${result.recommendedJobs[0].jobType}, 급여: ${result.recommendedJobs[0].jobSalary}, 고용 유형: ${result.recommendedJobs[0].employmentType}` : 
+          '데이터 없음');
         
         const jobs = result.recommendedJobs;
         setRecommendedJobs(jobs);
-        setFilters(defaultFilters); // Reset filters
+        setFilters(defaultFilters); // 필터 초기화
         
-        // Cache data
+        // 데이터 캐시
         saveToStorage(CACHE_KEYS.RECOMMENDED_JOBS, { jobs });
         
         toast({
-          title: 'Recommended Jobs Retrieved',
-          description: `Retrieved ${jobs.length} recommended jobs.`,
+          title: '추천 채용공고 조회 완료',
+          description: `${jobs.length}개의 추천 채용공고를 조회했습니다.`,
           variant: 'default',
         });
       } else {
         setRecommendedJobs([]);
         
         toast({
-          title: 'No Data',
-          description: 'Failed to retrieve recommended jobs.',
+          title: '데이터 없음',
+          description: '추천 채용공고 조회에 실패했습니다.',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error retrieving recommended jobs:', error);
+      console.error('추천 채용공고 조회 중 오류 발생:', error);
       
       toast({
-        title: 'Error',
-        description: 'An error occurred while retrieving recommended jobs.',
+        title: '오류',
+        description: '추천 채용공고 조회 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -411,7 +411,7 @@ export const useApiActions = () => {
     }
   }, [isRecommendedLoading, toast]);
 
-  // Run auto job matching
+  // 자동 채용공고 매칭 실행
   const handleRunAutoJobMatching = useCallback(async () => {
     setIsAutoMatchingLoading(true);
     try {
@@ -419,20 +419,20 @@ export const useApiActions = () => {
       
       setAutoMatchingResult(result);
       
-      // Cache data
+      // 데이터 캐시
       saveToStorage(CACHE_KEYS.AUTO_MATCHING, result);
       
       toast({
-        title: 'Auto Job Matching Complete',
-        description: 'Auto job matching completed successfully.',
+        title: '자동 채용공고 매칭 완료',
+        description: '자동 채용공고 매칭이 성공적으로 완료되었습니다.',
         variant: 'default',
       });
     } catch (error) {
-      console.error('Error running auto job matching:', error);
+      console.error('자동 채용공고 매칭 실행 중 오류 발생:', error);
       
       toast({
-        title: 'Error',
-        description: 'An error occurred while running auto job matching.',
+        title: '오류',
+        description: '자동 채용공고 매칭 실행 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -440,7 +440,7 @@ export const useApiActions = () => {
     }
   }, [toast]);
 
-  // Apply to Saramin jobs
+  // 사람인 채용공고 지원
   const handleApplySaraminJobs = useCallback(async () => {
     setIsApplyLoading(true);
     try {
@@ -448,20 +448,20 @@ export const useApiActions = () => {
       
       setApplyResult(result);
       
-      // Cache data
+      // 데이터 캐시
       saveToStorage(CACHE_KEYS.APPLY_RESULT, result);
       
       toast({
-        title: 'Saramin Job Applications Complete',
-        description: 'Saramin job applications completed successfully.',
+        title: '사람인 채용공고 지원 완료',
+        description: '사람인 채용공고 지원이 성공적으로 완료되었습니다.',
         variant: 'default',
       });
     } catch (error) {
-      console.error('Error applying to Saramin jobs:', error);
+      console.error('사람인 채용공고 지원 중 오류 발생:', error);
       
       toast({
-        title: 'Error',
-        description: 'An error occurred while applying to Saramin jobs.',
+        title: '오류',
+        description: '사람인 채용공고 지원 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -469,22 +469,22 @@ export const useApiActions = () => {
     }
   }, [toast]);
 
-  // Add a ref to track if the initial API call has been made
+  // 초기 API 호출이 이루어졌는지 추적하기 위한 ref 추가
   const initialApiCallMade = useRef(false);
 
-  // Modify useEffect to use the ref to prevent multiple API calls
+  // 여러 번의 API 호출을 방지하기 위해 ref를 사용하여 useEffect 수정
   useEffect(() => {
-    // Only load all jobs once when component mounts and if not already loaded
+    // 컴포넌트가 마운트될 때 한 번만 모든 채용공고를 로드하고 이미 로드되지 않은 경우
     if (!initialApiCallMade.current && recommendedJobs.length === 0) {
       initialApiCallMade.current = true;
       handleTestApi();
     }
-    // We only want to run this once on mount
+    // 이 작업은 마운트 시 한 번만 실행하고 싶습니다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
-    // States
+    // 상태
     testResult,
     recommendedJobs,
     filteredJobs,
@@ -492,23 +492,23 @@ export const useApiActions = () => {
     autoMatchingResult,
     applyResult,
     
-    // Loading states
+    // 로딩 상태
     isTestLoading,
     isRecommendedLoading,
     isAutoMatchingLoading,
     isApplyLoading,
     
-    // Action methods
+    // 액션 메서드
     handleTestApi,
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
     handleApplySaraminJobs,
     
-    // Filter methods
+    // 필터 메서드
     updateFilters,
     resetFilters,
     
-    // Cache methods
+    // 캐시 메서드
     clearCache: clearAllCache
   };
 };

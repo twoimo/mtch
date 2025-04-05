@@ -1,5 +1,4 @@
-
-// Export CACHE_KEYS so it can be imported by other modules
+// 다른 모듈에서 import할 수 있도록 CACHE_KEYS를 export
 export const CACHE_KEYS = {
   RECOMMENDED_JOBS: 'recommended-jobs-cache',
   TEST_RESULT: 'test-result-cache',
@@ -9,14 +8,14 @@ export const CACHE_KEYS = {
   SORT_ORDER: 'job-list-sort-order'
 };
 
-// Default cache TTL (30 minutes)
+// 기본 캐시 TTL (30분)
 export const DEFAULT_CACHE_TTL = 30 * 60 * 1000;
 
 /**
- * Save data to localStorage with timestamp
- * @param key Storage key
- * @param data Data to store
- * @returns Boolean indicating success
+ * 데이터를 타임스탬프와 함께 localStorage에 저장
+ * @param key 저장 키
+ * @param data 저장할 데이터
+ * @returns 성공 여부를 나타내는 boolean 값
  */
 export function saveToStorage<T>(key: string, data: T): boolean {
   try {
@@ -30,16 +29,16 @@ export function saveToStorage<T>(key: string, data: T): boolean {
     
     return true;
   } catch (error) {
-    console.error(`Error saving to storage (${key}):`, error);
+    console.error(`저장 중 오류 발생 (${key}):`, error);
     return false;
   }
 }
 
 /**
- * Load data from localStorage with timestamp validation
- * @param key Storage key
- * @param ttl Time-to-live in milliseconds (default: 30 minutes)
- * @returns The stored data or null if expired/missing
+ * 타임스탬프 유효성 검사를 통해 localStorage에서 데이터 로드
+ * @param key 저장 키
+ * @param ttl 유효 시간 (기본값: 30분)
+ * @returns 저장된 데이터 또는 만료/누락된 경우 null
  */
 export function loadFromStorage<T>(key: string, ttl = DEFAULT_CACHE_TTL): T | null {
   try {
@@ -51,34 +50,35 @@ export function loadFromStorage<T>(key: string, ttl = DEFAULT_CACHE_TTL): T | nu
     
     const timestamp = new Date(item.timestamp).getTime();
     if (Date.now() - timestamp > ttl) {
-      // Cache expired
+      // 캐시 만료
       localStorage.removeItem(key);
       return null;
     }
     
     return item.data;
   } catch (error) {
-    console.error(`Error loading from storage (${key}):`, error);
+    console.error(`로드 중 오류 발생 (${key}):`, error);
     return null;
   }
 }
 
 /**
- * Clear all application cache 
+ * 모든 애플리케이션 캐시 삭제
  */
 export function clearAllCache(): void {
   try {
+    // 모든 캐시 키를 순회하며 삭제
     Object.values(CACHE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
-    console.log('All cache cleared successfully');
+    console.log('모든 캐시가 성공적으로 삭제되었습니다');
   } catch (error) {
-    console.error('Error clearing cache:', error);
+    console.error('캐시 삭제 중 오류 발생:', error);
   }
 }
 
 /**
- * Get all cache items status for debugging 
+ * 디버깅을 위한 모든 캐시 상태 확인
  */
 export function getCacheStatus() {
   try {
@@ -91,14 +91,17 @@ export function getCacheStatus() {
       
       try {
         if (item) {
+          // 단순 데이터인 경우 (스크롤 위치, 정렬 순서)
           if (key === CACHE_KEYS.SCROLL_POSITION || key === CACHE_KEYS.SORT_ORDER) {
             isValid = true;
             age = 'N/A';
             expired = false;
           } else {
+            // JSON 데이터인 경우
             const parsedData = JSON.parse(item);
             isValid = true;
             
+            // 타임스탬프가 있으면 경과 시간 계산
             if (parsedData.timestamp) {
               const timestamp = new Date(parsedData.timestamp).getTime();
               const secondsElapsed = Math.round((Date.now() - timestamp) / 1000);
@@ -108,7 +111,7 @@ export function getCacheStatus() {
           }
         }
       } catch (e) {
-        console.error(`Cache parsing error for ${key}:`, e);
+        console.error(`캐시 데이터 파싱 오류 (${key}):`, e);
       }
       
       return {
@@ -121,7 +124,7 @@ export function getCacheStatus() {
       };
     });
   } catch (error) {
-    console.error("Error checking cache status:", error);
+    console.error("캐시 상태 확인 중 오류:", error);
     return [];
   }
 }

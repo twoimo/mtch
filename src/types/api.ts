@@ -1,5 +1,4 @@
-
-// API response types
+// API 응답 타입 정의
 export interface TestResultData {
   success: boolean;
   message: string;
@@ -32,7 +31,7 @@ export interface Job {
   isRecommended?: number;
   matchReason?: string;
   
-  // New fields
+  // 신규 필드
   company_name?: string;
   job_title?: string;
   job_description?: string;
@@ -43,10 +42,10 @@ export interface Job {
   company_type?: string;
   scraped_at?: string;
   match_score?: number;
-  match_reason?: number | string; // Changed to accept both number and string
+  match_reason?: number | string; // 숫자와 문자열 모두 허용
   is_recommended?: number;
   
-  // Additional fields
+  // 추가 필드
   isApplied?: number;
   is_applied?: number;
   isGptChecked?: number;
@@ -57,7 +56,7 @@ export interface Job {
   updated_at?: string;
   deletedAt?: string | null;
   deleted_at?: string | null;
-  job_type?: string; // Added this field which was missing
+  job_type?: string; // 누락된 필드 추가
 }
 
 export interface JobFilters {
@@ -68,15 +67,17 @@ export interface JobFilters {
   jobType: string[];
   salaryRange: string;
   onlyApplicable: boolean;
-  hideExpired?: boolean; // Added hideExpired property
+  hideExpired?: boolean; // 마감일 지난 공고 제외 설정
 }
 
+// 기본 API 응답 인터페이스
 export interface ApiResponse {
   success: boolean;
   message?: string;
   error?: string;
 }
 
+// 각종 응답 타입들
 export interface TestResponse extends ApiResponse {
   testCompleted?: boolean;
 }
@@ -92,7 +93,7 @@ export interface AllJobsResponse extends ApiResponse {
   total?: number;
 }
 
-// Add the missing response types
+// 누락된 응답 타입 추가
 export interface AutoMatchingResponse extends ApiResponse {
   matchedJobs?: number;
 }
@@ -101,8 +102,11 @@ export interface ApplyResponse extends ApiResponse {
   appliedJobs?: number;
 }
 
-// Helper function to normalize job data with proper defaults for all required fields
-export function normalizeJob(job: any): Job {
+/**
+ * 채용 데이터 정규화 함수 - 필요한 모든 필드에 기본값 설정
+ */
+// Record<string, unknown>은 any보다 안전한 타입입니다
+export function normalizeJob(job: Record<string, unknown>): Job {
   if (!job) return {
     id: 0,
     score: 0,
@@ -117,36 +121,36 @@ export function normalizeJob(job: any): Job {
     url: ''
   };
 
-  // Extract values from either camelCase or snake_case properties with defaults
-  const id = job.id || 0;
+  // camelCase 또는 snake_case 속성에서 값 추출 (기본값 설정)
+  const id = Number(job.id) || 0;
   
-  // For score, check all possible field names with numeric default
-  const score = job.score || job.match_score || job.matchScore || 0;
+  // 점수는 여러 가능한 필드명 확인
+  const score = Number(job.score) || Number(job.match_score) || Number(job.matchScore) || 0;
   
-  // For reason, check all possible field names with empty string default
-  const reason = job.reason || job.match_reason || job.matchReason || '';
+  // 이유는 여러 가능한 필드명 확인
+  const reason = String(job.reason || job.match_reason || job.matchReason || '');
   
-  // For strength and weakness (no snake case equivalents)
-  const strength = job.strength || '';
-  const weakness = job.weakness || '';
+  // 강점과 약점 (snake case 없음)
+  const strength = String(job.strength || '');
+  const weakness = String(job.weakness || '');
   
-  // For apply_yn, check all possible field names
-  const apply_yn = job.apply_yn !== undefined ? job.apply_yn : 
-                  job.isApplied !== undefined ? job.isApplied : 
-                  job.is_applied !== undefined ? job.is_applied : 0;
+  // 지원 가능 여부
+  const apply_yn = job.apply_yn !== undefined ? Number(job.apply_yn) : 
+                  job.isApplied !== undefined ? Number(job.isApplied) : 
+                  job.is_applied !== undefined ? Number(job.is_applied) : 0;
   
-  // For company name, job title, and location
-  const companyName = job.companyName || job.company_name || '';
-  const jobTitle = job.jobTitle || job.job_title || '';
-  const jobLocation = job.jobLocation || job.job_location || '';
+  // 회사명, 직무명, 위치
+  const companyName = String(job.companyName || job.company_name || '');
+  const jobTitle = String(job.jobTitle || job.job_title || '');
+  const jobLocation = String(job.jobLocation || job.job_location || '');
   
-  // For company type
-  const companyType = job.companyType || job.company_type || '';
+  // 회사 유형
+  const companyType = String(job.companyType || job.company_type || '');
   
-  // For url
-  const url = job.url || job.job_url || '';
+  // URL
+  const url = String(job.url || job.job_url || '');
 
-  // Create the normalized job object with required fields
+  // 정규화된 Job 객체 생성
   const normalizedJob: Job = {
     id,
     score,
@@ -161,93 +165,111 @@ export function normalizeJob(job: any): Job {
     url
   };
 
-  // Add all other properties from the original job
-  // First convert potential snake_case keys to camelCase
-  const extraProps: Record<string, any> = {};
+  // 원본 job의 모든 다른 속성 추가
+  // snake_case 키를 camelCase로 변환
+  const extraProps: Record<string, unknown> = {};
   for (const key in job) {
-    if (key.includes('_')) {
-      // Convert snake_case to camelCase
+    if (typeof key === 'string' && key.includes('_')) {
+      // snake_case를 camelCase로 변환
       const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
       extraProps[camelKey] = job[key];
     }
-    extraProps[key] = job[key];
+    if (typeof key === 'string') {
+      extraProps[key] = job[key];
+    }
   }
 
   return {
     ...normalizedJob,
-    ...extraProps
+    ...extraProps as Partial<Job>
   };
 }
 
-// Helper function to normalize API response data
-export function normalizeApiResponse(data: any): AllJobsResponse {
+/**
+ * API 응답 데이터 정규화 함수
+ */
+export function normalizeApiResponse(data: Record<string, unknown> | unknown[]): AllJobsResponse {
   if (!data) {
     return { success: false, jobs: [] };
   }
 
-  // Create standard response shape
+  // 표준 응답 형태 생성
   const normalizedResponse: AllJobsResponse = {
-    success: data.success || false,
+    success: Array.isArray(data) ? true : Boolean(data && typeof data === 'object' && 'success' in data && data.success),
     jobs: [],
-    page: data.page || 1,
-    limit: data.limit || 10,
-    total: data.total || 0
+    page: Array.isArray(data) ? 1 : (data && typeof data === 'object' && 'page' in data ? Number(data.page) : 1),
+    limit: Array.isArray(data) ? 10 : (data && typeof data === 'object' && 'limit' in data ? Number(data.limit) : 10),
+    total: Array.isArray(data) ? data.length : (data && typeof data === 'object' && 'total' in data ? Number(data.total) : 0)
   };
 
-  // Add error message if present
-  if (data.message) {
-    normalizedResponse.message = data.message;
-  }
-  if (data.error) {
-    normalizedResponse.error = data.error;
+  // 에러 메시지 있으면 추가
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    if ('message' in data && data.message) {
+      normalizedResponse.message = String(data.message);
+    }
+    if ('error' in data && data.error) {
+      normalizedResponse.error = String(data.error);
+    }
   }
 
-  // If the response has a 'jobs' array, normalize each job
-  if (Array.isArray(data.jobs)) {
-    normalizedResponse.jobs = data.jobs.map(job => normalizeJob(job));
+  // 다양한 형태의 응답 처리
+  if (data && typeof data === 'object' && !Array.isArray(data) && 'jobs' in data && Array.isArray(data.jobs)) {
+    // 'jobs' 배열이 있는 경우
+    normalizedResponse.jobs = (data.jobs as unknown[]).map(job => normalizeJob(job as Record<string, unknown>));
   } else if (Array.isArray(data)) {
-    // Handle case where data itself is an array of jobs
-    normalizedResponse.jobs = data.map(job => normalizeJob(job));
-  } else if (data.data && Array.isArray(data.data.jobs)) {
-    // Handle case where jobs are nested in data property
-    normalizedResponse.jobs = data.data.jobs.map(job => normalizeJob(job));
+    // 데이터 자체가 배열인 경우
+    normalizedResponse.jobs = data.map(job => normalizeJob(job as Record<string, unknown>));
+  } else if (data && typeof data === 'object' && 'data' in data && typeof data.data === 'object' && 
+             data.data && 'jobs' in data.data && Array.isArray(data.data.jobs)) {
+    // data 속성 내에 jobs 배열이 중첩된 경우
+    normalizedResponse.jobs = (data.data.jobs as unknown[]).map(job => normalizeJob(job as Record<string, unknown>));
   }
   
   return normalizedResponse;
 }
 
-// Helper function to normalize recommended jobs response
-export function normalizeRecommendedJobsResponse(data: any): RecommendedJobsResponse {
+/**
+ * 추천 채용 정보 응답 정규화 함수
+ */
+export function normalizeRecommendedJobsResponse(data: Record<string, unknown> | unknown[]): RecommendedJobsResponse {
   if (!data) {
     return { success: false, recommendedJobs: [] };
   }
 
-  // Create standard response shape
+  // 표준 응답 형태 생성
   const normalizedResponse: RecommendedJobsResponse = {
-    success: data.success || false,
+    success: Array.isArray(data) ? true : Boolean(data && typeof data === 'object' && 'success' in data && data.success),
     recommendedJobs: []
   };
 
-  // Add error message if present
-  if (data.message) {
-    normalizedResponse.message = data.message;
-  }
-  if (data.error) {
-    normalizedResponse.error = data.error;
+  // 에러 메시지 있으면 추가
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    if ('message' in data && data.message) {
+      normalizedResponse.message = String(data.message);
+    }
+    if ('error' in data && data.error) {
+      normalizedResponse.error = String(data.error);
+    }
   }
 
-  // If the response has a 'recommendedJobs' array, normalize each job
-  if (Array.isArray(data.recommendedJobs)) {
-    normalizedResponse.recommendedJobs = data.recommendedJobs.map(job => normalizeJob(job));
-  } else if (Array.isArray(data.jobs)) {
-    // Handle case where data has a jobs array instead of recommendedJobs
-    normalizedResponse.recommendedJobs = data.jobs.map(job => normalizeJob(job));
+  // 다양한 형태의 응답 처리
+  if (data && typeof data === 'object' && !Array.isArray(data) && 'recommendedJobs' in data && Array.isArray(data.recommendedJobs)) {
+    // 'recommendedJobs' 배열이 있는 경우
+    normalizedResponse.recommendedJobs = (data.recommendedJobs as unknown[]).map(job => 
+      normalizeJob(job as Record<string, unknown>));
+  } else if (data && typeof data === 'object' && !Array.isArray(data) && 'jobs' in data && Array.isArray(data.jobs)) {
+    // 'jobs' 배열이 있는 경우
+    normalizedResponse.recommendedJobs = (data.jobs as unknown[]).map(job => 
+      normalizeJob(job as Record<string, unknown>));
   } else if (Array.isArray(data)) {
-    // Handle case where data itself is an array of jobs
-    normalizedResponse.recommendedJobs = data.map(job => normalizeJob(job));
-  } else if (data.data && Array.isArray(data.data.jobs)) {
-    // Handle case where jobs are nested in data property
-    normalizedResponse.recommendedJobs = data.data.jobs.map(job => normalizeJob(job));
+    // 데이터 자체가 배열인 경우
+    normalizedResponse.recommendedJobs = data.map(job => 
+      normalizeJob(job as Record<string, unknown>));
+  } else if (data && typeof data === 'object' && 'data' in data && typeof data.data === 'object' && 
+             data.data && 'jobs' in data.data && Array.isArray(data.data.jobs)) {
+    // data 속성 내에 jobs 배열이 중첩된 경우
+    normalizedResponse.recommendedJobs = (data.data.jobs as unknown[]).map(job => 
+      normalizeJob(job as Record<string, unknown>));
   }
   
   return normalizedResponse;

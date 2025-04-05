@@ -11,14 +11,14 @@ import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
 
 /**
- * API Service for communicating with the main service
+ * 메인 서비스와 통신하기 위한 API 서비스
  */
 class ApiService {
   private baseUrl: string = '/api/developer/main_service_communicate';
 
   /**
-   * Test API endpoint - Scraping scheduler
-   * @returns Promise with test response
+   * 테스트 API 엔드포인트 - 스크래핑 스케줄러
+   * @returns 테스트 응답 Promise
    */
   async test(): Promise<TestResponse> {
     try {
@@ -32,25 +32,25 @@ class ApiService {
       if (!response.ok) {
         return { 
           success: false, 
-          message: `Server error: ${response.status}`,
+          message: `서버 오류: ${response.status}`,
           testCompleted: false 
         };
       }
       
       return { 
         success: true, 
-        message: 'Scraping scheduler started successfully.',
+        message: '스크래핑 스케줄러가 성공적으로 시작되었습니다.',
         testCompleted: true 
       };
     } catch (error) {
-      console.error('Scraping scheduler API error:', error);
-      return { success: false, error: 'An error occurred while starting the scraping scheduler.' };
+      console.error('스크래핑 스케줄러 API 오류:', error);
+      return { success: false, error: '스크래핑 스케줄러 시작 중 오류가 발생했습니다.' };
     }
   }
 
   /**
-   * Get all jobs from the API
-   * @returns Promise with all jobs response
+   * API에서 모든 채용 정보 가져오기
+   * @returns 모든 채용 정보가 포함된 응답 Promise
    */
   async getAllJobs(): Promise<AllJobsResponse> {
     try {
@@ -62,43 +62,43 @@ class ApiService {
       });
       
       if (!response.ok) {
-        console.warn(`API error: ${response.status}`);
+        console.warn(`API 오류: ${response.status}`);
         return this.getFallbackAllJobs();
       }
       
       try {
         const data = await response.json();
         if (data) {
-          console.info('Successfully retrieved all jobs');
-          // Use the normalizer to properly transform the API response
+          console.info('모든 채용 정보를 성공적으로 가져왔습니다');
+          // API 응답을 적절히 변환하기 위해 정규화 함수 사용
           return normalizeApiResponse(data);
         } else {
-          console.warn('Unexpected API response format:', data);
+          console.warn('예상치 못한 API 응답 형식:', data);
           return this.getFallbackAllJobs();
         }
       } catch (parseError) {
-        console.error('API response parsing error:', parseError);
+        console.error('API 응답 파싱 오류:', parseError);
         return this.getFallbackAllJobs();
       }
     } catch (error) {
-      console.error('Error retrieving all jobs:', error);
+      console.error('모든 채용 정보 가져오기 중 오류:', error);
       return this.getFallbackAllJobs();
     }
   }
 
   /**
-   * Provides fallback data when API fails
-   * @returns All jobs from JSON file
+   * API 실패 시 대체 데이터 제공
+   * @returns JSON 파일에서 가져온 모든 채용 정보
    */
   private getFallbackAllJobs(): AllJobsResponse {
-    console.info('Using fallback data from all-jobs.json file');
-    // Normalize the fallback data to ensure it matches the expected format
-    return normalizeApiResponse(allJobsData);
+    console.info('all-jobs.json 파일의 대체 데이터 사용 중');
+    // 예상 형식과 일치하도록 대체 데이터 정규화 - 타입 캐스팅으로 에러 해결
+    return normalizeApiResponse(allJobsData as Record<string, unknown>);
   }
 
   /**
-   * Get recommended jobs from the API
-   * @returns Promise with recommended jobs response
+   * API에서 추천 채용 정보 가져오기
+   * @returns 추천 채용 정보가 포함된 응답 Promise
    */
   async getRecommendedJobs(): Promise<RecommendedJobsResponse> {
     try {
@@ -110,43 +110,43 @@ class ApiService {
       });
       
       if (!response.ok) {
-        console.warn(`API error: ${response.status}`);
+        console.warn(`API 오류: ${response.status}`);
         return this.getFallbackRecommendedJobs();
       }
       
       try {
         const data = await response.json();
         if (data) {
-          console.info('Successfully retrieved recommended jobs data');
-          // Use the normalizer to properly transform the API response
+          console.info('추천 채용 정보를 성공적으로 가져왔습니다');
+          // API 응답을 적절히 변환하기 위해 정규화 함수 사용
           return normalizeRecommendedJobsResponse(data);
         } else {
-          console.warn('Unexpected API response format:', data);
+          console.warn('예상치 못한 API 응답 형식:', data);
           return this.getFallbackRecommendedJobs();
         }
       } catch (parseError) {
-        console.error('API response parsing error:', parseError);
+        console.error('API 응답 파싱 오류:', parseError);
         return this.getFallbackRecommendedJobs();
       }
     } catch (error) {
-      console.error('Error retrieving recommended jobs:', error);
+      console.error('추천 채용 정보 가져오기 중 오류:', error);
       return this.getFallbackRecommendedJobs();
     }
   }
   
   /**
-   * Provides fallback data when API fails
-   * @returns Recommended jobs from JSON file
+   * API 실패 시 대체 데이터 제공
+   * @returns JSON 파일에서 가져온 추천 채용 정보
    */
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
-    console.info('Using fallback data from recommended-jobs.json file');
-    // Normalize the fallback data to ensure it matches the expected format
-    return normalizeRecommendedJobsResponse(recommendedJobsData);
+    console.info('recommended-jobs.json 파일의 대체 데이터 사용 중');
+    // 예상 형식과 일치하도록 대체 데이터 정규화 - 타입 캐스팅으로 에러 해결
+    return normalizeRecommendedJobsResponse(recommendedJobsData as Record<string, unknown>);
   }
 
   /**
-   * Run auto job matching
-   * @returns Promise with auto matching response
+   * 자동 채용 매칭 실행
+   * @returns 자동 매칭 응답 Promise
    */
   async runAutoJobMatching(): Promise<AutoMatchingResponse> {
     try {
@@ -160,7 +160,7 @@ class ApiService {
       if (!response.ok) {
         return { 
           success: false, 
-          message: `Server error: ${response.status}`,
+          message: `서버 오류: ${response.status}`,
         };
       }
       
@@ -170,19 +170,19 @@ class ApiService {
       } catch (parseError) {
         return { 
           success: true, 
-          message: 'Auto job matching completed successfully',
+          message: '자동 채용 매칭이 성공적으로 완료되었습니다',
           matchedJobs: 5
         };
       }
     } catch (error) {
-      console.error('Error running auto job matching:', error);
-      return { success: false, error: 'An error occurred during auto job matching.' };
+      console.error('자동 채용 매칭 실행 중 오류:', error);
+      return { success: false, error: '자동 채용 매칭 중 오류가 발생했습니다.' };
     }
   }
 
   /**
-   * Apply to Saramin jobs
-   * @returns Promise with apply response
+   * Saramin 채용에 지원하기
+   * @returns 지원 응답 Promise
    */
   async applySaraminJobs(): Promise<ApplyResponse> {
     try {
@@ -196,7 +196,7 @@ class ApiService {
       if (!response.ok) {
         return { 
           success: false, 
-          message: `Server error: ${response.status}`,
+          message: `서버 오류: ${response.status}`,
         };
       }
       
@@ -206,13 +206,13 @@ class ApiService {
       } catch (parseError) {
         return { 
           success: true, 
-          message: 'Saramin job applications completed successfully',
+          message: 'Saramin 채용 지원이 성공적으로 완료되었습니다',
           appliedJobs: 3
         };
       }
     } catch (error) {
-      console.error('Error applying to Saramin jobs:', error);
-      return { success: false, error: 'An error occurred while applying to jobs.' };
+      console.error('Saramin 채용 지원 중 오류:', error);
+      return { success: false, error: '채용 지원 중 오류가 발생했습니다.' };
     }
   }
 }

@@ -1,4 +1,3 @@
-
 import { useApiActions } from '@/hooks/useApiActions';
 import ApiButtonGroup from '@/components/ApiButtonGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -277,7 +276,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center text-xl gap-2">
               <Info className="h-5 w-5 text-primary" />
-              API 작업
+              API 요청
             </CardTitle>
             
             {isMobile && (
@@ -294,12 +293,6 @@ const Index = () => {
               </Button>
             )}
           </div>
-
-          {!isMobile && (
-            <CardDescription>
-              아래 버튼을 클릭하여 원하는 API 작업을 실행하세요
-            </CardDescription>
-          )}
         </CardHeader>
         
         {(apiCardExpanded || !isMobile) && (

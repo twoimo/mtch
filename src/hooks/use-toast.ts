@@ -5,8 +5,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 3  // Increase to a reasonable number
-const TOAST_REMOVE_DELAY = 5000  // Reduce to 5 seconds for better UX
+const TOAST_LIMIT = 3  // 합리적인 수준으로 증가 (최대 표시 토스트 수)
+const TOAST_REMOVE_DELAY = 5000  // 더 나은 UX를 위해 5초로 단축
 
 type ToasterToast = ToastProps & {
   id: string
@@ -55,6 +55,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// 토스트 제거 큐에 추가하는 함수
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -74,7 +75,7 @@ const addToRemoveQueue = (toastId: string) => {
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
-      // Ensure we don't exceed the toast limit
+      // 토스트 제한을 초과하지 않도록 보장
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
@@ -91,8 +92,8 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // ! 부수 효과 ! - 이것은 dismissToast() 액션으로 추출될 수 있지만,
+      // 단순성을 위해 여기에 유지
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -143,8 +144,8 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
-  // Check if we already have a similar toast with the same title
-  // to prevent duplicate messages when making the same API call
+  // 동일한 제목의 토스트가 이미 있는지 확인
+  // 동일한 API 호출 시 중복 메시지 방지
   const hasSimilarToast = memoryState.toasts.some(
     (t) => t.title === props.title && t.description === props.description
   );
@@ -176,7 +177,7 @@ function toast({ ...props }: Toast) {
     }
   }
 
-  // Return a dummy object if toast not created
+  // 토스트가 생성되지 않으면 더미 객체 반환
   return {
     id: "",
     dismiss: () => {},

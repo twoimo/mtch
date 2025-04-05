@@ -1,4 +1,3 @@
-
 // API 통신을 담당하는 서비스 클래스
 import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
@@ -18,7 +17,9 @@ class MainServiceCommunicateService {
   private baseUrl: string = '/api/developer/main_service_communicate';
   // CORS 프록시 관련 설정 제거 (더 이상 필요 없음)
 
-  // 사람인 웹사이트 스크래핑 시작
+  /**
+   * 사람인 웹사이트 스크래핑 시작
+   */
   async test(): Promise<ApiResponse & { testCompleted?: boolean }> {
     try {
       const response = await fetch(`${this.baseUrl}/test`, {
@@ -47,7 +48,9 @@ class MainServiceCommunicateService {
     }
   }
 
-  // 전체 채용 정보 조회 - API 응답 형식 업데이트
+  /**
+   * 전체 채용 정보 조회 - API 응답 형식 업데이트
+   */
   async getAllJobs(): Promise<AllJobsResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/all-jobs`, {
@@ -66,7 +69,7 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data) {
           console.info('전체 채용 정보를 성공적으로 받아왔습니다.');
-          // 타입 변환을 위해 normalizeApiResponse 함수를 사용합니다
+          // 타입 변환을 위해 normalizeApiResponse 함수 사용
           const normalizedData = normalizeApiResponse(data);
           return normalizedData;
         } else {
@@ -84,16 +87,18 @@ class MainServiceCommunicateService {
   }
 
   /**
-   * Provides fallback data when API fails
-   * @returns All jobs from JSON file
+   * API 실패시 대체 데이터 제공
+   * @returns JSON 파일에서 불러온 전체 채용 정보
    */
   private getFallbackAllJobs(): AllJobsResponse {
     console.info('all-jobs.json 파일의 데이터를 사용합니다.');
-    // JSON 파일 데이터를 정규화하여 반환
-    return normalizeApiResponse(allJobsData);
+    // JSON 파일 데이터를 정규화하여 반환 - 타입 캐스팅으로 에러 해결
+    return normalizeApiResponse(allJobsData as Record<string, unknown>);
   }
 
-  // 추천 채용 정보 가져오기 - 실제 API 데이터 처리
+  /**
+   * 추천 채용 정보 가져오기 - 실제 API 데이터 처리
+   */
   async getRecommendedJobs(): Promise<RecommendedJobsResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/recommended-jobs`, {
@@ -112,7 +117,7 @@ class MainServiceCommunicateService {
         const data = await response.json();
         if (data) {
           console.info('실제 API 데이터를 성공적으로 받아왔습니다.');
-          // 타입 변환을 위해 normalizeRecommendedJobsResponse 함수를 사용합니다
+          // 타입 변환을 위해 normalizeRecommendedJobsResponse 함수 사용
           const normalizedData = normalizeRecommendedJobsResponse(data);
           return normalizedData;
         } else {
@@ -129,14 +134,18 @@ class MainServiceCommunicateService {
     }
   }
   
-  // 백업 데이터 제공 메서드 - JSON 파일에서 가져오기
+  /**
+   * 백업 데이터 제공 메서드 - JSON 파일에서 가져오기
+   */
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
     console.info('recommended-jobs.json 파일의 데이터를 사용합니다.');
-    // JSON 파일 데이터를 정규화하여 반환
-    return normalizeRecommendedJobsResponse(recommendedJobsData);
+    // JSON 파일 데이터를 정규화하여 반환 - 타입 캐스팅으로 에러 해결
+    return normalizeRecommendedJobsResponse(recommendedJobsData as Record<string, unknown>);
   }
 
-  // 자동 채용 매칭 실행
+  /**
+   * 자동 채용 매칭 실행
+   */
   async runAutoJobMatching(): Promise<AutoMatchingResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/run-auto-job-matching`, {
@@ -169,7 +178,9 @@ class MainServiceCommunicateService {
     }
   }
 
-  // 사람인 채용 지원
+  /**
+   * 사람인 채용 지원
+   */
   async applySaraminJobs(): Promise<ApplyResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/apply-saramin-jobs`, {
