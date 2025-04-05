@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -96,9 +95,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
   
   const renderFiltersContent = () => (
-    <ScrollArea className={`space-y-4 ${isMobile ? 'px-4 py-4 h-[70vh]' : ''} scrollbar-none`}>
+    <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'py-2'} scrollbar-none`}>
       <div>
-        <Label htmlFor="keyword" className="text-sm font-medium mb-1.5 block">
+        <Label htmlFor="keyword" className="text-sm font-medium mb-2 block">
           키워드 검색
         </Label>
         <div className="relative">
@@ -120,8 +119,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
-      <div>
-        <div className="flex justify-between items-center mb-1.5">
+      <div className="pt-1">
+        <div className="flex justify-between items-center mb-2">
           <Label htmlFor="score" className="text-sm font-medium">
             최소 매칭 점수: {filters.minScore}점
           </Label>
@@ -136,9 +135,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
         />
       </div>
       
-      <div>
-        <Label className="text-sm font-medium mb-1.5 block">고용 형태</Label>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="pt-1">
+        <Label className="text-sm font-medium mb-2 block">고용 형태</Label>
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="employment-type-1" 
@@ -202,12 +201,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
-      <div>
-        <Label className="text-sm font-medium mb-1.5 block">회사 유형</Label>
+      <div className="pt-1">
+        <Label className="text-sm font-medium mb-2 block">회사 유형</Label>
         <RadioGroup 
           value={filters.companyType} 
           onValueChange={handleCompanyTypeChange}
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-2 gap-3"
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="all" id="company-type-all" />
@@ -248,9 +247,9 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </RadioGroup>
       </div>
       
-      <div>
-        <Label className="text-sm font-medium mb-1.5 block">경력 유형</Label>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="pt-1">
+        <Label className="text-sm font-medium mb-2 block">경력 유형</Label>
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="job-type-1"
@@ -278,27 +277,27 @@ const JobsTab: React.FC<JobsTabProps> = ({
         </div>
       </div>
       
-      <div className="space-y-2.5 pt-1">
-        <div className="flex items-center space-x-2">
+      <div className="space-y-3.5 pt-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="only-applicable" className="text-sm cursor-pointer">
+            지원 가능한 채용만 보기
+          </Label>
           <Switch 
             id="only-applicable"
             checked={filters.onlyApplicable}
             onCheckedChange={handleOnlyApplicableChange}
           />
-          <Label htmlFor="only-applicable" className="text-sm cursor-pointer">
-            지원 가능한 채용만 보기
-          </Label>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between pt-1">
+          <Label htmlFor="hide-expired" className="text-sm cursor-pointer">
+            마감일 지난 공고 제외
+          </Label>
           <Switch 
             id="hide-expired"
             checked={filters.hideExpired}
             onCheckedChange={handleHideExpiredChange}
           />
-          <Label htmlFor="hide-expired" className="text-sm cursor-pointer">
-            마감일 지난 공고 제외
-          </Label>
         </div>
       </div>
       
@@ -318,7 +317,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
       {!isMobile && (
         <div className={`md:col-span-3 transition-all duration-300 ease-in-out ${filtersVisible ? 'opacity-100' : 'opacity-0 md:h-0 md:overflow-hidden md:my-0 md:py-0'}`}>
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 pb-6 px-5">
               {renderFiltersContent()}
             </CardContent>
           </Card>
@@ -341,7 +340,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             jobs={filteredJobs} 
             isLoading={false} 
             hideExpired={filters.hideExpired}
-            onToggleHideExpired={handleHideExpiredChange}
+            onToggleHideExpired={undefined}
             onOpenFilters={isMobile ? handleOpenDrawer : undefined}
           />
         )}
@@ -350,14 +349,14 @@ const JobsTab: React.FC<JobsTabProps> = ({
       {isMobile && (
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerContent className="px-0 pb-0">
-            <DrawerHeader className="text-left px-4 pb-0">
+            <DrawerHeader className="text-left px-6 pb-0">
               <DrawerTitle>필터 옵션</DrawerTitle>
               <DrawerDescription>
                 원하는 채용 정보를 찾아보세요
               </DrawerDescription>
             </DrawerHeader>
             {renderFiltersContent()}
-            <DrawerFooter className="pt-2 px-4">
+            <DrawerFooter className="pt-2 px-6">
               <DrawerClose asChild>
                 <Button variant="outline">닫기</Button>
               </DrawerClose>

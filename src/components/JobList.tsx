@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
 import { ArrowUp, ArrowDownUp, Filter } from 'lucide-react';
@@ -43,14 +42,13 @@ interface JobListProps {
 
 // Key for storing scroll position in localStorage
 const SCROLL_POSITION_KEY = 'job-list-scroll-position';
-const HIDE_EXPIRED_KEY = 'hide-expired-jobs';
 const SORT_ORDER_KEY = 'job-list-sort-order';
 
 // Component to display job listings
 const JobList: React.FC<JobListProps> = ({ 
   jobs, 
   isLoading = false, 
-  hideExpired: propHideExpired,
+  hideExpired,
   onToggleHideExpired,
   title = '채용 정보',
   onOpenFilters
@@ -65,21 +63,6 @@ const JobList: React.FC<JobListProps> = ({
     const savedSort = localStorage.getItem(SORT_ORDER_KEY);
     return (savedSort as 'score' | 'apply' | 'deadline' | 'recent') || 'score';
   });
-  
-  // State for hiding expired job postings - default is true (hide expired)
-  // Use the prop value if provided, otherwise use localStorage
-  const [hideExpired, setHideExpired] = useState<boolean>(() => {
-    if (propHideExpired !== undefined) return propHideExpired;
-    const savedState = localStorage.getItem(HIDE_EXPIRED_KEY);
-    return savedState === null ? true : savedState === 'true';
-  });
-  
-  // Update local state when prop changes
-  useEffect(() => {
-    if (propHideExpired !== undefined) {
-      setHideExpired(propHideExpired);
-    }
-  }, [propHideExpired]);
   
   const loaderRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -122,13 +105,6 @@ const JobList: React.FC<JobListProps> = ({
 
   // Filter out expired jobs if hideExpired is true
   useEffect(() => {
-    // Save hideExpired preference to localStorage
-    localStorage.setItem(HIDE_EXPIRED_KEY, hideExpired.toString());
-    
-    if (onToggleHideExpired) {
-      onToggleHideExpired(hideExpired);
-    }
-    
     if (!jobs || jobs.length === 0) return;
     
     // Filter jobs based on hideExpired setting
@@ -138,7 +114,7 @@ const JobList: React.FC<JobListProps> = ({
     }
     
     setFilteredJobs(jobsToDisplay);
-  }, [jobs, hideExpired, onToggleHideExpired, isJobExpired]);
+  }, [jobs, hideExpired, isJobExpired]);
 
   // Sort function - use memo to optimize calculation
   const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply' | 'deadline' | 'recent') => {
@@ -318,14 +294,6 @@ const JobList: React.FC<JobListProps> = ({
     setSortOrder(value as 'score' | 'apply' | 'deadline' | 'recent');
   };
 
-  // Toggle expired jobs handler
-  const handleToggleHideExpired = (checked: boolean) => {
-    setHideExpired(checked);
-    if (onToggleHideExpired) {
-      onToggleHideExpired(checked);
-    }
-  };
-
   // When loading, show skeleton UI - optimized rendering
   if (isLoading) {
     return (
@@ -366,8 +334,8 @@ const JobList: React.FC<JobListProps> = ({
   // 통합된 헤더 렌더링
   const renderIntegratedHeader = () => (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-      <div className="flex flex-col text-lg font-semibold">
-        <div className="flex items-center">
+      <div className="flex flex-col">
+        <div className="flex items-center text-lg font-semibold">
           {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
         </div>
         {hideExpired && expiredJobsCount > 0 && (
