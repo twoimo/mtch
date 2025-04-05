@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ interface Job {
 }
 
 interface CalendarTabProps {
-  jobs: Job[];
+  jobs: Job[]; // This is used by the component for type checking even if not directly referenced
   filteredJobs: Job[];
 }
 
@@ -60,7 +60,7 @@ const simplifyEmploymentType = (type: string): string => {
   return type;
 };
 
-const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
+const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const isMobile = useIsMobile();
@@ -111,10 +111,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
     return jobsByDate[dateKey] || [];
   }, [jobsByDate, selectedDate]);
   
-  const getJobCountForDate = (date: Date): number => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    return (jobsByDate[dateKey] || []).length;
-  };
+  const selectedDateJobsCount = useMemo(() => {
+    return selectedDateJobs.length;
+  }, [selectedDateJobs]);
   
   return (
     <div className="space-y-4">
@@ -299,7 +298,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ jobs, filteredJobs }) => {
               <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               {format(selectedDate, isMobile ? 'yy.MM.dd' : 'yyyy년 MM월 dd일', { locale: ko })} 마감
               <Badge variant="outline" className="ml-auto text-xs">
-                {selectedDateJobs.length}개
+                {selectedDateJobsCount}개
               </Badge>
             </CardTitle>
           </CardHeader>

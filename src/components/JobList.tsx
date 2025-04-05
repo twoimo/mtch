@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
-import { ArrowUp, ArrowDownUp, Filter } from 'lucide-react';
+import { ArrowUp, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { 
@@ -14,8 +13,6 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Job {
@@ -66,6 +63,9 @@ const JobList: React.FC<JobListProps> = ({
     return (savedSort as 'score' | 'apply' | 'deadline' | 'recent') || 'score';
   });
   
+  // Add a new state to track filter active status for feedback
+  const [activeFilterCount, setActiveFilterCount] = useState<number>(0);
+  
   const loaderRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 15; // Increased number of items for performance
@@ -74,8 +74,8 @@ const JobList: React.FC<JobListProps> = ({
   const lastScrollTop = useRef(0);
   const [lastLoadedCount, setLastLoadedCount] = useState(itemsPerPage);
 
-  // Debounce function
-  const debounce = <F extends (...args: any[]) => any>(
+  // Debounce function with proper typing
+  const debounce = <F extends (...args: Parameters<F>) => ReturnType<F>>(
     func: F,
     wait: number
   ): ((...args: Parameters<F>) => void) => {
@@ -94,7 +94,7 @@ const JobList: React.FC<JobListProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let deadlineDate;
+    let deadlineDate: Date;
     if (job.deadline.includes('.')) {
       const [year, month, day] = job.deadline.split('.').map(num => parseInt(num));
       deadlineDate = new Date(year, month - 1, day);
@@ -238,9 +238,12 @@ const JobList: React.FC<JobListProps> = ({
     }
   }, [filteredJobs.length, isLoading, page, itemsPerPage, sortedAllJobs.length]);
 
-  // Infinite scroll observer setup
+  // Infinite scroll observer setup with proper ref handling
   useEffect(() => {
     if (!loaderRef.current || isLoading) return;
+    
+    // Store the current ref value in a variable to avoid closure issues
+    const currentLoaderRef = loaderRef.current;
     
     const observer = new IntersectionObserver(
       (entries) => {
@@ -252,12 +255,11 @@ const JobList: React.FC<JobListProps> = ({
       { threshold: 0.1, rootMargin: '100px' }
     );
 
-    observer.observe(loaderRef.current);
+    observer.observe(currentLoaderRef);
     
     return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
+      // Use the stored ref value in cleanup
+      observer.unobserve(currentLoaderRef);
     };
   }, [loadMoreJobs, isLoading, scrollDirection]);
 
@@ -296,10 +298,20 @@ const JobList: React.FC<JobListProps> = ({
     setSortOrder(value as 'score' | 'apply' | 'deadline' | 'recent');
   };
 
+  // Count active filters for visual feedback
+  useEffect(() => {
+    let count = 0;
+    if (hideExpired) count++;
+    // Add other filter conditions here if needed
+    setActiveFilterCount(count);
+  }, [hideExpired]);
+
   // Toggle handler for expired jobs
   const handleToggleHideExpired = (value: boolean) => {
     if (onToggleHideExpired) {
       onToggleHideExpired(value);
+      // Store preference in localStorage for persistence
+      localStorage.setItem('hide-expired-jobs', value.toString());
     }
   };
 
@@ -356,9 +368,14 @@ const JobList: React.FC<JobListProps> = ({
       
       <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
         {isMobile && onOpenFilters && (
-          <Button variant="outline" size="sm" className="gap-1" onClick={onOpenFilters}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={`gap-1 ${activeFilterCount > 0 ? 'border-primary text-primary' : ''}`} 
+            onClick={onOpenFilters}
+          >
             <Filter className="h-4 w-4" />
-            필터
+            필터 {activeFilterCount > 0 && `(${activeFilterCount})`}
           </Button>
         )}
         
@@ -434,18 +451,22 @@ const JobList: React.FC<JobListProps> = ({
       {/* Add toggle group for hideExpired status on mobile */}
       {isMobile && onToggleHideExpired && (
         <div className="flex items-center justify-center pt-1 pb-3">
-          <ToggleGroup type="single" value={hideExpired ? "hide" : "show"} className="border rounded-lg">
+          <ToggleGroup 
+            type="single" 
+            value={hideExpired ? "hide" : "show"} 
+            className="border rounded-lg"
+          >
             <ToggleGroupItem 
               value="hide" 
               onClick={() => handleToggleHideExpired(true)}
-              className="px-3 py-1.5 text-xs"
+              className={`px-3 py-1.5 text-xs ${hideExpired ? "bg-primary/10 text-primary" : ""}`}
             >
               마감공고 숨기기
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="show" 
               onClick={() => handleToggleHideExpired(false)}
-              className="px-3 py-1.5 text-xs"
+              className={`px-3 py-1.5 text-xs ${!hideExpired ? "bg-primary/10 text-primary" : ""}`}
             >
               모든공고 보기
             </ToggleGroupItem>

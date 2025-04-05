@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { X, ChevronDown, ChevronUp, Filter, RotateCcw } from 'lucide-react';
+import { X, RotateCcw } from 'lucide-react';
 import JobList from '@/components/JobList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,23 +19,40 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
 
+// Import the Job type from JobList to ensure type compatibility
+type JobListJob = {
+  id: number;
+  score: number;
+  reason: string;
+  strength: string;
+  weakness: string;
+  apply_yn: number;
+  companyName: string;
+  jobTitle: string;
+  jobLocation: string;
+  companyType: string;
+  url: string;
+  deadline?: string;
+};
+
+interface JobFilters {
+  keyword: string;
+  minScore: number;
+  employmentType: string[];
+  companyType: string;
+  jobType: string[];
+  salaryRange: string;
+  onlyApplicable: boolean;
+  hideExpired?: boolean;
+}
+
 interface JobsTabProps {
-  jobs: any[];
-  filteredJobs: any[];
-  filters: {
-    keyword: string;
-    minScore: number;
-    employmentType: string[];
-    companyType: string;
-    jobType: string[];
-    salaryRange: string;
-    onlyApplicable: boolean;
-    hideExpired?: boolean;
-  };
-  onUpdateFilters: (filters: any) => void;
+  jobs: JobListJob[];
+  filteredJobs: JobListJob[];
+  filters: JobFilters;
+  onUpdateFilters: (filters: JobFilters) => void;
   onResetFilters: () => void;
 }
 
@@ -44,19 +60,21 @@ const JobsTab: React.FC<JobsTabProps> = ({
   jobs, filteredJobs, filters, onUpdateFilters, onResetFilters 
 }) => {
   const isMobile = useIsMobile();
-  const [showFilters, setShowFilters] = useState(!isMobile);
   const [filtersVisible, setFiltersVisible] = useState(!isMobile);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
-  // Initialize internal state based on filters prop
+  // Initialize internal state based on filters prop but only on component mount
   const [localHideExpired, setLocalHideExpired] = useState(
     filters.hideExpired === undefined ? true : !!filters.hideExpired
   );
   
-  // Sync filters state with the component whenever drawer opens or filters change
+  // Only sync on first mount and when filters change through parent, not drawer open/close
   useEffect(() => {
-    setLocalHideExpired(filters.hideExpired === undefined ? true : !!filters.hideExpired);
-  }, [drawerOpen, filters.hideExpired]);
+    // Only update local state if parent filters changed from outside this component
+    if (filters.hideExpired !== undefined && localHideExpired !== filters.hideExpired) {
+      setLocalHideExpired(filters.hideExpired);
+    }
+  }, [filters.hideExpired, localHideExpired]);
   
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateFilters({ ...filters, keyword: e.target.value });
@@ -91,8 +109,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
   const handleHideExpiredChange = (checked: boolean) => {
     // Update local state immediately for responsive UI
     setLocalHideExpired(checked);
-    // Update parent state
-    onUpdateFilters({ ...filters, hideExpired: checked });
+    // Update parent state with a slight delay to ensure local state updates first
+    setTimeout(() => {
+      onUpdateFilters({ ...filters, hideExpired: checked });
+    }, 0);
   };
   
   const toggleFilters = () => {
@@ -124,7 +144,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             placeholder="회사명, 포지션 등 검색"
             value={filters.keyword}
             onChange={handleKeywordChange}
-            className="pr-8"
+            className={`pr-8 ${filters.keyword ? 'border-primary/70' : ''}`}
           />
           {filters.keyword && (
             <button
@@ -140,7 +160,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
       <div className="pt-1">
         <div className="flex justify-between items-center mb-2">
           <Label htmlFor="score" className="text-sm font-medium">
-            최소 매칭 점수: {filters.minScore}점
+            최소 매칭 점수: <span className="text-primary">{filters.minScore}점</span>
           </Label>
         </div>
         <Slider
@@ -150,6 +170,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
           step={5}
           value={[filters.minScore]}
           onValueChange={handleScoreChange}
+          className={filters.minScore > 0 ? "accent-primary" : ""}
         />
       </div>
       
@@ -304,6 +325,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             id="only-applicable"
             checked={filters.onlyApplicable}
             onCheckedChange={handleOnlyApplicableChange}
+            className={filters.onlyApplicable ? "bg-primary" : ""}
           />
         </div>
         
@@ -315,6 +337,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
             id="hide-expired"
             checked={localHideExpired}
             onCheckedChange={handleHideExpiredChange}
+            className={localHideExpired ? "bg-primary" : ""}
           />
         </div>
       </div>
@@ -355,7 +378,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
           </div>
         ) : (
           <JobList 
-            jobs={filteredJobs} 
+            jobs={filteredJobs as JobListJob[]} 
             isLoading={false} 
             hideExpired={localHideExpired}
             onToggleHideExpired={handleHideExpiredChange}
