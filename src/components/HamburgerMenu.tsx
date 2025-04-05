@@ -2,7 +2,7 @@
 import React from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, Github, Sun, Moon, Command, ToggleRight } from 'lucide-react';
+import { Menu, Sun, Moon, Command, ToggleRight } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { Icons } from '@/components/icons';
 import { Switch } from '@/components/ui/switch';

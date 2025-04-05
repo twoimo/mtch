@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from './JobCard';
-import { ArrowUp, ArrowDownUp } from 'lucide-react';
+import { ArrowUp, ArrowDownUp, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { 
   Select, 
   SelectContent, 
@@ -12,6 +12,9 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 
 interface Job {
@@ -34,28 +37,33 @@ interface JobListProps {
   isLoading?: boolean;
   hideExpired?: boolean;
   onToggleHideExpired?: (hide: boolean) => void;
+  title?: string;
+  onOpenFilters?: () => void;
 }
 
 // Key for storing scroll position in localStorage
 const SCROLL_POSITION_KEY = 'job-list-scroll-position';
 const HIDE_EXPIRED_KEY = 'hide-expired-jobs';
+const SORT_ORDER_KEY = 'job-list-sort-order';
 
 // Component to display job listings
 const JobList: React.FC<JobListProps> = ({ 
   jobs, 
   isLoading = false, 
   hideExpired: propHideExpired,
-  onToggleHideExpired 
+  onToggleHideExpired,
+  title = '채용 정보',
+  onOpenFilters
 }) => {
   const isMobile = useIsMobile();
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [page, setPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'score' | 'apply'>(() => {
+  const [sortOrder, setSortOrder] = useState<'score' | 'apply' | 'deadline' | 'recent'>(() => {
     // Restore sort setting from localStorage
-    const savedSort = localStorage.getItem('job-list-sort-order');
-    return (savedSort as 'score' | 'apply') || 'score';
+    const savedSort = localStorage.getItem(SORT_ORDER_KEY);
+    return (savedSort as 'score' | 'apply' | 'deadline' | 'recent') || 'score';
   });
   
   // State for hiding expired job postings - default is true (hide expired)
@@ -133,17 +141,43 @@ const JobList: React.FC<JobListProps> = ({
   }, [jobs, hideExpired, onToggleHideExpired, isJobExpired]);
 
   // Sort function - use memo to optimize calculation
-  const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply') => {
+  const sortJobs = useCallback((jobsToSort: Job[], order: 'score' | 'apply' | 'deadline' | 'recent') => {
     if (order === 'score') {
       return [...jobsToSort].sort((a, b) => b.score - a.score);
-    } else {
+    } else if (order === 'apply') {
       return [...jobsToSort].sort((a, b) => {
         if (a.apply_yn !== b.apply_yn) {
           return b.apply_yn - a.apply_yn; // Show applicable jobs first
         }
         return b.score - a.score; // If same applicability, sort by score
       });
+    } else if (order === 'deadline') {
+      return [...jobsToSort].sort((a, b) => {
+        // Process deadline dates for comparison
+        const parseDate = (deadline?: string): Date => {
+          if (!deadline) return new Date(9999, 11, 31); // Far future for items without deadline
+          
+          if (deadline.includes('.')) {
+            const [year, month, day] = deadline.split('.').map(num => parseInt(num));
+            return new Date(year, month - 1, day);
+          } else {
+            return new Date(deadline);
+          }
+        };
+        
+        const dateA = parseDate(a.deadline);
+        const dateB = parseDate(b.deadline);
+        
+        // Sort by deadline (earliest first)
+        return dateA.getTime() - dateB.getTime();
+      });
+    } else if (order === 'recent') {
+      // Sort by most recently added (assuming id is sequential or using createdAt if available)
+      return [...jobsToSort].sort((a, b) => b.id - a.id);
     }
+    
+    // Default sorting
+    return [...jobsToSort];
   }, []);
 
   // Calculate all sorted jobs - optimized with useMemo
@@ -210,7 +244,7 @@ const JobList: React.FC<JobListProps> = ({
       setDisplayedJobs(jobsToDisplay);
       
       // Save sort setting
-      localStorage.setItem('job-list-sort-order', sortOrder);
+      localStorage.setItem(SORT_ORDER_KEY, sortOrder);
     }
   }, [sortOrder, page, filteredJobs, sortJobs, itemsPerPage, lastLoadedCount]);
 
@@ -281,7 +315,15 @@ const JobList: React.FC<JobListProps> = ({
 
   // Sort order change handler
   const handleSortChange = (value: string) => {
-    setSortOrder(value as 'score' | 'apply');
+    setSortOrder(value as 'score' | 'apply' | 'deadline' | 'recent');
+  };
+
+  // Toggle expired jobs handler
+  const handleToggleHideExpired = (checked: boolean) => {
+    setHideExpired(checked);
+    if (onToggleHideExpired) {
+      onToggleHideExpired(checked);
+    }
   };
 
   // When loading, show skeleton UI - optimized rendering
@@ -321,52 +363,68 @@ const JobList: React.FC<JobListProps> = ({
   // Calculate the number of expired jobs for the UI
   const expiredJobsCount = jobs.filter(isJobExpired).length;
 
-  return (
-    <div className="relative" ref={listRef}>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <div className="text-lg font-semibold">
-          총 <span className="text-blue-600">{jobs.length}</span>개의 추천 채용정보
-          {hideExpired && expiredJobsCount > 0 && (
-            <span className="text-sm text-muted-foreground ml-2">
-              (유효한 공고 {filteredJobs.length}개)
-            </span>
-          )}
+  // 통합된 헤더 렌더링
+  const renderIntegratedHeader = () => (
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+      <div className="flex flex-col text-lg font-semibold">
+        <div className="flex items-center">
+          {title} <span className="text-primary ml-1">{filteredJobs.length}</span>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex items-center">
-            <ArrowDownUp className={`h-4 w-4 mr-1 text-gray-500 ${isMobile ? 'hidden' : 'block'}`} />
-            <span className={`text-sm text-gray-600 ${isMobile ? 'hidden' : 'block'}`}>정렬:</span>
+        {hideExpired && expiredJobsCount > 0 && (
+          <div className="text-xs text-muted-foreground">
+            (유효한 공고 {filteredJobs.length}개, 마감된 {expiredJobsCount}개 제외)
           </div>
+        )}
+      </div>
+      
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+        {isMobile && onOpenFilters && (
+          <Button variant="outline" size="sm" className="gap-1" onClick={onOpenFilters}>
+            <Filter className="h-4 w-4" />
+            필터
+          </Button>
+        )}
+        
+        <div className="flex items-center gap-1">
           <Select value={sortOrder} onValueChange={handleSortChange}>
-            <SelectTrigger className={`h-8 ${isMobile ? 'w-[100px]' : 'w-[150px]'}`}>
+            <SelectTrigger className={`h-8 ${isMobile ? 'w-[120px]' : 'w-[150px]'}`}>
               <SelectValue placeholder="정렬 기준" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="score">매칭 점수순</SelectItem>
               <SelectItem value="apply">지원 가능 우선</SelectItem>
+              <SelectItem value="deadline">마감일순</SelectItem>
+              <SelectItem value="recent">최신순</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+    </div>
+  );
 
-      <div className="grid gap-4 grid-cols-1">
-        {displayedJobs.map((job, index) => (
-          <div 
-            key={job.id} 
-            className={`transition-all duration-300 ${
-              index >= (page - 1) * itemsPerPage ? 'opacity-0 animate-fade-in' : ''
-            }`}
-            style={{ 
-              animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
-              animationFillMode: 'forwards',
-              willChange: 'opacity, transform' // Performance optimization
-            }}
-          >
-            <JobCard job={job} />
-          </div>
-        ))}
-      </div>
+  return (
+    <div className="relative" ref={listRef}>
+      {renderIntegratedHeader()}
+
+      <ScrollArea className="w-full scrollbar-none">
+        <div className="grid gap-4 grid-cols-1">
+          {displayedJobs.map((job, index) => (
+            <div 
+              key={job.id} 
+              className={`transition-all duration-300 ${
+                index >= (page - 1) * itemsPerPage ? 'opacity-0 animate-fade-in' : ''
+              }`}
+              style={{ 
+                animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
+                animationFillMode: 'forwards',
+                willChange: 'opacity, transform' // Performance optimization
+              }}
+            >
+              <JobCard job={job} />
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
       
       {/* Observer element for loading more - Optimized display logic */}
       {displayedJobs.length < filteredJobs.length && (

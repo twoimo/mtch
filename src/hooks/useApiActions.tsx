@@ -68,6 +68,12 @@ export const useApiActions = () => {
   const [isAutoMatchingLoading, setIsAutoMatchingLoading] = useState(false);
   const [isApplyLoading, setIsApplyLoading] = useState(false);
   
+  // 필터 상태
+  const [hideExpired, setHideExpired] = useState<boolean>(() => {
+    const savedState = localStorage.getItem('hide-expired-jobs');
+    return savedState === null ? true : savedState === 'true';
+  });
+  
   const { toast } = useToast();
   
   // 직접적으로 localStorage에 접근하는 함수들 (우선순위 높게 정의)
@@ -132,7 +138,7 @@ export const useApiActions = () => {
         if (item) {
           try {
             const parsed = JSON.parse(item);
-            console.log(`${key} 데이터:`, parsed);
+            console.log(`${key} ��이터:`, parsed);
           } catch (err) {
             console.error(`${key} 파싱 실패`);
           }
@@ -374,12 +380,19 @@ export const useApiActions = () => {
     }
   }, []);
 
+  // 필터 함수
+  const toggleHideExpired = useCallback((value: boolean) => {
+    setHideExpired(value);
+    localStorage.setItem('hide-expired-jobs', value.toString());
+  }, []);
+
   return {
     // 상태
     testResult,
     recommendedJobs,
     autoMatchingResult,
     applyResult,
+    hideExpired,
     
     // 로딩 상태
     isTestLoading,
@@ -392,6 +405,7 @@ export const useApiActions = () => {
     handleGetRecommendedJobs,
     handleRunAutoJobMatching,
     handleApplySaraminJobs,
+    toggleHideExpired,
     
     // 캐시 관리 메서드
     clearCache,

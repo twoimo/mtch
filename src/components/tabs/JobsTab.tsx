@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { X, ChevronDown, ChevronUp, Filter, RotateCcw } from 'lucide-react';
 import JobList from '@/components/JobList';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Drawer,
   DrawerClose,
@@ -33,6 +34,7 @@ interface JobsTabProps {
     jobType: string[];
     salaryRange: string;
     onlyApplicable: boolean;
+    hideExpired?: boolean;
   };
   onUpdateFilters: (filters: any) => void;
   onResetFilters: () => void;
@@ -44,7 +46,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
   const isMobile = useIsMobile();
   const [showFilters, setShowFilters] = useState(!isMobile);
   const [filtersVisible, setFiltersVisible] = useState(!isMobile);
-  const [hideExpired, setHideExpired] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateFilters({ ...filters, keyword: e.target.value });
@@ -77,8 +79,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
   };
   
   const handleHideExpiredChange = (checked: boolean) => {
-    setHideExpired(checked);
-    handleToggleHideExpired(checked);
+    onUpdateFilters({ ...filters, hideExpired: checked });
   };
   
   const toggleFilters = () => {
@@ -90,12 +91,12 @@ const JobsTab: React.FC<JobsTabProps> = ({
     onResetFilters();
   };
 
-  const handleToggleHideExpired = (hide: boolean) => {
-    setHideExpired(hide);
+  const handleOpenDrawer = () => {
+    setDrawerOpen(true);
   };
   
   const renderFiltersContent = () => (
-    <div className={`space-y-4 ${isMobile ? 'px-4 py-4' : ''}`}>
+    <ScrollArea className={`space-y-4 ${isMobile ? 'px-4 py-4 h-[70vh]' : ''} scrollbar-none`}>
       <div>
         <Label htmlFor="keyword" className="text-sm font-medium mb-1.5 block">
           키워드 검색
@@ -274,34 +275,10 @@ const JobsTab: React.FC<JobsTabProps> = ({
               경력
             </label>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="job-type-3"
-              checked={filters.jobType.includes('경력무관')}
-              onCheckedChange={(checked) => 
-                handleJobTypeChange('경력무관', checked as boolean)
-              }
-            />
-            <label htmlFor="job-type-3" className="text-sm cursor-pointer">
-              경력무관
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="job-type-4"
-              checked={filters.jobType.includes('인턴/계약')}
-              onCheckedChange={(checked) => 
-                handleJobTypeChange('인턴/계약', checked as boolean)
-              }
-            />
-            <label htmlFor="job-type-4" className="text-sm cursor-pointer">
-              인턴/계약
-            </label>
-          </div>
         </div>
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-2.5 pt-1">
         <div className="flex items-center space-x-2">
           <Switch 
             id="only-applicable"
@@ -316,7 +293,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         <div className="flex items-center space-x-2">
           <Switch 
             id="hide-expired"
-            checked={hideExpired}
+            checked={filters.hideExpired}
             onCheckedChange={handleHideExpiredChange}
           />
           <Label htmlFor="hide-expired" className="text-sm cursor-pointer">
@@ -333,7 +310,7 @@ const JobsTab: React.FC<JobsTabProps> = ({
         <RotateCcw className="h-4 w-4 mr-2" />
         필터 초기화
       </Button>
-    </div>
+    </ScrollArea>
   );
 
   return (
@@ -349,59 +326,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
       )}
       
       <div className={`${isMobile ? 'col-span-1' : filtersVisible ? 'md:col-span-9' : 'md:col-span-12'}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            채용 정보 
-            <span className="text-primary ml-1">
-              {filteredJobs.length}
-            </span>
-          </h2>
-          
-          {isMobile ? (
-            <Drawer>
-              <DrawerTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Filter className="h-4 w-4" />
-                  필터
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="text-left">
-                  <DrawerTitle>필터 옵션</DrawerTitle>
-                  <DrawerDescription>
-                    원하는 채용 정보만 확인하세요
-                  </DrawerDescription>
-                </DrawerHeader>
-                {renderFiltersContent()}
-                <DrawerFooter className="pt-2">
-                  <DrawerClose asChild>
-                    <Button variant="outline">닫기</Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleFilters}
-              className="gap-1"
-            >
-              {filtersVisible ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  필터 숨기기
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  필터 보기
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-        
         {jobs.length === 0 ? (
           <div className="bg-muted/50 rounded-lg p-8 text-center">
             <h3 className="text-lg font-medium mb-2">추천 채용정보가 없습니다</h3>
@@ -416,11 +340,31 @@ const JobsTab: React.FC<JobsTabProps> = ({
           <JobList 
             jobs={filteredJobs} 
             isLoading={false} 
-            hideExpired={hideExpired}
+            hideExpired={filters.hideExpired}
             onToggleHideExpired={handleHideExpiredChange}
+            onOpenFilters={isMobile ? handleOpenDrawer : undefined}
           />
         )}
       </div>
+
+      {isMobile && (
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerContent className="px-0 pb-0">
+            <DrawerHeader className="text-left px-4 pb-0">
+              <DrawerTitle>필터 옵션</DrawerTitle>
+              <DrawerDescription>
+                원하는 채용 정보를 찾아보세요
+              </DrawerDescription>
+            </DrawerHeader>
+            {renderFiltersContent()}
+            <DrawerFooter className="pt-2 px-4">
+              <DrawerClose asChild>
+                <Button variant="outline">닫기</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 };
