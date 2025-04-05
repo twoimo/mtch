@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { X, RotateCcw } from 'lucide-react';
+import { X, RotateCcw, Filter } from 'lucide-react';
 import JobList from '@/components/JobList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +20,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Import the Job type from JobList to ensure type compatibility
 type JobListJob = {
@@ -60,7 +62,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
   jobs, filteredJobs, filters, onUpdateFilters, onResetFilters 
 }) => {
   const isMobile = useIsMobile();
-  const [filtersVisible, setFiltersVisible] = useState(!isMobile);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
   // Initialize internal state based on filters prop but only on component mount
@@ -75,6 +76,19 @@ const JobsTab: React.FC<JobsTabProps> = ({
       setLocalHideExpired(filters.hideExpired);
     }
   }, [filters.hideExpired, localHideExpired]);
+  
+  // Calculate active filter count for badge
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.keyword) count++;
+    if (filters.minScore > 0) count++;
+    if (filters.employmentType.length > 0) count++;
+    if (filters.companyType && filters.companyType !== 'all') count++;
+    if (filters.jobType.length > 0) count++;
+    if (filters.onlyApplicable) count++;
+    if (filters.hideExpired) count++;
+    return count;
+  }, [filters]);
   
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateFilters({ ...filters, keyword: e.target.value });
@@ -115,11 +129,6 @@ const JobsTab: React.FC<JobsTabProps> = ({
     }, 0);
   };
   
-  const toggleFilters = () => {
-    if (isMobile) return;
-    setFiltersVisible(!filtersVisible);
-  };
-  
   const handleResetFilters = () => {
     onResetFilters();
   };
@@ -134,8 +143,8 @@ const JobsTab: React.FC<JobsTabProps> = ({
   
   const renderFiltersContent = () => (
     <ScrollArea className={`space-y-5 ${isMobile ? 'py-5 px-5 h-[70vh]' : 'px-1'} scrollbar-none`}>
-      <div className="py-4">
-        <Label htmlFor="keyword" className="text-sm font-medium mb-2 block ">
+      <div className="pt-1 pb-2">
+        <Label htmlFor="keyword" className="text-sm font-medium mb-1.5 block">
           키워드 검색
         </Label>
         <div className="relative">
@@ -354,18 +363,46 @@ const JobsTab: React.FC<JobsTabProps> = ({
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
+      {/* Desktop Filter Panel - Always visible */}
       {!isMobile && (
-        <div className={`md:col-span-3 transition-all duration-300 ease-in-out ${filtersVisible ? 'opacity-100' : 'opacity-0 md:h-0 md:overflow-hidden md:my-0 md:py-0'}`}>
-          <Card>
+        <div className="md:col-span-3">
+          <Card className="sticky top-4">
             <CardContent className="pt-6 pb-6 px-5">
+              <div className="flex justify-between items-center mb-0">
+                <h3 className="font-medium flex items-center">
+                  <Filter className="h-4 w-4 mr-2" />
+                  필터 옵션
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-2">{activeFilterCount}</Badge>
+                  )}
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={handleResetFilters}
+                        disabled={activeFilterCount === 0}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        <span className="sr-only">필터 초기화</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>필터 초기화</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               {renderFiltersContent()}
             </CardContent>
           </Card>
         </div>
       )}
       
-      <div className={`${isMobile ? 'col-span-1' : filtersVisible ? 'md:col-span-9' : 'md:col-span-12'}`}>
+      {/* Job List Container - Always use 9 columns on desktop */}
+      <div className={`${isMobile ? 'col-span-1' : 'md:col-span-9'}`}>
         {jobs.length === 0 ? (
           <div className="bg-muted/50 rounded-lg p-8 text-center">
             <h3 className="text-lg font-medium mb-2">추천 채용정보가 없습니다</h3>
@@ -383,23 +420,72 @@ const JobsTab: React.FC<JobsTabProps> = ({
             hideExpired={localHideExpired}
             onToggleHideExpired={handleHideExpiredChange}
             onOpenFilters={isMobile ? handleOpenDrawer : undefined}
+            activeFilterCount={activeFilterCount}
           />
+        )}
+
+        {/* Job count summary */}
+        {jobs.length > 0 && filteredJobs.length > 0 && (
+          <div className="mt-4 text-sm text-muted-foreground flex items-center justify-between">
+            <div>
+              전체 <span className="font-medium">{jobs.length}</span>개 중{' '}
+              <span className="font-medium">{filteredJobs.length}</span>개 표시됨
+            </div>
+            <div className="flex items-center">
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleResetFilters}
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  필터 초기화
+                </Button>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
+      {/* Mobile Filter Drawer */}
       {isMobile && (
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerContent className="px-0 pb-0">
-            <DrawerHeader className="text-left px-6 pb-0">
-              <DrawerTitle>필터 옵션</DrawerTitle>
-              <DrawerDescription>
-                원하는 채용 정보를 찾아보세요
-              </DrawerDescription>
+            <DrawerHeader className="text-left px-6 pb-0 flex items-center justify-between">
+              <div>
+                <DrawerTitle>필터 옵션</DrawerTitle>
+                <DrawerDescription>
+                  원하는 채용 정보를 찾아보세요
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-2 align-middle">{activeFilterCount}</Badge>
+                  )}
+                </DrawerDescription>
+              </div>
+              {activeFilterCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-9 px-2.5"
+                  onClick={handleResetFilters}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  초기화
+                </Button>
+              )}
             </DrawerHeader>
             {renderFiltersContent()}
-            <DrawerFooter className="pt-2 px-6">
+            <DrawerFooter className="pt-2 px-6 flex flex-row gap-3">
+              <Button 
+                className="flex-1" 
+                onClick={() => {
+                  setDrawerOpen(false);
+                }}
+              >
+                적용 ({filteredJobs.length})
+              </Button>
               <DrawerClose asChild>
-                <Button variant="outline">닫기</Button>
+                <Button variant="outline" className="flex-1">취소</Button>
               </DrawerClose>
             </DrawerFooter>
           </DrawerContent>
