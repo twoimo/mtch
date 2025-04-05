@@ -108,7 +108,12 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
   const selectedDateJobs = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    return jobsByDate[dateKey] || [];
+    // Sort jobs by score in descending order (highest first)
+    return (jobsByDate[dateKey] || []).sort((a, b) => {
+      const scoreA = a.score || a.matchScore || 0;
+      const scoreB = b.score || b.matchScore || 0;
+      return scoreB - scoreA; // Descending order
+    });
   }, [jobsByDate, selectedDate]);
   
   const selectedDateJobsCount = useMemo(() => {
@@ -310,7 +315,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                 <p className="text-sm">이 날짜에 마감되는 채용 공고가 없습니다.</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[350px] pr-3 -mr-3">
+              <div className="pr-3 -mr-3">
                 <div className="space-y-2">
                   {selectedDateJobs.map(job => {
                     const simplifiedType = simplifyEmploymentType(job.employmentType || '');
@@ -352,7 +357,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </CardContent>
         </Card>
