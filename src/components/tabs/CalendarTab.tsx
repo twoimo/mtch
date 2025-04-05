@@ -267,11 +267,18 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                         </div>
                         
                         <div className="mt-0.5 space-y-0.5 overflow-y-auto flex-grow text-[8px] sm:text-xs">
-                          {jobsForDay.slice(0, isMobile ? 1 : 3).map(job => (
+                          {jobsForDay
+                            .sort((a, b) => {
+                              const scoreA = a.score || a.matchScore || 0;
+                              const scoreB = b.score || b.matchScore || 0;
+                              return scoreB - scoreA; // Sort by score in descending order
+                            })
+                            .slice(0, isMobile ? 1 : 3)
+                            .map(job => (
                             <div 
                               key={job.id} 
                               className="truncate rounded px-1 py-0.5 bg-accent/20"
-                              title={`${job.companyName} - ${job.jobTitle}`}
+                              title={`${job.companyName} - ${job.jobTitle} (${job.score || job.matchScore || 0}점)`}
                             >
                               {job.companyName}
                             </div>
