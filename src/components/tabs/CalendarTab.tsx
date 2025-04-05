@@ -208,7 +208,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
               return (
                 <>
                   {prevBlankCells.map((_, index) => (
-                    <div key={`prev-${index}`} className="h-14 sm:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div key={`prev-${index}`} className="h-16 sm:h-32 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                   
                   {days.map(day => {
@@ -221,7 +221,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                       <div
                         key={dateKey}
                         className={cn(
-                          "h-14 sm:h-20 p-1 border border-border/40 rounded-md transition-all duration-200",
+                          "h-16 sm:h-32 p-1 border border-border/40 rounded-md transition-all duration-200",
                           isToday(day) ? "bg-primary/5 border-primary/30" : "bg-card hover:bg-accent/10",
                           isSelected ? "ring-1 ring-primary" : "",
                           "flex flex-col cursor-pointer"
@@ -229,15 +229,15 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                         onClick={() => setSelectedDate(day)}
                       >
                         <div className="flex justify-between items-start">
-                          <span
+                            <span
                             className={cn(
-                              "inline-flex justify-center items-center h-5 w-5 rounded-full text-center text-xs font-medium",
-                              isToday(day) ? "bg-primary text-primary-foreground" : "",
+                              "text-xs font-medium",
+                              isToday(day) ? "text-primary font-bold" : "",
                               day.getDay() === 0 ? "text-red-500" : day.getDay() === 6 ? "text-blue-500" : ""
                             )}
-                          >
+                            >
                             {format(day, 'd')}
-                          </span>
+                            </span>
                           
                           {jobCount > 0 && (
                             <TooltipProvider>
@@ -246,7 +246,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                                   <Badge 
                                     variant="secondary" 
                                     className={cn(
-                                      "h-4 min-w-4 flex items-center justify-center rounded-full text-[10px]",
+                                      "h-4 min-w-2 flex items-center justify-center rounded-full text-[10px]",
                                       "bg-primary/20"
                                     )}
                                   >
@@ -262,7 +262,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                         </div>
                         
                         <div className="mt-0.5 space-y-0.5 overflow-y-auto flex-grow text-[8px] sm:text-xs">
-                          {jobsForDay.slice(0, isMobile ? 1 : 2).map(job => (
+                          {jobsForDay.slice(0, isMobile ? 1 : 3).map(job => (
                             <div 
                               key={job.id} 
                               className="truncate rounded px-1 py-0.5 bg-accent/20"
@@ -271,9 +271,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                               {job.companyName}
                             </div>
                           ))}
-                          {jobCount > (isMobile ? 1 : 2) && (
+                          {jobCount > (isMobile ? 1 : 3) && (
                             <div className="text-[8px] sm:text-xs text-muted-foreground px-1">
-                              +{jobCount - (isMobile ? 1 : 2)}개
+                              +{jobCount - (isMobile ? 1 : 3)}개
                             </div>
                           )}
                         </div>
@@ -282,7 +282,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
                   })}
                   
                   {nextBlankCells.map((_, index) => (
-                    <div key={`next-${index}`} className="h-14 sm:h-20 border border-border/40 bg-muted/20 rounded-md opacity-50" />
+                    <div key={`next-${index}`} className="h-16 sm:h-32 border border-border/40 bg-muted/20 rounded-md opacity-50" />
                   ))}
                 </>
               );
