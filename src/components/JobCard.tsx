@@ -320,6 +320,13 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
               </div>
               
               <div className="flex items-center gap-2">
+                
+                {job.createdAt && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(job.createdAt).toLocaleDateString()}
+                  </div>
+                )}
+
                 {bookmarked && (
                   <TooltipProvider>
                     <Tooltip>
@@ -336,12 +343,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                )}
-
-                {job.createdAt && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(job.createdAt).toLocaleDateString()}
-                  </div>
                 )}
 
                 <button
