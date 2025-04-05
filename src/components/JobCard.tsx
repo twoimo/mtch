@@ -320,7 +320,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
               </div>
               
               <div className="flex items-center gap-2">
-                {/* 북마크 표시를 왼쪽에 배치 */}
                 {bookmarked && (
                   <TooltipProvider>
                     <Tooltip>
@@ -338,7 +337,13 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                
+
+                {job.createdAt && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(job.createdAt).toLocaleDateString()}
+                  </div>
+                )}
+
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -358,11 +363,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                   }
                 </button>
                 
-                {job.createdAt && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(job.createdAt).toLocaleDateString()}
-                  </div>
-                )}
+
               </div>
             </CardFooter>
           </Card>
