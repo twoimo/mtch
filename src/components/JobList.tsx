@@ -2,14 +2,14 @@
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useJobList } from '@/hooks/useJobList';
-import { Job, JobListProps } from '@/types/job';
+import { JobListProps } from '@/types/job';
 import JobCard from './JobCard';
 import JobListHeader from './job-list/JobListHeader';
 import EmptyJobList from './job-list/EmptyJobList';
 import LoadingIndicator from './job-list/LoadingIndicator';
 import ScrollToTopButton from './job-list/ScrollToTopButton';
 import JobListFooter from './job-list/JobListFooter';
+import { useJobStore, useJobStoreEffects } from '@/store/jobStore';
 
 // Component to display job listings
 const JobList: React.FC<JobListProps> = ({ 
@@ -21,30 +21,54 @@ const JobList: React.FC<JobListProps> = ({
   onOpenFilters
 }) => {
   const isMobile = useIsMobile();
-  const itemsPerPage = 15;
   const listRef = useRef<HTMLDivElement>(null);
   const [activeFilterCount, setActiveFilterCount] = React.useState<number>(0);
   
-  // Use our custom hook for job list functionality
-  const {
-    displayedJobs,
+  // Zustand 스토어에서 상태와 액션 가져오기
+  const { 
+    displayedJobs, 
     filteredJobs,
     sortOrder,
-    loaderRef,
     showScrollTop,
-    scrollDirection,
     expiredJobsCount,
-    
-    handleSortChange,
+    setSortOrder,
     loadMoreJobs,
-    scrollToTop
-  } = useJobList(jobs, hideExpired, itemsPerPage);
+    setHideExpired,
+    setAllJobs,
+  } = useJobStore();
+  
+  // 스크롤 관련 이펙트 훅 사용
+  const { scrollDirection } = useJobStoreEffects();
+  
+  // 로더 참조
+  const loaderRef = useRef<HTMLDivElement>(null);
+  
+  // 스크롤 맨 위로 함수
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  // 정렬 변경 핸들러
+  const handleSortChange = (value: string) => {
+    setSortOrder(value as 'score' | 'apply' | 'deadline' | 'recent');
+  };
+  
+  // 첫 렌더링 시 jobs를 스토어에 설정
+  useEffect(() => {
+    if (jobs && jobs.length > 0) {
+      setAllJobs(jobs);
+    }
+  }, [jobs, setAllJobs]);
+  
+  // 로딩 상태에 따라 hideExpired 업데이트
+  useEffect(() => {
+    setHideExpired(hideExpired);
+  }, [hideExpired, setHideExpired]);
 
-  // Setup intersection observer for infinite scroll
+  // Intersection Observer 설정
   useEffect(() => {
     if (!loaderRef.current || isLoading) return;
     
-    // Store the current ref value in a variable to avoid closure issues
     const currentLoaderRef = loaderRef.current;
     
     const observer = new IntersectionObserver(
@@ -60,20 +84,19 @@ const JobList: React.FC<JobListProps> = ({
     observer.observe(currentLoaderRef);
     
     return () => {
-      // Use the stored ref value in cleanup
       observer.unobserve(currentLoaderRef);
     };
   }, [loadMoreJobs, isLoading, scrollDirection]);
 
-  // Count active filters for visual feedback
+  // 활성화된 필터 수 계산
   useEffect(() => {
     let count = 0;
     if (hideExpired) count++;
-    // Add other filter conditions here if needed
+    // 필요한 경우 여기에 다른 필터 조건 추가
     setActiveFilterCount(count);
   }, [hideExpired]);
 
-  // When loading, show skeleton UI
+  // 로딩 중일 때 스켈레톤 UI 표시
   if (isLoading) {
     return <LoadingIndicator />;
   }
@@ -99,12 +122,12 @@ const JobList: React.FC<JobListProps> = ({
             <div 
               key={job.id} 
               className={`transition-all duration-300 ${
-                index >= ((Math.floor(index / itemsPerPage)) * itemsPerPage) ? 'opacity-0 animate-fade-in' : ''
+                index >= ((Math.floor(index / 15)) * 15) ? 'opacity-0 animate-fade-in' : ''
               }`}
               style={{ 
-                animationDelay: `${Math.min(index % itemsPerPage * 0.05, 0.5)}s`, 
+                animationDelay: `${Math.min(index % 15 * 0.05, 0.5)}s`, 
                 animationFillMode: 'forwards',
-                willChange: 'opacity, transform' // Performance optimization
+                willChange: 'opacity, transform' // 성능 최적화
               }}
             >
               <JobCard job={job} />
@@ -113,7 +136,7 @@ const JobList: React.FC<JobListProps> = ({
         </div>
       </ScrollArea>
       
-      {/* Observer element for loading more */}
+      {/* 더 로드하기 위한 관찰자 요소 */}
       {displayedJobs.length < filteredJobs.length && (
         <div 
           ref={loaderRef} 
@@ -123,13 +146,13 @@ const JobList: React.FC<JobListProps> = ({
         </div>
       )}
       
-      {/* Scroll to top button */}
+      {/* 맨 위로 스크롤 버튼 */}
       <ScrollToTopButton 
         onClick={scrollToTop} 
         visible={showScrollTop} 
       />
       
-      {/* Footer with count information and mobile toggle */}
+      {/* 카운트 정보와 모바일 토글이 있는 푸터 */}
       <JobListFooter 
         displayedCount={displayedJobs.length}
         hideExpired={hideExpired}
