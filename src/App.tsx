@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 5 * 60 * 1000, // 5분 동안 데이터 신선함 유지
-      cacheTime: 30 * 60 * 1000, // 30분 동안 사용되지 않은 데이터 캐시 유지
+      gcTime: 30 * 60 * 1000, // 30분 동안 사용되지 않은 데이터 캐시 유지 (이전 cacheTime)
       refetchOnWindowFocus: false, // 창 포커스 시 자동 재조회 비활성화
       suspense: false, // Suspense 모드 비활성화 (필요 시 활성화)
     },
