@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CommandPalette from "./components/CommandPalette";
 import { useCommandPalette } from "./hooks/useCommandPalette";
+import "./styles/animations.css";
 
 const queryClient = new QueryClient();
 
