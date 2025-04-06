@@ -25,14 +25,14 @@ const JobListHeader: React.FC<JobListHeaderProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-      <div className="flex flex-col">
-        <div className="flex items-center text-lg font-semibold">
+    <div className="flex flex-row justify-between items-center mb-4 gap-2 flex-wrap">
+      <div className="flex items-center">
+        <div className="text-lg font-semibold">
           {title} <span className="text-primary ml-1">{count}</span>
         </div>
       </div>
       
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+      <div className="flex items-center gap-2">
         {isMobile && onOpenFilters && (
           <Button 
             variant="outline" 
