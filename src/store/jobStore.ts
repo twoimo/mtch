@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Job } from '@/types/api';
@@ -46,7 +46,7 @@ export const STORAGE_KEYS = {
 // Zustand 스토어 생성
 export const useJobStore = create<JobState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // 초기 상태
       allJobs: [],
       recommendedJobs: [],
@@ -76,7 +76,7 @@ export const useJobStore = create<JobState>()(
         set({ recommendedJobs: jobs }),
         
       setSortOrder: (order) => 
-        set(state => {
+        set(() => {
           // 정렬 순서를 변경하고 필터링 다시 실행
           localStorage.setItem(STORAGE_KEYS.SORT_ORDER, order);
           return { 
@@ -86,7 +86,7 @@ export const useJobStore = create<JobState>()(
         }),
         
       setHideExpired: (hide) => 
-        set(state => {
+        set(() => {
           localStorage.setItem(STORAGE_KEYS.HIDE_EXPIRED, String(hide));
           return { 
             hideExpired: hide,
@@ -96,7 +96,7 @@ export const useJobStore = create<JobState>()(
         
       loadMoreJobs: () => 
         set(state => {
-          const { page, filteredJobs, itemsPerPage, displayedJobs } = state;
+          const { page, filteredJobs, displayedJobs } = state;
           // 더 로드할 항목이 있는지 확인
           if (displayedJobs.length < filteredJobs.length) {
             return { page: page + 1 };
@@ -155,12 +155,17 @@ export const useJobStoreEffects = () => {
     scrollDirection
   } = useJobStore();
   
+  // Extract complex dependencies to separate variables
+  const hideExpired = useJobStore(state => state.hideExpired);
+  const sortOrder = useJobStore(state => state.sortOrder);
+  const page = useJobStore(state => state.page);
+  
   // 필터링 실행
   React.useEffect(() => {
     if (allJobs.length > 0) {
       filterJobs();
     }
-  }, [allJobs, filterJobs, useJobStore(state => state.hideExpired), useJobStore(state => state.sortOrder), useJobStore(state => state.page)]);
+  }, [allJobs, filterJobs, hideExpired, sortOrder, page]);
   
   // 스크롤 이벤트 처리
   React.useEffect(() => {
