@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Database, CheckCircle2, XCircle, Search } from 'lucide-react';
-import { Job, ApplyResponse, AutoMatchingResponse } from '@/services/MainServiceCommunicateService';
+import { Job, ApplyResponse, AutoMatchingResponse } from '@/services/api-service';
 
 interface TestResult {
   success: boolean;

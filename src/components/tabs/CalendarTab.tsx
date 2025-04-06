@@ -49,6 +49,9 @@ interface CalendarTabProps {
   filteredJobs: Job[];
 }
 
+/**
+ * 고용 형태를 간소화하는 유틸리티 함수
+ */
 const simplifyEmploymentType = (type: string): string => {
   if (!type) return '';
   
@@ -73,6 +76,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
     setCurrentDate(prevDate => addMonths(prevDate, 1));
   };
   
+  // 날짜별 채용 정보 매핑
   const jobsByDate = useMemo(() => {
     const result: Record<string, Job[]> = {};
     
@@ -80,10 +84,12 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
     const lastDay = endOfMonth(currentDate);
     const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
     
+    // 월의 모든 날짜에 대해 빈 배열 초기화
     daysInMonth.forEach(day => {
       result[format(day, 'yyyy-MM-dd')] = [];
     });
     
+    // 각 채용 정보를 마감일에 따라 할당
     filteredJobs.forEach(job => {
       if (job.deadline) {
         let deadlineDate: Date;
@@ -105,14 +111,15 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
     return result;
   }, [filteredJobs, currentDate]);
   
+  // 선택된 날짜의 채용 정보 필터링 및 정렬
   const selectedDateJobs = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    // Sort jobs by score in descending order (highest first)
+    // 점수 내림차순 정렬 (높은 점수가 먼저)
     return (jobsByDate[dateKey] || []).sort((a, b) => {
       const scoreA = a.score || a.matchScore || 0;
       const scoreB = b.score || b.matchScore || 0;
-      return scoreB - scoreA; // Descending order
+      return scoreB - scoreA;
     });
   }, [jobsByDate, selectedDate]);
   
@@ -323,47 +330,49 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ filteredJobs }) => {
               </div>
             ) : (
               <div className="pr-3 -mr-3">
-                <div className="space-y-2">
-                  {selectedDateJobs.map(job => {
-                    const simplifiedType = simplifyEmploymentType(job.employmentType || '');
-                    
-                    return (
-                      <div 
-                        key={job.id} 
-                        className="p-2 sm:p-3 border border-border rounded-md hover:bg-accent/10 transition-colors"
-                      >
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm truncate pr-2">
-                              <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                                {job.jobTitle}
-                              </a>
-                            </h3>
-                            <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
+                <ScrollArea className="w-full">
+                  <div className="space-y-2">
+                    {selectedDateJobs.map(job => {
+                      const simplifiedType = simplifyEmploymentType(job.employmentType || '');
+                      
+                      return (
+                        <div 
+                          key={job.id} 
+                          className="p-2 sm:p-3 border border-border rounded-md hover:bg-accent/10 transition-colors"
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm truncate pr-2">
+                                <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                                  {job.jobTitle}
+                                </a>
+                              </h3>
+                              <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
+                            </div>
+                            <Badge 
+                              variant={job.score >= 70 ? "default" : "secondary"} 
+                              className="text-xs whitespace-nowrap shrink-0"
+                            >
+                              {job.score || job.matchScore || 0}점
+                            </Badge>
                           </div>
-                          <Badge 
-                            variant={job.score >= 70 ? "default" : "secondary"} 
-                            className="text-xs whitespace-nowrap shrink-0"
-                          >
-                            {job.score || job.matchScore || 0}점
-                          </Badge>
+                          
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {simplifiedType && (
+                              <Badge variant="outline" className="text-[10px]">{simplifiedType}</Badge>
+                            )}
+                            {job.jobType && (
+                              <Badge variant="outline" className="text-[10px]">{job.jobType}</Badge>
+                            )}
+                            {job.jobLocation && (
+                              <Badge variant="outline" className="text-[10px]">{job.jobLocation}</Badge>
+                            )}
+                          </div>
                         </div>
-                        
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {simplifiedType && (
-                            <Badge variant="outline" className="text-[10px]">{simplifiedType}</Badge>
-                          )}
-                          {job.jobType && (
-                            <Badge variant="outline" className="text-[10px]">{job.jobType}</Badge>
-                          )}
-                          {job.jobLocation && (
-                            <Badge variant="outline" className="text-[10px]">{job.jobLocation}</Badge>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </div>
             )}
           </CardContent>

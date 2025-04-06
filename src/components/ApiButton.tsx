@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +17,10 @@ interface ApiButtonProps {
   disabled?: boolean;
 }
 
-// API 요청을 실행하는 버튼 컴포넌트
+/**
+ * API 요청을 실행하는 버튼 컴포넌트
+ * 로딩 상태와 아이콘, 툴팁을 지원합니다.
+ */
 const ApiButton: React.FC<ApiButtonProps> = ({ 
   label, 
   onClick, 
@@ -28,6 +32,8 @@ const ApiButton: React.FC<ApiButtonProps> = ({
   disabled = false
 }) => {
   const isMobile = useIsMobile();
+  
+  // 모바일에서 라벨 텍스트 길이 제한
   const buttonLabel = isMobile ? (label.length > 12 ? `${label.substring(0, 10)}...` : label) : label;
   
   const buttonContent = (
@@ -54,12 +60,14 @@ const ApiButton: React.FC<ApiButtonProps> = ({
         </>
       )}
       
+      {/* 로딩 시 애니메이션 효과 */}
       {isLoading && (
         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shine_1.5s_ease-in-out_infinite] pointer-events-none" />
       )}
     </Button>
   );
   
+  // 툴팁 존재 시 툴팁 적용
   if (tooltip) {
     return (
       <TooltipProvider>

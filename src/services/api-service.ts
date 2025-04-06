@@ -1,3 +1,4 @@
+
 import { 
   AllJobsResponse, 
   RecommendedJobsResponse, 
@@ -5,7 +6,9 @@ import {
   AutoMatchingResponse, 
   ApplyResponse,
   normalizeApiResponse,
-  normalizeRecommendedJobsResponse
+  normalizeRecommendedJobsResponse,
+  Job,
+  ApiResponse
 } from '@/types/api';
 import recommendedJobsData from '../../recommended-jobs.json';
 import allJobsData from '../../all-jobs.json';
@@ -20,7 +23,7 @@ class ApiService {
    * 테스트 API 엔드포인트 - 스크래핑 스케줄러
    * @returns 테스트 응답 Promise
    */
-  async test(): Promise<TestResponse> {
+  async test(): Promise<TestResponse & { testCompleted?: boolean }> {
     try {
       const response = await fetch(`${this.baseUrl}/test`, {
         method: 'GET',
@@ -70,7 +73,6 @@ class ApiService {
         const data = await response.json();
         if (data) {
           console.info('모든 채용 정보를 성공적으로 가져왔습니다');
-          // API 응답을 적절히 변환하기 위해 정규화 함수 사용
           return normalizeApiResponse(data);
         } else {
           console.warn('예상치 못한 API 응답 형식:', data);
@@ -92,7 +94,6 @@ class ApiService {
    */
   private getFallbackAllJobs(): AllJobsResponse {
     console.info('all-jobs.json 파일의 대체 데이터 사용 중');
-    // 예상 형식과 일치하도록 대체 데이터 정규화 - 타입 캐스팅으로 에러 해결
     return normalizeApiResponse(allJobsData as Record<string, unknown>);
   }
 
@@ -118,7 +119,6 @@ class ApiService {
         const data = await response.json();
         if (data) {
           console.info('추천 채용 정보를 성공적으로 가져왔습니다');
-          // API 응답을 적절히 변환하기 위해 정규화 함수 사용
           return normalizeRecommendedJobsResponse(data);
         } else {
           console.warn('예상치 못한 API 응답 형식:', data);
@@ -140,7 +140,6 @@ class ApiService {
    */
   private getFallbackRecommendedJobs(): RecommendedJobsResponse {
     console.info('recommended-jobs.json 파일의 대체 데이터 사용 중');
-    // 예상 형식과 일치하도록 대체 데이터 정규화 - 타입 캐스팅으로 에러 해결
     return normalizeRecommendedJobsResponse(recommendedJobsData as Record<string, unknown>);
   }
 
@@ -219,3 +218,4 @@ class ApiService {
 
 // Create singleton instance
 export const apiService = new ApiService();
+export type { Job, ApiResponse, RecommendedJobsResponse, AllJobsResponse, AutoMatchingResponse, ApplyResponse };
